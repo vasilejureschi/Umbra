@@ -1,0 +1,6 @@
+Create website showing the explored part of the world with percentage, kms walked,etc
+
+Fix pan (the display is not updated correctly on pan)
+Disable animate to location on pan and add an "Where Am I?" button
+Have a background task that stores areas explored instead of points walked (concats
+areas explored in a  location and a radius for example)
