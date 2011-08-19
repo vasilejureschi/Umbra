@@ -65,7 +65,7 @@ public class LocationRecorder implements LocationProvider {
         for (AproximateLocation aproximateLocation : locations) {
             batchInserter.prepareForInsert();
             batchInserter.bind(latitudeIndex, aproximateLocation.getLatitude());
-            batchInserter.bind(longitudeIndex, aproximateLocation.getLatitude());
+            batchInserter.bind(longitudeIndex, aproximateLocation.getLongitude());
             batchInserter.execute();
             Log.d(TAG, "Batch inserted latitude and longitude: "
                     + numberLogList(aproximateLocation.getLatitude(), aproximateLocation.getLongitude()));
@@ -83,6 +83,7 @@ public class LocationRecorder implements LocationProvider {
         List<AproximateLocation> list = new ArrayList<AproximateLocation>();
         Cursor cursor = this.db.query(TABLE_NAME, new String[] { LATITUDE, LONGITUDE }, null, null, null,
                 null, LONGITUDE + " desc");
+        Log.d(TAG, "Results obtained: " + cursor.getCount());
         if (cursor.moveToFirst()) {
             do {
                 AproximateLocation location = new AproximateLocation(DATABASE_PROVIDER);
@@ -109,8 +110,9 @@ public class LocationRecorder implements LocationProvider {
         String condition = LONGITUDE + " >= " + longitudeMin + " AND " + LONGITUDE + " <= " + longitudeMax
                 + " AND " + LATITUDE + " >= " + latitudeMin + " AND " + LATITUDE + " <= " + latitudeMax;
 
+        Log.v(TAG, "Select condition is " + condition);
         Cursor cursor = this.db.query(TABLE_NAME, new String[] { LATITUDE, LONGITUDE }, condition, null,
-                null, null, LONGITUDE + " desc");
+                null, null, LATITUDE + " desc");
         Log.d(TAG, "Results obtained: " + cursor.getCount());
         if (cursor.moveToFirst()) {
             do {
