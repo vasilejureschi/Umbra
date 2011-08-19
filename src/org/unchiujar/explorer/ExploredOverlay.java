@@ -96,11 +96,11 @@ public class ExploredOverlay extends Overlay {
         Log.v(TAG, "View distance is " + viewDistance + " meters, radius in pixels is " + radius
                 + " pixel per meter is " + pixelsMeter);
         // TODO research what PorterDuffMode does and set to simulate transparency
-        Rect screenCover = new Rect(0, 0, mapView.getMeasuredWidth(), mapView.getMeasuredHeight());
-        canvas.drawRect(screenCover, rectPaint);
 
 
         if (pointsUpdated) {
+            Rect screenCover = new Rect(0, 0, mapView.getMeasuredWidth(), mapView.getMeasuredHeight());
+            canvas.drawRect(screenCover, rectPaint);
 
             for (AproximateLocation location : locations) {
                 // BUG - do not use
@@ -110,10 +110,10 @@ public class ExploredOverlay extends Overlay {
                 projection.toPixels(locationToGeoPoint(location), tempPoint);
                 Log.v(TAG, "GeoPoint to screen point: " + tempPoint);
                 // for display use only visible points
-//                if (tempPoint.x >= 0 && tempPoint.x <= mapView.getWidth() && tempPoint.y >= 0
-//                        && tempPoint.y <= mapView.getHeight()) {
+                if (tempPoint.x >= 0 && tempPoint.x <= mapView.getWidth() && tempPoint.y >= 0
+                        && tempPoint.y <= mapView.getHeight()) {
                     canvas.drawCircle(tempPoint.x, tempPoint.y, radius, circlePaint);
-//                }
+                }
 
             }
             //draw blue location circle

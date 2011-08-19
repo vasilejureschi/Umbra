@@ -31,6 +31,9 @@ import com.google.android.maps.Overlay;
 
 public class FogOfExplore extends MapActivity {
     private static final String TAG = FogOfExplore.class.getName();
+    /** Interval between zoom checks for the zoom and pan handler.*/
+    public static final int ZOOM_CHECKING_DELAY = 100; 
+
     private Intent locationServiceIntent;
     private ExploredOverlay explored;
     private LocationChangeReceiver locationChangeReceiver;
@@ -98,7 +101,7 @@ public class FogOfExplore extends MapActivity {
         displayRunningNotification();
 
         // start zoom check
-        handler.postDelayed(zoomChecker, zoomCheckingDelay); // register a new one
+        handler.postDelayed(zoomChecker, ZOOM_CHECKING_DELAY); // register a new one
 
     }
 
@@ -177,7 +180,7 @@ public class FogOfExplore extends MapActivity {
         locationChangeReceiver = new LocationChangeReceiver();
         registerReceiver(locationChangeReceiver, movementFilter);
         //register zoom && pan handler
-        handler.postDelayed(zoomChecker, zoomCheckingDelay); 
+        handler.postDelayed(zoomChecker, ZOOM_CHECKING_DELAY); 
         startLocationService();
         super.onResume();
 
@@ -252,10 +255,9 @@ public class FogOfExplore extends MapActivity {
 
     private Handler handler = new Handler();
 
-    public static final int zoomCheckingDelay = 500; // in ms
 
     private Runnable zoomChecker = new Runnable() {
-        private int oldZoom = 1;
+        private int oldZoom = 9001;
 
         public void run() {
             MapView mapView = (MapView) findViewById(R.id.mapview);
@@ -263,8 +265,8 @@ public class FogOfExplore extends MapActivity {
             if (mapView.getZoomLevel() != oldZoom) {
                 redrawOverlay();
             }
-            handler.removeCallbacks(zoomChecker); // remove the old callback
-            handler.postDelayed(zoomChecker, zoomCheckingDelay); // register a new one
+            handler.removeCallbacks(zoomChecker); 
+            handler.postDelayed(zoomChecker, ZOOM_CHECKING_DELAY); 
         }
     };
     private NotificationManager mNotificationManager;
