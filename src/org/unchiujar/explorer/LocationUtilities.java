@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 
 import android.location.Location;
+import android.util.Log;
 
 import com.google.android.maps.GeoPoint;
 
@@ -15,6 +16,8 @@ import com.google.android.maps.GeoPoint;
  * 
  */
 public class LocationUtilities {
+
+    private static final String TAG = LocationUtilities.class.getName();
 
     public static GeoPoint locationToGeoPoint(Location location) {
         return coordinatesToGeoPoint(location.getLatitude(), location.getLongitude());
@@ -64,11 +67,50 @@ public class LocationUtilities {
 
     }
 
+    // FIXME broken
     // TODO: lame code calculations following, improve
     // TODO: write tests
     // TODO: zoom case is not correctly checked, rectangle A included in B
-    public static List<AproximateLocation> complementArea(Location upperLeftA, Location lowerRightA, Location upperLeftB,
-            Location lowerRightB) {
+    /**
+     * The A region is the region already known while the B region is the unkown one. The method
+     * returns the areas of B that are not in A and the rectangles around A that are next to B.
+     * 
+     * In the following example the starred regions should be returned.
+     * 
+     * <pre>
+     *   _____
+     *  |**B* |**
+     *  |**------
+     *  |__|__| |
+     *  ***| A  |
+     *  ***|____|
+     * </pre>
+     * 
+     * <pre>
+     *             ^
+     *            N|+
+     *             |
+     *             |
+     * -W          |           E+
+     * -------------------------->
+     *             |
+     *             |
+     *             |
+     *            S|-
+     * 
+     * </pre>
+     * 
+     * @param upperLeftA
+     * @param lowerRightA
+     * @param upperLeftB
+     * @param lowerRightB
+     * @return
+     */
+    public static List<LocationRectangle> complementArea(Location upperLeftA, Location lowerRightA,
+            Location upperLeftB, Location lowerRightB) {
+
+        Log.d(TAG, "Calculating rectangles for :"
+                + LogUtilities.locationLogList(upperLeftA, lowerRightA, upperLeftB, lowerRightB));
         // north is +, south is -
         // west is - , east is +
         // yay for inventing words :D
@@ -91,12 +133,11 @@ public class LocationUtilities {
         // largest longitude
         eastestLongitude = (lowerRightA.getLongitude() > lowerRightB.getLongitude()) ? lowerRightA
                 .getLongitude() : lowerRightB.getLongitude();
-                
-        // if B is included in A return an empty array        
-        if (northestLatitude == upperLeftA.getLatitude() && 
-                westestLongitude == upperLeftA.getLongitude() &&
-                southestLatitude == lowerRightA.getLatitude() &&
-                eastestLongitude == lowerRightA.getLongitude()) {
+
+        // if B is included in A return an empty array
+        if (northestLatitude == upperLeftA.getLatitude() && westestLongitude == upperLeftA.getLongitude()
+                && southestLatitude == lowerRightA.getLatitude()
+                && eastestLongitude == lowerRightA.getLongitude()) {
             return Collections.emptyList();
         }
         AproximateLocation rect1UL = new AproximateLocation("mumu");
@@ -112,12 +153,12 @@ public class LocationUtilities {
          * 
          * <pre>
          *   _____
-         *  |..B. |..
-         *  |..------
+         *  |**B* |**
+         *  |**------
          *  |__|__| |
          *  ***| A  |
          *  ***|____|
-         * 
+         *           
          * </pre>
          * 
          * 
@@ -134,7 +175,8 @@ public class LocationUtilities {
 
             rect2BR.setLatitude(lowerRightA.getLatitude());
             rect2BR.setLongitude(upperLeftA.getLongitude());
-            return createList(rect1UL, rect1BR, rect2UL, rect2BR);
+            return createList(new LocationRectangle(rect1UL, rect1BR),
+                    new LocationRectangle(rect2UL, rect2BR));
 
         }
 
@@ -167,7 +209,8 @@ public class LocationUtilities {
 
             rect2BR.setLatitude(southestLatitude);
             rect2BR.setLongitude(eastestLongitude);
-            return createList(rect1UL, rect1BR, rect2UL, rect2BR);
+            return createList(new LocationRectangle(rect1UL, rect1BR),
+                    new LocationRectangle(rect2UL, rect2BR));
 
         }
 
@@ -199,7 +242,8 @@ public class LocationUtilities {
 
             rect2BR.setLatitude(southestLatitude);
             rect2BR.setLongitude(lowerRightA.getLongitude());
-            return createList(rect1UL, rect1BR, rect2UL, rect2BR);
+            return createList(new LocationRectangle(rect1UL, rect1BR),
+                    new LocationRectangle(rect2UL, rect2BR));
 
         }
 
@@ -232,20 +276,21 @@ public class LocationUtilities {
 
             rect2BR.setLatitude(southestLatitude);
             rect2BR.setLongitude(lowerRightA.getLongitude());
-            return createList(rect1UL, rect1BR, rect2UL, rect2BR);
+            return createList(new LocationRectangle(rect1UL, rect1BR),
+                    new LocationRectangle(rect2UL, rect2BR));
         }
         assert false : "Unexpected rectangle values were passed : " + upperLeftA + " " + lowerRightA + " "
                 + upperLeftB + " " + lowerRightB;
 
         return Collections.emptyList();
     }
-    
-    private  static List<AproximateLocation> createList(AproximateLocation... locations){
-        ArrayList<AproximateLocation> rectangles = new ArrayList<AproximateLocation>();
-        for (AproximateLocation aproximateLocation : locations) {
-            rectangles.add(aproximateLocation);
+
+    private static List<LocationRectangle> createList(LocationRectangle... locations) {
+        ArrayList<LocationRectangle> rectangles = new ArrayList<LocationRectangle>();
+        for (LocationRectangle rectangle : locations) {
+            rectangles.add(rectangle);
         }
         return rectangles;
-        
+
     }
 }
