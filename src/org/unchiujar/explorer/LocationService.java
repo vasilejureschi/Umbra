@@ -80,7 +80,7 @@ public class LocationService extends IntentService implements LocationListener {
 	locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 	// set up
 	locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-		5000, 10, this);
+		5000, (float)LocationOrder.METERS_RADIUS * 2, this);
 	Log.d(TAG, "Location manager set up.");
 //	locationRecorder = LocationRecorder.getInstance(this);
     }
