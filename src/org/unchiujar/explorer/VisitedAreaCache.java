@@ -32,11 +32,12 @@ public class VisitedAreaCache implements LocationProvider {
     private TreeSet<AproximateLocation> newLocations = new TreeSet<AproximateLocation>(new LocationOrder());
 
     /** Upper left bound of cached rectangle area. */
-    private AproximateLocation upperLeftBound;
+    private AproximateLocation upperLeftBoundCached;
 
     /** Lower right bound of cached rectangle area. */
-    private AproximateLocation lowerRightBound;
+    private AproximateLocation lowerRightBoundCached;
     private Context context;
+    private boolean cached = false;
 
     private static VisitedAreaCache instance;
 
@@ -77,6 +78,10 @@ public class VisitedAreaCache implements LocationProvider {
 
     }
 
+    public void stopDbUpdate() {
+        updateTimer.cancel();
+    }
+
     public static VisitedAreaCache getInstance(Context context) {
         return (instance == null) ? instance = new VisitedAreaCache(context) : instance;
     }
@@ -91,7 +96,7 @@ public class VisitedAreaCache implements LocationProvider {
     public synchronized long insert(AproximateLocation location) {
         locations.add(location);
         // set dirty cache flag if an actual location was
-        // inserted in the tree
+        // inserted in the tree, checks by tree size
         if (locations.size() != previousSize) {
             // add the location to the database update treeset
             newLocations.add(location);
@@ -106,42 +111,26 @@ public class VisitedAreaCache implements LocationProvider {
         return new ArrayList<AproximateLocation>(locations);
     }
 
-    // TODO crappy code,
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.unchiujar.explorer.LocationProvider#selectVisited(org.unchiujar.explorer.AproximateLocation
+     * , org.unchiujar.explorer.AproximateLocation)
+     */
     @Override
     public List<AproximateLocation> selectVisited(AproximateLocation upperLeft, AproximateLocation lowerRight) {
-        // get from database if the checked bounds are bigger than the cached bounds
-//
-//        // initialize
-//        if (upperLeftBound == null) {
-//            upperLeftBound = upperLeft;
-//            lowerRightBound = lowerRight;
-//            LocationRecorder recorder = LocationRecorder.getInstance(context);
-//            locations.addAll(recorder.selectVisited(upperLeft,lowerRight));
-//
-//        }
-//
-//        List<AproximateLocation> rectangles = LocationUtilities.complementArea(upperLeftBound, lowerRightBound,
-//                upperLeft, lowerRight);
-//
-//        upperLeftBound = upperLeft;
-//        lowerRightBound = lowerRight;
-//        // TODO NPE here, see why
-//        Log.d(TAG, ""+rectangles.size());
-//
-//        Log.d(TAG, ""+rectangles);
-//        
-//        if (rectangles != null && rectangles.size() == 4) {
-//            LocationRecorder recorder = LocationRecorder.getInstance(context);
-//            locations.addAll(recorder.selectVisited(rectangles.get(0), rectangles.get(1)));
-//            locations.addAll(recorder.selectVisited(rectangles.get(2), rectangles.get(3)));
-//        }
-        Log.d(TAG, "Getting visited points between " + upperLeft + lowerRight);
-      LocationRecorder recorder = LocationRecorder.getInstance(context);
+        if (!cached) {
+            // TODO find a better method
+            // cache the entire database
+            LocationRecorder recorder = LocationRecorder.getInstance(context);
+            locations.addAll(recorder.selectAll());
+            cached = true;
 
-        locations.addAll(recorder.selectVisited(upperLeft, lowerRight));
+        }
         ArrayList<AproximateLocation> visited = new ArrayList<AproximateLocation>(locations.subSet(upperLeft,
                 lowerRight));
-
+        Log.d(TAG, "Returning  " + visited.size() + "  cached results");
         return visited;
     }
 
