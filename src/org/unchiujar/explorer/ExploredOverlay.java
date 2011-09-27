@@ -2,10 +2,10 @@ package org.unchiujar.explorer;
 
 import static org.unchiujar.explorer.LocationUtilities.locationToGeoPoint;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -30,26 +30,32 @@ public class ExploredOverlay extends Overlay {
     private double currentLat;
     private double currentLong;
 
-    // TODO remove - DEBUG code
-    int i;
-    Paint paint1 = new Paint();
-    // TODO remove - DEBUG code
     private Paint currentPaint;
     private Paint circlePaint;
     private Point tempPoint = new Point();
+    private boolean bitmapCreated;
+    private Bitmap cover;
+    private Canvas coverCanvas;
+
+    // TODO remove - DEBUG code
+    private Paint paint1 = new Paint();
+    private int i;
+    // TODO remove - DEBUG code
+    private Rect screenCover;
 
     public ExploredOverlay(Context context) {
         this.context = context;
 
         rectPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        rectPaint.setColor(Color.DKGRAY);
-        rectPaint.setAlpha(50);
+
+        rectPaint.setColor(Color.BLACK);
+        rectPaint.setAlpha(150);
         rectPaint.setStyle(Style.FILL_AND_STROKE);
 
         currentPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         currentPaint.setColor(Color.BLUE);
         currentPaint.setStyle(Style.STROKE);
-        
+
         circlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         // set PorterDuff mode in order to create transparent holes in
         // the canvas
@@ -57,9 +63,9 @@ public class ExploredOverlay extends Overlay {
         // see http://en.wikipedia.org/wiki/Alpha_compositing
         // see
         // http://groups.google.com/group/android-developers/browse_thread/thread/5b0a498664b17aa0/de4aab6fb7e97e38?lnk=gst&q=erase+transparent&pli=1
-        circlePaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SCREEN));
-        // circlePaint.setAlpha(0);
-        circlePaint.setColor(Color.RED);
+        circlePaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+        circlePaint.setAlpha(255);
+        circlePaint.setColor(Color.BLACK);
         circlePaint.setStyle(Style.FILL_AND_STROKE);
 
         // TODO remove - DEBUG code
@@ -72,6 +78,7 @@ public class ExploredOverlay extends Overlay {
 
     @Override
     public void draw(Canvas canvas, MapView mapView, boolean shadow) {
+
         super.draw(canvas, mapView, shadow);
         canvas.drawText("redraw? " + i++, 5, 10, paint1);
 
@@ -97,10 +104,21 @@ public class ExploredOverlay extends Overlay {
                 + " pixel per meter is " + pixelsMeter);
         // TODO research what PorterDuffMode does and set to simulate transparency
 
-
         if (pointsUpdated) {
-            Rect screenCover = new Rect(0, 0, mapView.getMeasuredWidth(), mapView.getMeasuredHeight());
-            canvas.drawRect(screenCover, rectPaint);
+
+            if (!bitmapCreated) {
+                cover = Bitmap.createBitmap(mapView.getMeasuredWidth(), mapView.getMeasuredHeight(),
+                        Bitmap.Config.ALPHA_8);
+                coverCanvas = new Canvas(cover);
+                // TODO check is width, heigh is always the same - rotation may be a problem
+                screenCover = new Rect(0, 0, mapView.getMeasuredWidth(), mapView.getMeasuredHeight());
+
+                bitmapCreated = true;
+            } else {
+                cover.eraseColor(Color.TRANSPARENT);
+            }
+
+            coverCanvas.drawRect(screenCover, rectPaint);
 
             for (AproximateLocation location : locations) {
                 // BUG - do not use
@@ -112,17 +130,15 @@ public class ExploredOverlay extends Overlay {
                 // for display use only visible points
                 if (tempPoint.x >= 0 && tempPoint.x <= mapView.getWidth() && tempPoint.y >= 0
                         && tempPoint.y <= mapView.getHeight()) {
-                    canvas.drawCircle(tempPoint.x, tempPoint.y, radius, circlePaint);
+                    coverCanvas.drawCircle(tempPoint.x, tempPoint.y, radius, circlePaint);
                 }
 
             }
-            //draw blue location circle
+            // draw blue location circle
             projection.toPixels(new GeoPoint((int) (currentLat * 1e6), (int) (currentLong * 1e6)), tempPoint);
-            canvas.drawCircle(tempPoint.x, tempPoint.y,
-                    radius, currentPaint);
-
+            coverCanvas.drawCircle(tempPoint.x, tempPoint.y, radius, currentPaint);
+            canvas.drawBitmap(cover, 0, 0, rectPaint);
         }
-
 
         pointsUpdated = false;
         // super.draw(canvadb des, mapView, false);
