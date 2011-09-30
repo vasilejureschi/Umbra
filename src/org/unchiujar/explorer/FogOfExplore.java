@@ -31,8 +31,8 @@ import com.google.android.maps.Overlay;
 
 public class FogOfExplore extends MapActivity {
     private static final String TAG = FogOfExplore.class.getName();
-    /** Interval between zoom checks for the zoom and pan handler.*/
-    public static final int ZOOM_CHECKING_DELAY = 100; 
+    /** Interval between zoom checks for the zoom and pan handler. */
+    public static final int ZOOM_CHECKING_DELAY = 100;
 
     private Intent locationServiceIntent;
     private ExploredOverlay explored;
@@ -72,39 +72,6 @@ public class FogOfExplore extends MapActivity {
         }
     }
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.main);
-        MapView mapView = (MapView) findViewById(R.id.mapview);
-        mapView.setBuiltInZoomControls(true);
-        mapView.setReticleDrawMode(MapView.ReticleDrawMode.DRAW_RETICLE_NEVER);
-        mapView.setBackgroundColor(Color.RED);
-
-        startLocationService();
-        // add overlay to the list of overlays
-        explored = new ExploredOverlay(this);
-
-        List<Overlay> listOfOverlays = mapView.getOverlays();
-        // listOfOverlays.clear();
-        // MyLocationOverlay myLocation = new MyLocationOverlay(getApplicationContext(), mapView);
-        // myLocation.enableCompass();
-        // myLocation.enableMyLocation();
-        // listOfOverlays.add(myLocation);
-        listOfOverlays.add(explored);
-        mapController = mapView.getController();
-        // set city level zoom
-        mapController.setZoom(17);
-        redrawOverlay();
-
-        Log.d(TAG, "Activity created");
-        displayRunningNotification();
-
-        // start zoom check
-        handler.postDelayed(zoomChecker, ZOOM_CHECKING_DELAY); // register a new one
-
-    }
-
     private void redrawOverlay() {
         if (!visible) {
             return;
@@ -142,35 +109,45 @@ public class FogOfExplore extends MapActivity {
 
     }
 
-    @Override
-    protected void onPause() {
-        visible = false;
-        super.onPause();
-    }
+    // ==================== LIFECYCLE METHODS ====================
 
     @Override
-    protected void onRestart() {
-        visible = true;
-        super.onRestart();
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.main);
+        MapView mapView = (MapView) findViewById(R.id.mapview);
+        mapView.setBuiltInZoomControls(true);
+        mapView.setReticleDrawMode(MapView.ReticleDrawMode.DRAW_RETICLE_NEVER);
+        mapView.setBackgroundColor(Color.RED);
+
+        startLocationService();
+        // add overlay to the list of overlays
+        explored = new ExploredOverlay(this);
+
+        List<Overlay> listOfOverlays = mapView.getOverlays();
+        // listOfOverlays.clear();
+        // MyLocationOverlay myLocation = new MyLocationOverlay(getApplicationContext(), mapView);
+        // myLocation.enableCompass();
+        // myLocation.enableMyLocation();
+        // listOfOverlays.add(myLocation);
+        listOfOverlays.add(explored);
+        mapController = mapView.getController();
+        // set city level zoom
+        mapController.setZoom(17);
+        redrawOverlay();
+
+        displayRunningNotification();
+
+        // start zoom check
+        handler.postDelayed(zoomChecker, ZOOM_CHECKING_DELAY);
+        Log.d(TAG, "onCreate completed: Activity created");
     }
 
     @Override
     protected void onStart() {
         visible = true;
         super.onStart();
-    }
-
-    @Override
-    protected void onStop() {
-        // TODO Auto-generated method stub
-        super.onStop();
-    }
-
-    private void startLocationService() {
-        // bind to location service
-        locationServiceIntent = new Intent(this, LocationService.class);
-        bindService(locationServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
-
+        Log.d(TAG, "onStart completed: Activity started");
     }
 
     @Override
@@ -179,10 +156,51 @@ public class FogOfExplore extends MapActivity {
         movementFilter = new IntentFilter(LocationService.MOVEMENT_UPDATE);
         locationChangeReceiver = new LocationChangeReceiver();
         registerReceiver(locationChangeReceiver, movementFilter);
-        //register zoom && pan handler
-        handler.postDelayed(zoomChecker, ZOOM_CHECKING_DELAY); 
+        // register zoom && pan handler
+        handler.postDelayed(zoomChecker, ZOOM_CHECKING_DELAY);
         startLocationService();
         super.onResume();
+        visible = true;
+        Log.d(TAG, "onResume completed.");
+    }
+
+    @Override
+    protected void onPause() {
+        visible = false;
+        super.onPause();
+        Log.d(TAG, "onPause completed.");
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.d(TAG, "onStop completed.");
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        Log.d(TAG, "onRestart completed.");
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mNotificationManager.cancelAll();
+        handler.removeCallbacks(zoomChecker);
+        unbindService(mConnection);
+        stopService(locationServiceIntent);
+        unregisterReceiver(locationChangeReceiver);
+        VisitedAreaCache.getInstance(this).stopDbUpdate();
+        Log.d(TAG, "onDestroy completed.");
+    }
+
+    // =================END LIFECYCLE METHODS ====================
+
+    private void startLocationService() {
+        // bind to location service
+        locationServiceIntent = new Intent(this, LocationService.class);
+        bindService(locationServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
 
     }
 
@@ -192,6 +210,7 @@ public class FogOfExplore extends MapActivity {
         public void onReceive(Context context, Intent intent) {
             Log.d(TAG, "Location change notification received");
 
+            IntentFilter movementFilter;
             Bundle bundle = intent.getExtras();
             double latitude = (Double) bundle.get(LocationService.LATITUDE);
             double longitude = (Double) bundle.get(LocationService.LONGITUDE);
@@ -202,17 +221,6 @@ public class FogOfExplore extends MapActivity {
             currentLong = longitude;
             // mapController.setCenter(coordinatesToGeoPoint(latitude, longitude));
         }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        mNotificationManager.cancelAll();
-        handler.removeCallbacks(zoomChecker);         
-        unbindService(mConnection);
-        stopService(locationServiceIntent);
-        unregisterReceiver(locationChangeReceiver);
-        VisitedAreaCache.getInstance(this).stopDbUpdate();
     }
 
     @Override
@@ -255,7 +263,6 @@ public class FogOfExplore extends MapActivity {
 
     private Handler handler = new Handler();
 
-
     private Runnable zoomChecker = new Runnable() {
         private int oldZoom = 9001;
 
@@ -265,8 +272,8 @@ public class FogOfExplore extends MapActivity {
             if (mapView.getZoomLevel() != oldZoom) {
                 redrawOverlay();
             }
-            handler.removeCallbacks(zoomChecker); 
-            handler.postDelayed(zoomChecker, ZOOM_CHECKING_DELAY); 
+            handler.removeCallbacks(zoomChecker);
+            handler.postDelayed(zoomChecker, ZOOM_CHECKING_DELAY);
         }
     };
     private NotificationManager mNotificationManager;
