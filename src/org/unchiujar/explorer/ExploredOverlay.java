@@ -25,7 +25,6 @@ public class ExploredOverlay extends Overlay {
     private static final String TAG = ExploredOverlay.class.getName();
     private List<AproximateLocation> locations;
     private Context context;
-    private boolean pointsUpdated;
     private Paint rectPaint;
     private double currentLat;
     private double currentLong;
@@ -102,10 +101,6 @@ public class ExploredOverlay extends Overlay {
 
         Log.v(TAG, "View distance is " + viewDistance + " meters, radius in pixels is " + radius
                 + " pixel per meter is " + pixelsMeter);
-        // TODO research what PorterDuffMode does and set to simulate transparency
-
-        if (pointsUpdated) {
-
             if (!bitmapCreated) {
                 cover = Bitmap.createBitmap(mapView.getMeasuredWidth(), mapView.getMeasuredHeight(),
                         Bitmap.Config.ALPHA_8);
@@ -115,7 +110,7 @@ public class ExploredOverlay extends Overlay {
 
                 bitmapCreated = true;
             } else {
-                cover.eraseColor(Color.TRANSPARENT);
+              cover.eraseColor(Color.TRANSPARENT);
             }
 
             coverCanvas.drawRect(screenCover, rectPaint);
@@ -126,7 +121,7 @@ public class ExploredOverlay extends Overlay {
                 // returns an incorrect value in point
                 // you'll cry debugger tears if you do
                 projection.toPixels(locationToGeoPoint(location), tempPoint);
-                Log.v(TAG, "GeoPoint to screen point: " + tempPoint);
+//                Log.v(TAG, "GeoPoint to screen point: " + tempPoint);
                 // for display use only visible points
                 if (tempPoint.x >= 0 && tempPoint.x <= mapView.getWidth() && tempPoint.y >= 0
                         && tempPoint.y <= mapView.getHeight()) {
@@ -138,16 +133,11 @@ public class ExploredOverlay extends Overlay {
             projection.toPixels(new GeoPoint((int) (currentLat * 1e6), (int) (currentLong * 1e6)), tempPoint);
             coverCanvas.drawCircle(tempPoint.x, tempPoint.y, radius, currentPaint);
             canvas.drawBitmap(cover, 0, 0, rectPaint);
-        }
-
-        pointsUpdated = false;
         // super.draw(canvadb des, mapView, false);
     }
 
     public void setExplored(List<AproximateLocation> locations) {
         this.locations = locations;
-        pointsUpdated = true;
-
     }
 
     public void setCurrent(double currentLat, double currentLong) {

@@ -23,6 +23,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 
 import com.google.android.maps.MapActivity;
 import com.google.android.maps.MapController;
@@ -32,7 +33,7 @@ import com.google.android.maps.Overlay;
 public class FogOfExplore extends MapActivity {
     private static final String TAG = FogOfExplore.class.getName();
     /** Interval between zoom checks for the zoom and pan handler. */
-    public static final int ZOOM_CHECKING_DELAY = 100;
+    public static final int ZOOM_CHECKING_DELAY = 500;
 
     private Intent locationServiceIntent;
     private ExploredOverlay explored;
@@ -98,14 +99,7 @@ public class FogOfExplore extends MapActivity {
         explored.setCurrent(currentLat, currentLong);
         explored.setExplored(recorder.selectVisited(upperLeft, bottomRight));
 
-        runOnUiThread(new Runnable() {
-
-            @Override
-            public void run() {
-                mapView.invalidate();
-
-            }
-        });
+        mapView.postInvalidate();
 
     }
 
@@ -119,7 +113,6 @@ public class FogOfExplore extends MapActivity {
         mapView.setBuiltInZoomControls(true);
         mapView.setReticleDrawMode(MapView.ReticleDrawMode.DRAW_RETICLE_NEVER);
         mapView.setBackgroundColor(Color.RED);
-
         startLocationService();
         // add overlay to the list of overlays
         explored = new ExploredOverlay(this);
@@ -138,8 +131,6 @@ public class FogOfExplore extends MapActivity {
 
         displayRunningNotification();
 
-        // start zoom check
-        handler.postDelayed(zoomChecker, ZOOM_CHECKING_DELAY);
         Log.d(TAG, "onCreate completed: Activity created");
     }
 
@@ -166,6 +157,7 @@ public class FogOfExplore extends MapActivity {
 
     @Override
     protected void onPause() {
+        handler.removeCallbacks(zoomChecker);
         visible = false;
         super.onPause();
         Log.d(TAG, "onPause completed.");
@@ -260,6 +252,9 @@ public class FogOfExplore extends MapActivity {
         mNotificationManager.notify(13234, notification);
 
     }
+    
+
+
 
     private Handler handler = new Handler();
 
@@ -271,10 +266,13 @@ public class FogOfExplore extends MapActivity {
 
             if (mapView.getZoomLevel() != oldZoom) {
                 redrawOverlay();
+                oldZoom = mapView.getZoomLevel();
             }
             handler.removeCallbacks(zoomChecker);
             handler.postDelayed(zoomChecker, ZOOM_CHECKING_DELAY);
         }
     };
+ 
+ 
     private NotificationManager mNotificationManager;
 }
