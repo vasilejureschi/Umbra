@@ -260,19 +260,26 @@ public class FogOfExplore extends MapActivity {
 
     private Runnable zoomChecker = new Runnable() {
         private int oldZoom = 9001;
+        private int oldCenterLat = -1;
+        private int oldCenterLong = -1;
 
         public void run() {
             MapView mapView = (MapView) findViewById(R.id.mapview);
 
-            if (mapView.getZoomLevel() != oldZoom) {
+            int mapCenterLat = mapView.getMapCenter().getLatitudeE6();
+            int mapCenterLong = mapView.getMapCenter().getLongitudeE6();
+
+            if (mapView.getZoomLevel() != oldZoom || oldCenterLat != mapCenterLat
+                    || oldCenterLong != mapCenterLong) {
                 redrawOverlay();
                 oldZoom = mapView.getZoomLevel();
+                oldCenterLat = mapCenterLat;
+                oldCenterLong = mapCenterLong;
             }
             handler.removeCallbacks(zoomChecker);
             handler.postDelayed(zoomChecker, ZOOM_CHECKING_DELAY);
         }
     };
- 
  
     private NotificationManager mNotificationManager;
 }
