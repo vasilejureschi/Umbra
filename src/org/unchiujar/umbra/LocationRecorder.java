@@ -43,6 +43,10 @@ import android.util.Log;
 public class LocationRecorder implements LocationProvider {
     private static final String TAG = LocationRecorder.class.getName();
     private static final String DATABASE_NAME = "visited.db";
+    /**
+     * The version number for the database used by SQLiteOpenHelper when for database upgrades.
+     * Increment when database structure is modified.
+     */
     private static final int DATABASE_VERSION = 1;
     private static final String TABLE_NAME = "coordinates";
     private static final String LONGITUDE = "longitude";
@@ -65,7 +69,7 @@ public class LocationRecorder implements LocationProvider {
         // this.db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
         // openHelper.onCreate(db);
         this.insertStmt = this.db.compileStatement(INSERT);
-        
+
     }
 
     public static LocationRecorder getInstance(Context context) {
@@ -77,8 +81,9 @@ public class LocationRecorder implements LocationProvider {
         this.insertStmt.bindDouble(1, location.getLatitude());
         this.insertStmt.bindDouble(2, location.getLongitude());
         long index = this.insertStmt.executeInsert();
-        Log.d(TAG, DATABASE_NAME + "Inserted latitude and longitude: "
-                + numberLogList(location.getLatitude(), location.getLongitude()));
+        Log.d(TAG,
+                DATABASE_NAME + "Inserted latitude and longitude: "
+                        + numberLogList(location.getLatitude(), location.getLongitude()));
 
         return index;
     }
@@ -87,15 +92,17 @@ public class LocationRecorder implements LocationProvider {
         DatabaseUtils.InsertHelper batchInserter = new DatabaseUtils.InsertHelper(db, TABLE_NAME);
         int latitudeIndex = batchInserter.getColumnIndex(LATITUDE);
         int longitudeIndex = batchInserter.getColumnIndex(LONGITUDE);
-        
+
         // see http://notes.theorbis.net/2010/02/batch-insert-to-sqlite-on-android.html
         for (AproximateLocation aproximateLocation : locations) {
             batchInserter.prepareForInsert();
             batchInserter.bind(latitudeIndex, aproximateLocation.getLatitude());
             batchInserter.bind(longitudeIndex, aproximateLocation.getLongitude());
             batchInserter.execute();
-            Log.d(TAG, "Batch inserted latitude and longitude: "
-                    + numberLogList(aproximateLocation.getLatitude(), aproximateLocation.getLongitude()));
+            Log.d(TAG,
+                    "Batch inserted latitude and longitude: "
+                            + numberLogList(aproximateLocation.getLatitude(),
+                                    aproximateLocation.getLongitude()));
 
         }
         batchInserter.close();
@@ -171,9 +178,32 @@ public class LocationRecorder implements LocationProvider {
 
         @Override
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            Log.w(TAG, "Upgrading database, this will drop tables and recreate.");
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
-            onCreate(db);
+            if (newVersion > oldVersion) {
+                db.beginTransaction();
+                boolean success = true;
+                for (int i = oldVersion; i < newVersion; ++i) {
+                    int nextVersion = i + 1;
+                    switch (nextVersion) {
+                    case 2:
+                        // success = upgradeToVersion2(db);
+                        break;
+                    case 3:
+                        // success = upgrateToVersion3(db);
+                        break;
+                    // etc. for later versions.
+                    }
+                    if (!success) {
+                        break;
+                    }
+                }
+                if (success) {
+                    db.setTransactionSuccessful();
+                }
+                db.endTransaction();
+            } else {
+                db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
+                onCreate(db);
+            }
         }
     }
 }
