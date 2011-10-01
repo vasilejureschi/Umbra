@@ -1,4 +1,4 @@
-package org.unchiujar.explorer;
+package org.unchiujar.umbra;
 
 import android.location.Location;
 

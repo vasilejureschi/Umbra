@@ -3,5 +3,6 @@
     <string name="where_am_i">Where Am I ?</string>
     <string name="help">Help</string>
 	<string name="exit">Exit</string>
-    <string name="app_name">Explorer</string>
+    <string name="app_name">Umbra</string>
+    <string name="running">is running, tap to display.</string>
 </resources>

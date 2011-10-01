@@ -1,7 +1,6 @@
-package org.unchiujar.explorer;
+package org.unchiujar.umbra;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -115,8 +114,8 @@ public class VisitedAreaCache implements LocationProvider {
      * (non-Javadoc)
      * 
      * @see
-     * org.unchiujar.explorer.LocationProvider#selectVisited(org.unchiujar.explorer.AproximateLocation
-     * , org.unchiujar.explorer.AproximateLocation)
+     * org.unchiujar.umbra.LocationProvider#selectVisited(org.unchiujar.umbra.AproximateLocation
+     * , org.unchiujar.umbra.AproximateLocation)
      */
     @Override
     public List<AproximateLocation> selectVisited(AproximateLocation upperLeft, AproximateLocation lowerRight) {

@@ -1,8 +1,8 @@
-package org.unchiujar.explorer;
+package org.unchiujar.umbra;
 
-import static org.unchiujar.explorer.LocationUtilities.coordinatesToGeoPoint;
-import static org.unchiujar.explorer.LocationUtilities.coordinatesToLocation;
-import static org.unchiujar.explorer.LogUtilities.numberLogList;
+import static org.unchiujar.umbra.LocationUtilities.coordinatesToGeoPoint;
+import static org.unchiujar.umbra.LocationUtilities.coordinatesToLocation;
+import static org.unchiujar.umbra.LogUtilities.numberLogList;
 
 import java.util.List;
 
@@ -23,7 +23,6 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 
 import com.google.android.maps.MapActivity;
 import com.google.android.maps.MapController;
@@ -43,6 +42,7 @@ public class FogOfExplore extends MapActivity {
     private double currentLat;
     private double currentLong;
     private boolean visible = true;
+    public double currentAccuracy;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -96,7 +96,7 @@ public class FogOfExplore extends MapActivity {
         Log.d(TAG, "Getting points for rectangle:  "
                 + numberLogList(upperLeft.getLatitude(), upperLeft.getLongitude())
                 + numberLogList(bottomRight.getLatitude(), bottomRight.getLongitude()));
-        explored.setCurrent(currentLat, currentLong);
+        explored.setCurrent(currentLat, currentLong, currentAccuracy);
         explored.setExplored(recorder.selectVisited(upperLeft, bottomRight));
 
         mapView.postInvalidate();
@@ -202,15 +202,16 @@ public class FogOfExplore extends MapActivity {
         public void onReceive(Context context, Intent intent) {
             Log.d(TAG, "Location change notification received");
 
-            IntentFilter movementFilter;
             Bundle bundle = intent.getExtras();
             double latitude = (Double) bundle.get(LocationService.LATITUDE);
             double longitude = (Double) bundle.get(LocationService.LONGITUDE);
-
+            float accuracy = (Float) bundle.get(LocationService.ACCURACY);
+            
             Log.d(TAG, "Received point" + numberLogList(latitude, longitude));
             redrawOverlay();
             currentLat = latitude;
             currentLong = longitude;
+            currentAccuracy = accuracy;
             // mapController.setCenter(coordinatesToGeoPoint(latitude, longitude));
         }
     }
@@ -234,17 +235,19 @@ public class FogOfExplore extends MapActivity {
     };
 
     private void displayRunningNotification() {
+        String contentTitle = getString(R.string.app_name);
+        String running = getString(R.string.running);
+
+        Context context = getApplicationContext();
+
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         // instantiate notification
         int icon = R.drawable.icon;
-        CharSequence tickerText = "Explorer is running, tap to display.";
-        long when = System.currentTimeMillis();
-        Notification notification = new Notification(icon, tickerText, when);
+        CharSequence tickerText = contentTitle + " " + running;
+        Notification notification = new Notification(icon, tickerText, System.currentTimeMillis());
         notification.flags |= Notification.FLAG_NO_CLEAR;
         // Define the Notification's expanded message and Intent:
-        Context context = getApplicationContext();
-        CharSequence contentTitle = "Explorer";
-        CharSequence contentText = "Explorer is running, tap to display.";
+        CharSequence contentText = contentTitle + " " + running;
         Intent notificationIntent = new Intent(this, FogOfExplore.class);
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
 

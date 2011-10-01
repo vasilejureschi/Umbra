@@ -1,6 +1,6 @@
-package org.unchiujar.explorer;
+package org.unchiujar.umbra;
 
-import static org.unchiujar.explorer.LocationUtilities.locationToGeoPoint;
+import static org.unchiujar.umbra.LocationUtilities.locationToGeoPoint;
 
 import java.util.List;
 
@@ -9,11 +9,11 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Paint.Style;
 import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
-import android.graphics.Paint.Style;
 import android.util.Log;
 
 import com.google.android.maps.GeoPoint;
@@ -31,6 +31,8 @@ public class ExploredOverlay extends Overlay {
 
     private Paint currentPaint;
     private Paint circlePaint;
+    private Paint accuracyPaint;
+    
     private Point tempPoint = new Point();
     private boolean bitmapCreated;
     private Bitmap cover;
@@ -41,12 +43,16 @@ public class ExploredOverlay extends Overlay {
     private int i;
     // TODO remove - DEBUG code
     private Rect screenCover;
+    private double currentAccuracy;
 
     public ExploredOverlay(Context context) {
         this.context = context;
 
+        accuracyPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        accuracyPaint.setColor(Color.RED);
+        accuracyPaint.setStyle(Style.FILL_AND_STROKE);
+        
         rectPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-
         rectPaint.setColor(Color.BLACK);
         rectPaint.setAlpha(150);
         rectPaint.setStyle(Style.FILL_AND_STROKE);
@@ -99,6 +105,10 @@ public class ExploredOverlay extends Overlay {
         int radius = (int) ((double) viewDistance * pixelsMeter);
         radius = (radius <= 2) ? 3 : radius;
 
+
+        int accuracy = (int) ((double) currentAccuracy * pixelsMeter);
+        accuracy = (accuracy <= 2) ? 3 : radius;
+
         Log.v(TAG, "View distance is " + viewDistance + " meters, radius in pixels is " + radius
                 + " pixel per meter is " + pixelsMeter);
             if (!bitmapCreated) {
@@ -132,6 +142,8 @@ public class ExploredOverlay extends Overlay {
             // draw blue location circle
             projection.toPixels(new GeoPoint((int) (currentLat * 1e6), (int) (currentLong * 1e6)), tempPoint);
             coverCanvas.drawCircle(tempPoint.x, tempPoint.y, radius, currentPaint);
+            coverCanvas.drawCircle(tempPoint.x, tempPoint.y, accuracy, accuracyPaint);
+
             canvas.drawBitmap(cover, 0, 0, rectPaint);
         // super.draw(canvadb des, mapView, false);
     }
@@ -140,8 +152,9 @@ public class ExploredOverlay extends Overlay {
         this.locations = locations;
     }
 
-    public void setCurrent(double currentLat, double currentLong) {
+    public void setCurrent(double currentLat, double currentLong, double currentAccuracy) {
         this.currentLat = currentLat;
         this.currentLong = currentLong;
+        this.currentAccuracy = currentAccuracy;
     }
 }

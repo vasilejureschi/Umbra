@@ -1,4 +1,4 @@
-package org.unchiujar.explorer;
+package org.unchiujar.umbra;
 
 import android.app.IntentService;
 import android.content.Intent;
@@ -11,11 +11,13 @@ import android.util.Log;
 public class LocationService extends IntentService implements LocationListener {
     private static final String TAG = LocationService.class.getName();
 
-    public static final String MOVEMENT_UPDATE = "org.unchiujar.explore.MOVEMENT_UPDATE";
+    public static final String MOVEMENT_UPDATE = "org.unchiujar.umbra.MOVEMENT_UPDATE";
 
-    public static final String LATITUDE = "org.unchiujar.explorer.LocationService.LATITUDE";
+    public static final String LATITUDE = "org.unchiujar.umbra.LocationService.LATITUDE";
 
-    public static final String LONGITUDE = "org.unchiujar.explorer.LocationService.LONGITUDE";
+    public static final String LONGITUDE = "org.unchiujar.umbra.LocationService.LONGITUDE";
+    public static final String ACCURACY = "org.unchiujar.umbra.LocationService.ACCURACY";
+
     
     private LocationManager locationManager;
     private LocationProvider locationRecorder = VisitedAreaCache.getInstance(this);
@@ -51,6 +53,7 @@ public class LocationService extends IntentService implements LocationListener {
 	Intent intent = new Intent(MOVEMENT_UPDATE);
 	intent.putExtra(LATITUDE,location.getLatitude());
 	intent.putExtra(LONGITUDE,location.getLongitude());
+	intent.putExtra(ACCURACY, location.getAccuracy());
 	sendBroadcast(intent);
 
     }
