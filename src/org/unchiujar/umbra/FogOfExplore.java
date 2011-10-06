@@ -33,16 +33,17 @@ import static org.unchiujar.umbra.LogUtilities.numberLogList;
 
 import java.util.List;
 
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Color;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -60,6 +61,8 @@ public class FogOfExplore extends MapActivity {
     private static final String TAG = FogOfExplore.class.getName();
     /** Interval between zoom checks for the zoom and pan handler. */
     public static final int ZOOM_CHECKING_DELAY = 500;
+    private static final int DIALOG_START_GPS = 0;
+    private static final int DIALOG_START_NET = 1;
 
     private Intent locationServiceIntent;
     private ExploredOverlay explored;
@@ -120,9 +123,10 @@ public class FogOfExplore extends MapActivity {
         // TODO - optimization get points for rectangle only if a zoomout
         // or a pan action occured - ie new points come into view
 
-        Log.d(TAG, "Getting points for rectangle:  "
-                + numberLogList(upperLeft.getLatitude(), upperLeft.getLongitude())
-                + numberLogList(bottomRight.getLatitude(), bottomRight.getLongitude()));
+        Log.d(TAG,
+                "Getting points for rectangle:  "
+                        + numberLogList(upperLeft.getLatitude(), upperLeft.getLongitude())
+                        + numberLogList(bottomRight.getLatitude(), bottomRight.getLongitude()));
         explored.setCurrent(currentLat, currentLong, currentAccuracy);
         explored.setExplored(recorder.selectVisited(upperLeft, bottomRight));
 
@@ -155,9 +159,6 @@ public class FogOfExplore extends MapActivity {
         // set city level zoom
         mapController.setZoom(17);
         redrawOverlay();
-
-        displayRunningNotification();
-
         Log.d(TAG, "onCreate completed: Activity created");
     }
 
@@ -205,7 +206,6 @@ public class FogOfExplore extends MapActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mNotificationManager.cancelAll();
         handler.removeCallbacks(zoomChecker);
         unbindService(mConnection);
         stopService(locationServiceIntent);
@@ -217,10 +217,51 @@ public class FogOfExplore extends MapActivity {
     // =================END LIFECYCLE METHODS ====================
 
     private void startLocationService() {
+
+        boolean isGPS = ((LocationManager) getSystemService(LOCATION_SERVICE))
+                .isProviderEnabled(LocationManager.GPS_PROVIDER);
+
+        if (!isGPS) {
+            showDialog(DIALOG_START_GPS);
+        }
+
         // bind to location service
         locationServiceIntent = new Intent(this, LocationService.class);
         bindService(locationServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
 
+    }
+
+    @Override
+    protected Dialog onCreateDialog(int id) {
+        Dialog dialog;
+        Log.d(TAG, "Showing dialog with id " + id);
+        switch (id) {
+        case DIALOG_START_GPS:
+            return createGPSDialog();
+        case DIALOG_START_NET:
+            // TODO internet starting dialog
+            break;
+        default:
+            dialog = null;
+        }
+        return null;
+    }
+
+    private Dialog createGPSDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(R.string.gps_dialog).setCancelable(false)
+                .setPositiveButton(R.string.start_gps_btn, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+
+                        startActivityForResult(new Intent(
+                                android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS), 0);
+                    }
+                }).setNegativeButton(R.string.continue_no_gps, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        FogOfExplore.this.finish();
+                    }
+                });
+        return builder.create();
     }
 
     public class LocationChangeReceiver extends BroadcastReceiver {
@@ -233,7 +274,7 @@ public class FogOfExplore extends MapActivity {
             double latitude = (Double) bundle.get(LocationService.LATITUDE);
             double longitude = (Double) bundle.get(LocationService.LONGITUDE);
             float accuracy = (Float) bundle.get(LocationService.ACCURACY);
-            
+
             Log.d(TAG, "Received point" + numberLogList(latitude, longitude));
             redrawOverlay();
             currentLat = latitude;
@@ -261,31 +302,6 @@ public class FogOfExplore extends MapActivity {
         }
     };
 
-    private void displayRunningNotification() {
-        String contentTitle = getString(R.string.app_name);
-        String running = getString(R.string.running);
-
-        Context context = getApplicationContext();
-
-        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        // instantiate notification
-        int icon = R.drawable.icon;
-        CharSequence tickerText = contentTitle + " " + running;
-        Notification notification = new Notification(icon, tickerText, System.currentTimeMillis());
-        notification.flags |= Notification.FLAG_NO_CLEAR;
-        // Define the Notification's expanded message and Intent:
-        CharSequence contentText = contentTitle + " " + running;
-        Intent notificationIntent = new Intent(this, FogOfExplore.class);
-        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
-
-        notification.setLatestEventInfo(context, contentTitle, contentText, contentIntent);
-        mNotificationManager.notify(13234, notification);
-
-    }
-    
-
-
-
     private Handler handler = new Handler();
 
     private Runnable zoomChecker = new Runnable() {
@@ -310,6 +326,5 @@ public class FogOfExplore extends MapActivity {
             handler.postDelayed(zoomChecker, ZOOM_CHECKING_DELAY);
         }
     };
- 
-    private NotificationManager mNotificationManager;
+
 }

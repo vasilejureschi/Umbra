@@ -31,4 +31,7 @@
 	<string name="exit">Exit</string>
     <string name="app_name">Umbra</string>
     <string name="running">is running, tap to display.</string>
+    <string name="gps_dialog">This application needs a GPS fix to run properly.</string>
+    <string name="start_gps_btn">Start GPS</string>
+    <string name="continue_no_gps">Continue</string>
 </resources>
