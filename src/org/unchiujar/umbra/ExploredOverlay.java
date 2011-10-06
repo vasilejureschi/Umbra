@@ -59,7 +59,7 @@ public class ExploredOverlay extends Overlay {
     private Paint currentPaint;
     private Paint circlePaint;
     private Paint accuracyPaint;
-    
+
     private Point tempPoint = new Point();
     private boolean bitmapCreated;
     private Bitmap cover;
@@ -77,8 +77,9 @@ public class ExploredOverlay extends Overlay {
 
         accuracyPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         accuracyPaint.setColor(Color.RED);
+        accuracyPaint.setAlpha(50);
         accuracyPaint.setStyle(Style.FILL_AND_STROKE);
-        
+
         rectPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         rectPaint.setColor(Color.BLACK);
         rectPaint.setAlpha(150);
@@ -112,7 +113,6 @@ public class ExploredOverlay extends Overlay {
     public void draw(Canvas canvas, MapView mapView, boolean shadow) {
 
         super.draw(canvas, mapView, shadow);
-        canvas.drawText("redraw? " + i++, 5, 10, paint1);
 
         Log.d(TAG, "########Called");
         assert !shadow : "The overlay does not need a shadow as it only covers the explored areas.";
@@ -127,51 +127,51 @@ public class ExploredOverlay extends Overlay {
 
         // 4 / 2 ^ (21 - level)
 
-        int viewDistance = 50;
-        double pixelsMeter = 4d / Math.pow(2, 21 - mapView.getZoomLevel());
-        int radius = (int) ((double) viewDistance * pixelsMeter);
-        radius = (radius <= 2) ? 3 : radius;
-
+        double pixelsMeter = 4d / Math.pow(2, 19 - mapView.getZoomLevel());
+        int radius = (int) ((double) LocationOrder.METERS_RADIUS * pixelsMeter);
+        radius = (radius <= 1) ? 1 : radius;
 
         int accuracy = (int) ((double) currentAccuracy * pixelsMeter);
-        accuracy = (accuracy <= 2) ? 3 : radius;
+        accuracy = (accuracy <= 1) ? 1 : radius;
 
-        Log.v(TAG, "View distance is " + viewDistance + " meters, radius in pixels is " + radius
-                + " pixel per meter is " + pixelsMeter);
-            if (!bitmapCreated) {
-                cover = Bitmap.createBitmap(mapView.getMeasuredWidth(), mapView.getMeasuredHeight(),
-                        Bitmap.Config.ALPHA_8);
-                coverCanvas = new Canvas(cover);
-                // TODO check is width, heigh is always the same - rotation may be a problem
-                screenCover = new Rect(0, 0, mapView.getMeasuredWidth(), mapView.getMeasuredHeight());
+        canvas.drawText("redraw? " + i++ + " accuracy " + accuracy, 5, 10, paint1);
 
-                bitmapCreated = true;
-            } else {
-              cover.eraseColor(Color.TRANSPARENT);
+        Log.v(TAG, "View distance is " + LocationOrder.METERS_RADIUS + " meters, radius in pixels is "
+                + radius + " pixel per meter is " + pixelsMeter);
+        if (!bitmapCreated) {
+            cover = Bitmap.createBitmap(mapView.getMeasuredWidth(), mapView.getMeasuredHeight(),
+                    Bitmap.Config.ALPHA_8);
+            coverCanvas = new Canvas(cover);
+            // TODO check is width, height is always the same - rotation may be a problem
+            screenCover = new Rect(0, 0, mapView.getMeasuredWidth(), mapView.getMeasuredHeight());
+
+            bitmapCreated = true;
+        } else {
+            cover.eraseColor(Color.TRANSPARENT);
+        }
+
+        coverCanvas.drawRect(screenCover, rectPaint);
+
+        for (AproximateLocation location : locations) {
+            // BUG - do not use
+            // point = mapView.getProjection().toPixels(geoPoint, null);
+            // returns an incorrect value in point
+            // you'll cry debugger tears if you do
+            projection.toPixels(locationToGeoPoint(location), tempPoint);
+            // Log.v(TAG, "GeoPoint to screen point: " + tempPoint);
+            // for display use only visible points
+            if (tempPoint.x >= 0 && tempPoint.x <= mapView.getWidth() && tempPoint.y >= 0
+                    && tempPoint.y <= mapView.getHeight()) {
+                coverCanvas.drawCircle(tempPoint.x, tempPoint.y, radius, circlePaint);
             }
 
-            coverCanvas.drawRect(screenCover, rectPaint);
+        }
+        // draw blue location circle
+        projection.toPixels(new GeoPoint((int) (currentLat * 1e6), (int) (currentLong * 1e6)), tempPoint);
+        coverCanvas.drawCircle(tempPoint.x, tempPoint.y, radius, currentPaint);
+        coverCanvas.drawCircle(tempPoint.x, tempPoint.y, accuracy, accuracyPaint);
 
-            for (AproximateLocation location : locations) {
-                // BUG - do not use
-                // point = mapView.getProjection().toPixels(geoPoint, null);
-                // returns an incorrect value in point
-                // you'll cry debugger tears if you do
-                projection.toPixels(locationToGeoPoint(location), tempPoint);
-//                Log.v(TAG, "GeoPoint to screen point: " + tempPoint);
-                // for display use only visible points
-                if (tempPoint.x >= 0 && tempPoint.x <= mapView.getWidth() && tempPoint.y >= 0
-                        && tempPoint.y <= mapView.getHeight()) {
-                    coverCanvas.drawCircle(tempPoint.x, tempPoint.y, radius, circlePaint);
-                }
-
-            }
-            // draw blue location circle
-            projection.toPixels(new GeoPoint((int) (currentLat * 1e6), (int) (currentLong * 1e6)), tempPoint);
-            coverCanvas.drawCircle(tempPoint.x, tempPoint.y, radius, currentPaint);
-            coverCanvas.drawCircle(tempPoint.x, tempPoint.y, accuracy, accuracyPaint);
-
-            canvas.drawBitmap(cover, 0, 0, rectPaint);
+        canvas.drawBitmap(cover, 0, 0, rectPaint);
         // super.draw(canvadb des, mapView, false);
     }
 
