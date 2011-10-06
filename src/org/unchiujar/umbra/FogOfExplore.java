@@ -44,6 +44,8 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.location.LocationManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -51,6 +53,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.google.android.maps.MapActivity;
 import com.google.android.maps.MapController;
@@ -144,7 +147,6 @@ public class FogOfExplore extends MapActivity {
         mapView.setBuiltInZoomControls(true);
         mapView.setReticleDrawMode(MapView.ReticleDrawMode.DRAW_RETICLE_NEVER);
         mapView.setBackgroundColor(Color.RED);
-        startLocationService();
         // add overlay to the list of overlays
         explored = new ExploredOverlay(this);
 
@@ -224,7 +226,7 @@ public class FogOfExplore extends MapActivity {
         if (!isGPS) {
             showDialog(DIALOG_START_GPS);
         }
-
+        displayConnectivityWarning();
         // bind to location service
         locationServiceIntent = new Intent(this, LocationService.class);
         bindService(locationServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
@@ -247,6 +249,22 @@ public class FogOfExplore extends MapActivity {
         return null;
     }
 
+    private void displayConnectivityWarning(){
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        boolean connected = false;
+        for (NetworkInfo info : connectivityManager.getAllNetworkInfo()) {
+            if (info.getState() == NetworkInfo.State.CONNECTED
+                    || info.getState() == NetworkInfo.State.CONNECTING) {
+                connected = true;
+                break;
+            }
+        }
+
+        if (!connected) {
+            Toast.makeText(getApplicationContext(), R.string.connectivity_warning, Toast.LENGTH_LONG).show();
+
+        }
+    }
     private Dialog createGPSDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage(R.string.gps_dialog).setCancelable(false)

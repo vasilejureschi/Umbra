@@ -34,4 +34,5 @@
     <string name="gps_dialog">This application needs a GPS fix to run properly.</string>
     <string name="start_gps_btn">Start GPS</string>
     <string name="continue_no_gps">Continue</string>
+    <string name="connectivity_warning">Maps cannot be downloaded as network connection is unavailable. Enable the 3G or WiFi connection."</string>
 </resources>
