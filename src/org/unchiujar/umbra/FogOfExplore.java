@@ -96,11 +96,18 @@ public class FogOfExplore extends MapActivity {
             return true;
         case R.id.help:
             Log.d(TAG, "Showing help...");
+            Intent helpIntent = new Intent(this, Help.class);
+            startActivity(helpIntent);
             return true;
         case R.id.exit:
             Log.d(TAG, "Exit requested...");
             finish();
             return true;
+        case R.id.settings:
+            Log.d(TAG, "Exit requested...");
+            finish();
+            return true;
+            
         default:
             return super.onOptionsItemSelected(item);
         }
@@ -235,7 +242,6 @@ public class FogOfExplore extends MapActivity {
 
     @Override
     protected Dialog onCreateDialog(int id) {
-        Dialog dialog;
         Log.d(TAG, "Showing dialog with id " + id);
         switch (id) {
         case DIALOG_START_GPS:
@@ -244,7 +250,6 @@ public class FogOfExplore extends MapActivity {
             // TODO internet starting dialog
             break;
         default:
-            dialog = null;
         }
         return null;
     }

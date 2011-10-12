@@ -25,11 +25,13 @@
       Contributors:
          Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
 -->
-<com.google.android.maps.MapView
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/mapview"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:clickable="true"
-    android:apiKey="0kqWshHBMLE4BI71Cfh4OKdEfdNDEkTc055gPFw"
-/>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:orientation="vertical" android:layout_width="match_parent"
+	android:layout_height="match_parent">
+	<TextView android:layout_width="match_parent"
+		android:layout_height="match_parent" android:id="@+id/help"
+		android:text="@string/feedback_text" android:textColor="#FFFFFF"
+		android:background="#000000" android:layout_margin="25px" android:scrollbars="vertical" android:textSize="5pt" android:inputType="none">
+		<requestFocus></requestFocus>
+	</TextView>
+</LinearLayout>

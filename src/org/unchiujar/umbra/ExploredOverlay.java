@@ -56,6 +56,7 @@ public class ExploredOverlay extends Overlay {
     private double currentLat;
     private double currentLong;
 
+    private Paint topBarPaint;
     private Paint currentPaint;
     private Paint circlePaint;
     private Paint accuracyPaint;
@@ -66,18 +67,27 @@ public class ExploredOverlay extends Overlay {
     private Canvas coverCanvas;
 
     // TODO remove - DEBUG code
-    private Paint paint1 = new Paint();
+    private Paint textPaint = new Paint();
     private int i;
     // TODO remove - DEBUG code
+    private Rect topBar;
+
     private Rect screenCover;
     private double currentAccuracy;
 
     public ExploredOverlay(Context context) {
         this.context = context;
 
+
+        topBarPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        topBarPaint.setColor(Color.WHITE);
+        topBarPaint.setAlpha(120);
+        topBarPaint.setStyle(Style.FILL_AND_STROKE);
+
+
         accuracyPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         accuracyPaint.setColor(Color.RED);
-        accuracyPaint.setAlpha(50);
+        accuracyPaint.setAlpha(70);
         accuracyPaint.setStyle(Style.FILL_AND_STROKE);
 
         rectPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -103,8 +113,8 @@ public class ExploredOverlay extends Overlay {
 
         // TODO remove - DEBUG code
         i = -1000000000;
-        paint1.setARGB(90, 0, 0, 255); // blue
-        paint1.setAntiAlias(true);
+        textPaint.setAntiAlias(true);
+        textPaint.setTextSize(15);
         // TODO remove - DEBUG code
 
     }
@@ -117,6 +127,10 @@ public class ExploredOverlay extends Overlay {
         Log.d(TAG, "########Called");
         assert !shadow : "The overlay does not need a shadow as it only covers the explored areas.";
         Projection projection = mapView.getProjection();
+
+        //top bar rectangle
+        
+        topBar = new Rect(0, 0, mapView.getMeasuredWidth(), 30);
 
         // the size of the displayed area is dependent on the zoom level
         // 1 - 19 levels
@@ -132,9 +146,8 @@ public class ExploredOverlay extends Overlay {
         radius = (radius <= 1) ? 1 : radius;
 
         int accuracy = (int) ((double) currentAccuracy * pixelsMeter);
-        accuracy = (accuracy <= 1) ? 1 : radius;
+        accuracy = (accuracy <= 1) ? 1 : accuracy;
 
-        canvas.drawText("redraw? " + i++ + " accuracy " + accuracy, 5, 10, paint1);
 
         Log.v(TAG, "View distance is " + LocationOrder.METERS_RADIUS + " meters, radius in pixels is "
                 + radius + " pixel per meter is " + pixelsMeter);
@@ -151,7 +164,8 @@ public class ExploredOverlay extends Overlay {
         }
 
         coverCanvas.drawRect(screenCover, rectPaint);
-
+        
+        
         for (AproximateLocation location : locations) {
             // BUG - do not use
             // point = mapView.getProjection().toPixels(geoPoint, null);
@@ -172,6 +186,9 @@ public class ExploredOverlay extends Overlay {
         coverCanvas.drawCircle(tempPoint.x, tempPoint.y, accuracy, accuracyPaint);
 
         canvas.drawBitmap(cover, 0, 0, rectPaint);
+        canvas.drawRect(topBar, topBarPaint);
+        canvas.drawText("Redraw:" + i++ + " | Accuracy: " + currentAccuracy + " m ", 17, 17, textPaint);
+
         // super.draw(canvadb des, mapView, false);
     }
 

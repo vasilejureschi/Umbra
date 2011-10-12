@@ -76,19 +76,19 @@ public class LocationService extends IntentService implements LocationListener {
     @Override
     public void onLocationChanged(Location location) {
         Log.d(TAG, "Location changed: " + location);
-        //test if the accuracy is good enough 
+        // test if the accuracy is good enough
         if (location.getAccuracy() < LocationOrder.METERS_RADIUS * 2) {
             // record to database
             long size = locationRecorder.insert(new AproximateLocation(location));
             Log.d(TAG, "Tree size is :" + size);
-            // update display
-            Intent intent = new Intent(MOVEMENT_UPDATE);
-            intent.putExtra(LATITUDE, location.getLatitude());
-            intent.putExtra(LONGITUDE, location.getLongitude());
-            intent.putExtra(ACCURACY, location.getAccuracy());
-
-            sendBroadcast(intent);
         }
+        // update display
+        Intent intent = new Intent(MOVEMENT_UPDATE);
+        intent.putExtra(LATITUDE, location.getLatitude());
+        intent.putExtra(LONGITUDE, location.getLongitude());
+        intent.putExtra(ACCURACY, location.getAccuracy());
+
+        sendBroadcast(intent);
 
     }
 
@@ -137,10 +137,15 @@ public class LocationService extends IntentService implements LocationListener {
 
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000,
                 (float) LocationOrder.METERS_RADIUS * 2, this);
-
+        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000,
+                (float) LocationOrder.METERS_RADIUS * 2, this);
+        
         // set the last known location
-        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+        if (locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) != null) {
             onLocationChanged(locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER));
+        } else {
+            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000,
+                    (float) LocationOrder.METERS_RADIUS * 2, this);
         }
     }
 
