@@ -41,7 +41,7 @@ import android.util.Log;
 
 public class LocationService extends IntentService implements LocationListener {
     private static final int APPLICATION_ID = 13234;
-    private NotificationManager mNotificationManager;
+    private NotificationManager notificationManager;
 
     private static final String TAG = LocationService.class.getName();
 
@@ -124,8 +124,8 @@ public class LocationService extends IntentService implements LocationListener {
 
     @Override
     public void onDestroy() {
-        mNotificationManager.cancel(APPLICATION_ID);
-        mNotificationManager.cancelAll();
+        notificationManager.cancel(APPLICATION_ID);
+        notificationManager.cancelAll();
         super.onDestroy();
     }
 
@@ -139,7 +139,7 @@ public class LocationService extends IntentService implements LocationListener {
                 (float) LocationOrder.METERS_RADIUS * 2, this);
         locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000,
                 (float) LocationOrder.METERS_RADIUS * 2, this);
-        
+
         // set the last known location
         if (locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) != null) {
             onLocationChanged(locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER));
@@ -155,23 +155,21 @@ public class LocationService extends IntentService implements LocationListener {
 
         Context context = getApplicationContext();
 
-        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         // instantiate notification
-        int icon = R.drawable.icon;
         CharSequence tickerText = contentTitle + " " + running;
-        Notification notification = new Notification(icon, tickerText, System.currentTimeMillis());
+        Notification notification = new Notification(R.drawable.icon, tickerText, System.currentTimeMillis());
         notification.flags |= Notification.FLAG_NO_CLEAR;
         notification.flags |= Notification.FLAG_FOREGROUND_SERVICE;
+        
 
         // Define the Notification's expanded message and Intent:
         CharSequence contentText = contentTitle + " " + running;
         Intent notificationIntent = new Intent(this, FogOfExplore.class);
         // notificationIntent.setAction("android.intent.action.VIEW");
-        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent,
-                Intent.FLAG_ACTIVITY_NEW_TASK);
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         notification.setLatestEventInfo(context, contentTitle, contentText, contentIntent);
-        mNotificationManager.notify(APPLICATION_ID, notification);
-
+        notificationManager.notify(APPLICATION_ID, notification);
     }
 
 }
