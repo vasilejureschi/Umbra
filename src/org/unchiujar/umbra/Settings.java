@@ -27,35 +27,15 @@
 package org.unchiujar.umbra;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
 
-public class Help extends Activity {
+
+public class Settings extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.help);
-        final Button button = (Button) findViewById(R.id.feedback_btn);
-        button.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                sendEmail();
-            }
-        });
+        setContentView(R.layout.settings);
     }
-
-    private void sendEmail() {
-        Intent emailIntent = new Intent(android.content.Intent.ACTION_SEND);
-        String recipients[] = { getString(R.string.feedback_email) };
-
-        emailIntent.putExtra(android.content.Intent.EXTRA_EMAIL, recipients);
-        emailIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, getString(R.string.email_subject));
-        emailIntent.setType("plain/text");
-        
-        emailIntent.putExtra(android.content.Intent.EXTRA_TEXT, getString(R.string.email_body));
-        startActivity(Intent.createChooser(emailIntent, getString(R.string.email_chooser)));
-    }
-
+    
 }

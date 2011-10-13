@@ -32,11 +32,22 @@
 	<string name="exit">Exit</string>
 	<string name="app_name">Umbra</string>
 	<string name="running">is running, tap to display.</string>
-	<string name="gps_dialog">This application needs a GPS fix to run properly.
-	</string>
+	<string name="gps_dialog">This application needs a GPS fix to run properly.</string>
 	<string name="start_gps_btn">Start GPS</string>
 	<string name="continue_no_gps">Continue</string>
 	<string name="connectivity_warning">Maps cannot be downloaded as network connection is unavailable. Enable the 3G or WiFi connection."</string>
-	<string name="feedback_text">"Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-	</string>
+	<string name="help_text">Umbra is a exploration application based on the the Fog Of War concept used in strategy games.
+	 
+	On the map the unexplored area is displayed grayed out while the explored part is clear. The application needs a GPS fix in order
+	to mark an area as explored as the accuracy from the other location sources is not good enough. Currently the minimum accuracy needed
+	for saving the explored area is set at 20 m (60 feet). The accuracy is displayed as a disc around the current position.
+	Umbra saves your exploration in an internal database (nothing is sent over the network).
+	
+	   </string>
+	 <string name="feedback_text">Send feedback or suggestion email</string>
+	 <string name="feedback_email">vasile.jureschi@gmail.com</string>  
+	 <string name="email_subject">Umbra feedback</string>
+	 <string name="email_body">Complain here :)</string>
+	 <string name="email_chooser">Send email using:</string>
+	 
 </resources>

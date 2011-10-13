@@ -40,7 +40,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 public class LocationService extends IntentService implements LocationListener {
-    private static final int APPLICATION_ID = 13234;
+    private static final int APPLICATION_ID = 1241241;
     private NotificationManager notificationManager;
 
     private static final String TAG = LocationService.class.getName();
@@ -124,12 +124,24 @@ public class LocationService extends IntentService implements LocationListener {
 
     @Override
     public void onDestroy() {
+        super.onDestroy();
+        Log.d(TAG, "Service on destroy called.");
+
+    }
+
+
+    @Override
+    public boolean onUnbind(Intent intent) {
+        Log.d(TAG, "Unbind called.");
+        locationManager.removeUpdates(this);
+        
         notificationManager.cancel(APPLICATION_ID);
         notificationManager.cancelAll();
-        super.onDestroy();
+        return super.onUnbind(intent);
     }
 
     // =================END LIFECYCLE METHODS ====================
+
 
     private void enableGPS() {
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);

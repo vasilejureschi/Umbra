@@ -104,10 +104,9 @@ public class FogOfExplore extends MapActivity {
             finish();
             return true;
         case R.id.settings:
-            Log.d(TAG, "Exit requested...");
-            finish();
-            return true;
-            
+            Intent settingsIntent = new Intent(this, Settings.class);
+            startActivity(settingsIntent);
+            return true;            
         default:
             return super.onOptionsItemSelected(item);
         }
@@ -281,7 +280,6 @@ public class FogOfExplore extends MapActivity {
                     }
                 }).setNegativeButton(R.string.continue_no_gps, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
-                        FogOfExplore.this.finish();
                     }
                 });
         return builder.create();

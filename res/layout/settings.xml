@@ -27,12 +27,11 @@
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	android:orientation="vertical" android:layout_width="match_parent"
-	android:layout_height="match_parent" android:weightSum="1">
+	android:layout_height="match_parent">
 	<TextView android:layout_width="match_parent"
-		android:id="@+id/help"
-		android:text="@string/help_text" android:textColor="#FFFFFF"
-		android:background="#000000" android:layout_margin="25px" android:scrollbars="vertical" android:textSize="6pt" android:inputType="none" android:layout_height="293dp" android:layout_weight="0.60">
+		android:layout_height="match_parent" android:id="@+id/help"
+		android:text="@string/feedback_text" android:textColor="#FFFFFF"
+		android:background="#000000" android:layout_margin="25px" android:scrollbars="vertical" android:textSize="5pt" android:inputType="none">
 		<requestFocus></requestFocus>
 	</TextView>
-	<Button android:layout_height="wrap_content" android:layout_width="match_parent" android:text="@string/feedback_text" android:id="@+id/feedback_btn"></Button>
 </LinearLayout>
