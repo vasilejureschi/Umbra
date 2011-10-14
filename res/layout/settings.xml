@@ -28,10 +28,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	android:orientation="vertical" android:layout_width="match_parent"
 	android:layout_height="match_parent">
-	<TextView android:layout_width="match_parent"
-		android:layout_height="match_parent" android:id="@+id/help"
-		android:text="@string/feedback_text" android:textColor="#FFFFFF"
-		android:background="#000000" android:layout_margin="25px" android:scrollbars="vertical" android:textSize="5pt" android:inputType="none">
-		<requestFocus></requestFocus>
-	</TextView>
+    <TextView android:textAppearance="?android:attr/textAppearanceMedium" android:layout_width="wrap_content" android:text="@string/transparency_label" android:layout_height="wrap_content" android:id="@+id/transparency_label" android:layout_margin="10px"></TextView>
+    <SeekBar android:id="@+id/transparency_seek" android:layout_height="wrap_content" android:layout_width="match_parent" android:max="255" android:layout_margin="10px"></SeekBar>
+    <ImageView android:id="@+id/transparency_image" android:src="@drawable/transparency" android:layout_height="wrap_content" android:layout_width="fill_parent"></ImageView>
 </LinearLayout>

@@ -35,6 +35,7 @@ import java.util.List;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -101,12 +102,17 @@ public class FogOfExplore extends MapActivity {
             return true;
         case R.id.exit:
             Log.d(TAG, "Exit requested...");
+            //cleanup
+            handler.removeCallbacks(zoomChecker);
+            unbindService(mConnection);
+            stopService(locationServiceIntent);
+            VisitedAreaCache.getInstance(this).stopDbUpdate();
             finish();
             return true;
         case R.id.settings:
             Intent settingsIntent = new Intent(this, Settings.class);
             startActivity(settingsIntent);
-            return true;            
+            return true;
         default:
             return super.onOptionsItemSelected(item);
         }
@@ -138,16 +144,18 @@ public class FogOfExplore extends MapActivity {
                         + numberLogList(bottomRight.getLatitude(), bottomRight.getLongitude()));
         explored.setCurrent(currentLat, currentLong, currentAccuracy);
         explored.setExplored(recorder.selectVisited(upperLeft, bottomRight));
-
         mapView.postInvalidate();
 
     }
+
+    ProgressDialog dialog;
 
     // ==================== LIFECYCLE METHODS ====================
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        dialog = ProgressDialog.show(this, "", "Loading. Please wait...", true);
         setContentView(R.layout.main);
         MapView mapView = (MapView) findViewById(R.id.mapview);
         mapView.setBuiltInZoomControls(true);
@@ -166,19 +174,19 @@ public class FogOfExplore extends MapActivity {
         mapController = mapView.getController();
         // set city level zoom
         mapController.setZoom(17);
-        redrawOverlay();
         Log.d(TAG, "onCreate completed: Activity created");
     }
 
     @Override
     protected void onStart() {
-        visible = true;
         super.onStart();
         Log.d(TAG, "onStart completed: Activity started");
     }
 
     @Override
     protected void onResume() {
+        super.onResume();
+
         IntentFilter movementFilter;
         movementFilter = new IntentFilter(LocationService.MOVEMENT_UPDATE);
         locationChangeReceiver = new LocationChangeReceiver();
@@ -186,16 +194,17 @@ public class FogOfExplore extends MapActivity {
         // register zoom && pan handler
         handler.postDelayed(zoomChecker, ZOOM_CHECKING_DELAY);
         startLocationService();
-        super.onResume();
         visible = true;
+        redrawOverlay();
+        dialog.cancel();
         Log.d(TAG, "onResume completed.");
     }
 
     @Override
     protected void onPause() {
+        super.onPause();
         handler.removeCallbacks(zoomChecker);
         visible = false;
-        super.onPause();
         Log.d(TAG, "onPause completed.");
     }
 
@@ -214,11 +223,7 @@ public class FogOfExplore extends MapActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        handler.removeCallbacks(zoomChecker);
-        unbindService(mConnection);
-        stopService(locationServiceIntent);
         unregisterReceiver(locationChangeReceiver);
-        VisitedAreaCache.getInstance(this).stopDbUpdate();
         Log.d(TAG, "onDestroy completed.");
     }
 
@@ -253,7 +258,7 @@ public class FogOfExplore extends MapActivity {
         return null;
     }
 
-    private void displayConnectivityWarning(){
+    private void displayConnectivityWarning() {
         ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         boolean connected = false;
         for (NetworkInfo info : connectivityManager.getAllNetworkInfo()) {
@@ -269,6 +274,7 @@ public class FogOfExplore extends MapActivity {
 
         }
     }
+
     private Dialog createGPSDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage(R.string.gps_dialog).setCancelable(false)

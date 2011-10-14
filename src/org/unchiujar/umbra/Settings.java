@@ -27,15 +27,51 @@
 package org.unchiujar.umbra;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
+import android.widget.ImageView;
+import android.widget.SeekBar;
 
-
-public class Settings extends Activity {
+public class Settings extends Activity implements SeekBar.OnSeekBarChangeListener {
+    public static final String UMBRA_PREFS = "org.unchiujar.umbra.settings";
+    public static final String TRANSPARENCY = "org.unchiujar.umbra.settings.transparency";
+    
+    private static final String TAG = Settings.class.getName();
+    private SeekBar setTransparency;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.settings);
+        setTransparency = (SeekBar) findViewById(R.id.transparency_seek);
+        setTransparency.setOnSeekBarChangeListener(this);
+        setTransparency.setProgress(getSharedPreferences(UMBRA_PREFS, 0).getInt(TRANSPARENCY, 120));        
     }
-    
+
+    @Override
+    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+        // change image transparency
+        Log.d(TAG, "Transparency set to " + progress);
+        ImageView view = (ImageView) findViewById(R.id.transparency_image);
+        view.setAlpha(Math.abs(progress - 255));
+        //save settings
+        SharedPreferences settings = getSharedPreferences(UMBRA_PREFS, 0);
+        SharedPreferences.Editor editor = settings.edit();
+        editor.putInt(TRANSPARENCY, progress);
+        editor.commit();
+    }
+
+    @Override
+    public void onStartTrackingTouch(SeekBar seekBar) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void onStopTrackingTouch(SeekBar seekBar) {
+        // TODO Auto-generated method stub
+
+    }
+
 }

@@ -32,6 +32,7 @@ import static org.unchiujar.umbra.LocationUtilities.locationToGeoPoint;
 import java.util.List;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -92,7 +93,6 @@ public class ExploredOverlay extends Overlay {
 
         rectPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         rectPaint.setColor(Color.BLACK);
-        rectPaint.setAlpha(150);
         rectPaint.setStyle(Style.FILL_AND_STROKE);
 
         currentPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -184,6 +184,10 @@ public class ExploredOverlay extends Overlay {
         projection.toPixels(new GeoPoint((int) (currentLat * 1e6), (int) (currentLong * 1e6)), tempPoint);
         coverCanvas.drawCircle(tempPoint.x, tempPoint.y, radius, currentPaint);
         coverCanvas.drawCircle(tempPoint.x, tempPoint.y, accuracy, accuracyPaint);
+
+        
+        SharedPreferences settings = context.getSharedPreferences(Settings.UMBRA_PREFS, 0);
+        rectPaint.setAlpha(settings.getInt(Settings.TRANSPARENCY, 120));
 
         canvas.drawBitmap(cover, 0, 0, rectPaint);
         canvas.drawRect(topBar, topBarPaint);

@@ -49,5 +49,6 @@
 	 <string name="email_subject">Umbra feedback</string>
 	 <string name="email_body">Complain here :)</string>
 	 <string name="email_chooser">Send email using:</string>
+	 <string name="transparency_label">Set the fog transparency</string>
 	 
 </resources>
