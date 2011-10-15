@@ -51,4 +51,9 @@
 	 <string name="email_chooser">Send email using:</string>
 	 <string name="transparency_label">Set the fog transparency</string>
 	 
+
+     <string name="remote_service_started">Location service started</string>
+     <string name="remote_service_connected">Connected to location service</string>
+     <string name="remote_service_disconnected">Disconnected from location service</string>
+
 </resources>

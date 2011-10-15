@@ -39,7 +39,7 @@
             </intent-filter>
         </activity>
 	<uses-library android:name="com.google.android.maps" />
-    <service android:name="LocationService"></service>
+    <service android:process=":remote" android:name="LocationService"/>
     <activity android:name="Help"></activity>
     <activity android:name="Settings"></activity>
 </application>
