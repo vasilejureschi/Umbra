@@ -33,6 +33,7 @@ import android.app.IntentService;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
@@ -46,7 +47,7 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
 
-public class LocationService extends IntentService implements LocationListener {
+public class LocationService extends Service implements LocationListener {
     private static final int APPLICATION_ID = 1241241;
     private NotificationManager notificationManager;
 
@@ -62,23 +63,6 @@ public class LocationService extends IntentService implements LocationListener {
     private LocationManager locationManager;
     private LocationProvider locationRecorder = VisitedAreaCache.getInstance(this);
 
-    /**
-     * A constructor is required, and must call the super IntentService(String) constructor with a
-     * name for the worker thread.
-     */
-    public LocationService() {
-        super("LocationService");
-    }
-
-    /**
-     * The IntentService calls this method from the default worker thread with the intent that
-     * started the service. When this method returns, IntentService stops the service, as
-     * appropriate.
-     */
-    @Override
-    protected void onHandleIntent(Intent intent) {
-        Log.d(TAG, "On handle intent");
-    }
 
     @Override
     public void onLocationChanged(Location location) {
@@ -150,7 +134,8 @@ public class LocationService extends IntentService implements LocationListener {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         // TODO Auto-generated method stub
-        return super.onStartCommand(intent, flags, startId);
+//        return super.onStartCommand(intent, flags, startId);
+        return Service.START_STICKY;
     }
 
     @Override
@@ -210,16 +195,7 @@ public class LocationService extends IntentService implements LocationListener {
         notificationManager.notify(APPLICATION_ID, notification);
     }
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+         
     
     
     
@@ -250,7 +226,7 @@ public class LocationService extends IntentService implements LocationListener {
     static final int MSG_SET_VALUE = 3;
 
     /**
-     * Handler of incoming messages from clients.
+     * Handler of incoming messages from clients`.
      */
     class IncomingHandler extends Handler {
         @Override

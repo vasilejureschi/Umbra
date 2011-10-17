@@ -107,8 +107,6 @@ public class FogOfExplore extends MapActivity {
         case R.id.exit:
             Log.d(TAG, "Exit requested...");
             // cleanup
-            handler.removeCallbacks(zoomChecker);
-            unbindService(mConnection);
             stopService(locationServiceIntent);
             VisitedAreaCache.getInstance(this).stopDbUpdate();
             finish();
@@ -126,8 +124,6 @@ public class FogOfExplore extends MapActivity {
         if (!visible) {
             return;
         }
-        // LocationRecorder recorder = LocationRecorder
-        // .getInstance(getApplicationContext());
 
         final MapView mapView = (MapView) findViewById(R.id.mapview);
         int halfLatSpan = mapView.getLatitudeSpan() / 2;
@@ -179,6 +175,8 @@ public class FogOfExplore extends MapActivity {
         // set city level zoom
         mapController.setZoom(17);
         Log.d(TAG, "onCreate completed: Activity created");
+        locationServiceIntent = new Intent("org.com.unchiujar.LocationService");
+        startService(locationServiceIntent);
     }
 
     @Override
@@ -190,16 +188,9 @@ public class FogOfExplore extends MapActivity {
     @Override
     protected void onResume() {
         super.onResume();
-
-        IntentFilter movementFilter;
-        movementFilter = new IntentFilter(LocationService.MOVEMENT_UPDATE);
-
-        // locationChangeReceiver = new LocationChangeReceiver();
-        // registerReceiver(locationChangeReceiver, movementFilter);
-
         // register zoom && pan handler
         handler.postDelayed(zoomChecker, ZOOM_CHECKING_DELAY);
-        startLocationService();
+        checkConnectivity();
         visible = true;
         redrawOverlay();
         dialog.cancel();
@@ -229,8 +220,8 @@ public class FogOfExplore extends MapActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
-        unbindService(mConnection);
+        handler.removeCallbacks(zoomChecker);
+        doUnbindService();
         Log.d(TAG, "onDestroy completed.");
     }
 
@@ -238,7 +229,7 @@ public class FogOfExplore extends MapActivity {
 
     
     
-    private void startLocationService() {
+    private void checkConnectivity() {
 
         boolean isGPS = ((LocationManager) getSystemService(LOCATION_SERVICE))
                 .isProviderEnabled(LocationManager.GPS_PROVIDER);
@@ -249,10 +240,7 @@ public class FogOfExplore extends MapActivity {
         displayConnectivityWarning();
         
         // bind to location service
-        locationServiceIntent = new Intent(this, LocationService.class);
-        bindService(locationServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
-        mIsBound = true;
-
+        doBindService();
     }
 
     @Override
@@ -401,9 +389,6 @@ public class FogOfExplore extends MapActivity {
                 // disconnected (and then reconnected if it can be restarted)
                 // so there is no need to do anything here.
             }
-
-            // As part of the sample, tell the user what happened.
-            Toast.makeText(FogOfExplore.this, R.string.remote_service_connected, Toast.LENGTH_SHORT).show();
         }
 
         public void onServiceDisconnected(ComponentName className) {
@@ -411,18 +396,11 @@ public class FogOfExplore extends MapActivity {
             // unexpectedly disconnected -- that is, its process crashed.
             mService = null;
             Log.d(TAG, "Disconnected from location service");
-
-            // As part of the sample, tell the user what happened.
-            Toast.makeText(FogOfExplore.this, R.string.remote_service_disconnected, Toast.LENGTH_SHORT)
-                    .show();
         }
     };
 
-    void doBindService() {
-        // Establish a connection with the service. We use an explicit
-        // class name because there is no reason to be able to let other
-        // applications replace our component.
-        bindService(new Intent(FogOfExplore.this, LocationService.class), mConnection,
+    void doBindService() {        
+        bindService(locationServiceIntent, mConnection,
                 Context.BIND_AUTO_CREATE);
         mIsBound = true;
         Log.d(TAG, "Binding to location service");

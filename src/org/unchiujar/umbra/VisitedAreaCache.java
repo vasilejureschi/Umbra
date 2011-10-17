@@ -67,6 +67,7 @@ public class VisitedAreaCache implements LocationProvider {
 
     private static VisitedAreaCache instance;
 
+    
     private VisitedAreaCache(Context context) {
         super();
         this.context = context;
@@ -101,6 +102,7 @@ public class VisitedAreaCache implements LocationProvider {
         // create and schedule database updates
         updateTimer = new Timer();
         updateTimer.schedule(updateDb, UPDATE_INTERVAL, UPDATE_INTERVAL);
+
 
     }
 
@@ -160,4 +162,5 @@ public class VisitedAreaCache implements LocationProvider {
         return visited;
     }
 
+ 
 }
