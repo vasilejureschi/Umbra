@@ -50,7 +50,7 @@ public class LocationUtilities {
         return coordinatesToGeoPoint(location.getLatitude(), location.getLongitude());
     }
 
-    public static AproximateLocation geoPointToLocation(GeoPoint geoPoint) {
+    public static ApproximateLocation geoPointToLocation(GeoPoint geoPoint) {
         return coordinatesToLocation(geoPoint.getLatitudeE6() / 1e6, geoPoint.getLongitudeE6() / 1e6);
     }
 
@@ -70,10 +70,10 @@ public class LocationUtilities {
      *            in decimal degrees
      * @param longitude
      *            in decimal degrees
-     * @return a AproximateLocation with the coordinates
+     * @return a ApproximateLocation with the coordinates
      */
-    public static AproximateLocation coordinatesToLocation(double latitude, double longitude) {
-        AproximateLocation location = new AproximateLocation("Translator");
+    public static ApproximateLocation coordinatesToLocation(double latitude, double longitude) {
+        ApproximateLocation location = new ApproximateLocation("Translator");
         location.setLatitude(latitude);
         location.setLongitude(longitude);
         return location;
@@ -84,10 +84,10 @@ public class LocationUtilities {
      *            in microdegrees
      * @param longitudeE6
      *            in microdegrees
-     * @return a AproximateLocation with the coordinates
+     * @return a ApproximateLocation with the coordinates
      */
-    public static AproximateLocation coordinatesToLocation(int latitudeE6, int longitudeE6) {
-        AproximateLocation location = new AproximateLocation("Translator");
+    public static ApproximateLocation coordinatesToLocation(int latitudeE6, int longitudeE6) {
+        ApproximateLocation location = new ApproximateLocation("Translator");
         location.setLatitude(latitudeE6 / 1e6);
         location.setLongitude(longitudeE6 / 1e6);
         return location;
@@ -167,11 +167,11 @@ public class LocationUtilities {
                 && eastestLongitude == lowerRightA.getLongitude()) {
             return Collections.emptyList();
         }
-        AproximateLocation rect1UL = new AproximateLocation("mumu");
-        AproximateLocation rect1BR = new AproximateLocation("mumu");
+        ApproximateLocation rect1UL = new ApproximateLocation("mumu");
+        ApproximateLocation rect1BR = new ApproximateLocation("mumu");
 
-        AproximateLocation rect2UL = new AproximateLocation("mumu");
-        AproximateLocation rect2BR = new AproximateLocation("mumu");
+        ApproximateLocation rect2UL = new ApproximateLocation("mumu");
+        ApproximateLocation rect2BR = new ApproximateLocation("mumu");
 
         // The coordinates for the dotted areas are to be calculated.
         // The same calculations apply if the rectangles do not overlap

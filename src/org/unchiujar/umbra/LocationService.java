@@ -27,19 +27,27 @@
 
 package org.unchiujar.umbra;
 
+import java.util.ArrayList;
+
 import android.app.IntentService;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.util.Log;
 
-public class LocationService extends IntentService implements LocationListener {
+public class LocationService extends Service implements LocationListener {
     private static final int APPLICATION_ID = 1241241;
     private NotificationManager notificationManager;
 
@@ -53,42 +61,36 @@ public class LocationService extends IntentService implements LocationListener {
     public static final String ACCURACY = "org.unchiujar.umbra.LocationService.ACCURACY";
 
     private LocationManager locationManager;
-    private LocationProvider locationRecorder = VisitedAreaCache.getInstance(this);
+//    private LocationProvider locationRecorder = VisitedAreaCache.getInstance(this);
 
-    /**
-     * A constructor is required, and must call the super IntentService(String) constructor with a
-     * name for the worker thread.
-     */
-    public LocationService() {
-        super("LocationService");
-    }
-
-    /**
-     * The IntentService calls this method from the default worker thread with the intent that
-     * started the service. When this method returns, IntentService stops the service, as
-     * appropriate.
-     */
-    @Override
-    protected void onHandleIntent(Intent intent) {
-        Log.d(TAG, "On handle intent");
-    }
 
     @Override
     public void onLocationChanged(Location location) {
         Log.d(TAG, "Location changed: " + location);
         // test if the accuracy is good enough
-        if (location.getAccuracy() < LocationOrder.METERS_RADIUS * 2) {
-            // record to database
-            long size = locationRecorder.insert(new AproximateLocation(location));
-            Log.d(TAG, "Tree size is :" + size);
-        }
-        // update display
-        Intent intent = new Intent(MOVEMENT_UPDATE);
-        intent.putExtra(LATITUDE, location.getLatitude());
-        intent.putExtra(LONGITUDE, location.getLongitude());
-        intent.putExtra(ACCURACY, location.getAccuracy());
+        
+        for (int i=mClients.size()-1; i>=0; i--) {
+            try {
+                // Send data as an Integer
+                mClients.get(i).send(Message.obtain(null, 9000, location));
 
-        sendBroadcast(intent);
+
+            } catch (RemoteException e) {
+                // The client is dead. Remove it from the list; we are going through the list from back to front so this is safe to do inside the loop.
+                mClients.remove(i);
+            }
+        }
+        
+        
+        Message message = Message.obtain();
+        message.obj = location;
+        
+        try {
+            mMessenger.send(message);
+        } catch (RemoteException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 
     }
 
@@ -111,6 +113,7 @@ public class LocationService extends IntentService implements LocationListener {
 
     // ==================== LIFECYCLE METHODS ====================
 
+    
     @Override
     public void onCreate() {
 
@@ -119,24 +122,25 @@ public class LocationService extends IntentService implements LocationListener {
         enableGPS();
         displayRunningNotification();
         Log.d(TAG, "Location manager set up.");
-        // locationRecorder = LocationRecorder.getInstance(this);
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        return super.onStartCommand(intent, flags, startId);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+        locationManager.removeUpdates(this);        
+        notificationManager.cancel(APPLICATION_ID);
         Log.d(TAG, "Service on destroy called.");
-
     }
 
 
     @Override
     public boolean onUnbind(Intent intent) {
         Log.d(TAG, "Unbind called.");
-        locationManager.removeUpdates(this);
-        
-        notificationManager.cancel(APPLICATION_ID);
-        notificationManager.cancelAll();
         return super.onUnbind(intent);
     }
 
@@ -165,14 +169,12 @@ public class LocationService extends IntentService implements LocationListener {
         String contentTitle = getString(R.string.app_name);
         String running = getString(R.string.running);
 
-        Context context = getApplicationContext();
-
         notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         // instantiate notification
         CharSequence tickerText = contentTitle + " " + running;
         Notification notification = new Notification(R.drawable.icon, tickerText, System.currentTimeMillis());
         notification.flags |= Notification.FLAG_NO_CLEAR;
-        notification.flags |= Notification.FLAG_FOREGROUND_SERVICE;
+        notification.flags |= Notification.FLAG_ONGOING_EVENT;
         
 
         // Define the Notification's expanded message and Intent:
@@ -180,8 +182,85 @@ public class LocationService extends IntentService implements LocationListener {
         Intent notificationIntent = new Intent(this, FogOfExplore.class);
         // notificationIntent.setAction("android.intent.action.VIEW");
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        notification.setLatestEventInfo(context, contentTitle, contentText, contentIntent);
+        notification.setLatestEventInfo(this, contentTitle, contentText, contentIntent);
         notificationManager.notify(APPLICATION_ID, notification);
     }
+    
+         
+    
+    
+    
+    /** Keeps track of all current registered clients. */
+    ArrayList<Messenger> mClients = new ArrayList<Messenger>();
+    /** Holds last value set by a client. */
+    int mValue = 0;
 
+    /**
+     * Command to the service to register a client, receiving callbacks
+     * from the service.  The Message's replyTo field must be a Messenger of
+     * the client where callbacks should be sent.
+     */
+    static final int MSG_REGISTER_CLIENT = 1;
+
+    /**
+     * Command to the service to unregister a client, ot stop receiving callbacks
+     * from the service.  The Message's replyTo field must be a Messenger of
+     * the client as previously given with MSG_REGISTER_CLIENT.
+     */
+    static final int MSG_UNREGISTER_CLIENT = 2;
+
+    /**
+     * Command to service to set a new value.  This can be sent to the
+     * service to supply a new value, and will be sent by the service to
+     * any registered clients with the new value.
+     */
+    static final int MSG_SET_VALUE = 3;
+
+    /**
+     * Handler of incoming messages from clients`.
+     */
+    class IncomingHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case MSG_REGISTER_CLIENT:
+                    mClients.add(msg.replyTo);
+                    break;
+                case MSG_UNREGISTER_CLIENT:
+                    mClients.remove(msg.replyTo);
+                    break;
+                case MSG_SET_VALUE:
+                    mValue = msg.arg1;
+                    for (int i=mClients.size()-1; i>=0; i--) {
+                        try {
+                            mClients.get(i).send(Message.obtain(null,
+                                    MSG_SET_VALUE, mValue, 0));
+                        } catch (RemoteException e) {
+                            // The client is dead.  Remove it from the list;
+                            // we are going through the list from back to front
+                            // so this is safe to do inside the loop.
+                            mClients.remove(i);
+                        }
+                    }
+                    break;
+                default:
+                    super.handleMessage(msg);
+            }
+        }
+    }
+
+    /**
+     * Target we publish for clients to send messages to IncomingHandler.
+     */
+    final Messenger mMessenger = new Messenger(new IncomingHandler());
+    
+    
+    /**
+     * When binding to the service, we return an interface to our messenger
+     * for sending messages to the service.
+     */
+    @Override
+    public IBinder onBind(Intent intent) {
+        return mMessenger.getBinder();
+    }
 }

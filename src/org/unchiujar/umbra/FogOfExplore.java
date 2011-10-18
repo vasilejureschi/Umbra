@@ -36,7 +36,6 @@ import java.util.List;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -44,12 +43,16 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Color;
+import android.location.Location;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -70,9 +73,10 @@ public class FogOfExplore extends MapActivity {
 
     private Intent locationServiceIntent;
     private ExploredOverlay explored;
-    private LocationChangeReceiver locationChangeReceiver;
+
+
     private MapController mapController;
-    LocationProvider recorder = VisitedAreaCache.getInstance(this);
+    LocationProvider recorder;
     private double currentLat;
     private double currentLong;
     private boolean visible = true;
@@ -102,11 +106,9 @@ public class FogOfExplore extends MapActivity {
             return true;
         case R.id.exit:
             Log.d(TAG, "Exit requested...");
-            //cleanup
-            handler.removeCallbacks(zoomChecker);
-            unbindService(mConnection);
+            // cleanup
             stopService(locationServiceIntent);
-            VisitedAreaCache.getInstance(this).stopDbUpdate();
+            VisitedAreaCache.getInstance(this).destroy();
             finish();
             return true;
         case R.id.settings:
@@ -119,11 +121,10 @@ public class FogOfExplore extends MapActivity {
     }
 
     private void redrawOverlay() {
+        //FIXME hack
         if (!visible) {
             return;
         }
-        // LocationRecorder recorder = LocationRecorder
-        // .getInstance(getApplicationContext());
 
         final MapView mapView = (MapView) findViewById(R.id.mapview);
         int halfLatSpan = mapView.getLatitudeSpan() / 2;
@@ -131,9 +132,9 @@ public class FogOfExplore extends MapActivity {
         int mapCenterLat = mapView.getMapCenter().getLatitudeE6();
         int mapCenterLong = mapView.getMapCenter().getLongitudeE6();
 
-        AproximateLocation upperLeft = coordinatesToLocation(mapCenterLat + halfLatSpan, mapCenterLong
+        ApproximateLocation upperLeft = coordinatesToLocation(mapCenterLat + halfLatSpan, mapCenterLong
                 - halfLongSpan);
-        AproximateLocation bottomRight = coordinatesToLocation(mapCenterLat - halfLatSpan, mapCenterLong
+        ApproximateLocation bottomRight = coordinatesToLocation(mapCenterLat - halfLatSpan, mapCenterLong
                 + halfLongSpan);
         // TODO - optimization get points for rectangle only if a zoomout
         // or a pan action occured - ie new points come into view
@@ -144,6 +145,7 @@ public class FogOfExplore extends MapActivity {
                         + numberLogList(bottomRight.getLatitude(), bottomRight.getLongitude()));
         explored.setCurrent(currentLat, currentLong, currentAccuracy);
         explored.setExplored(recorder.selectVisited(upperLeft, bottomRight));
+
         mapView.postInvalidate();
 
     }
@@ -175,6 +177,9 @@ public class FogOfExplore extends MapActivity {
         // set city level zoom
         mapController.setZoom(17);
         Log.d(TAG, "onCreate completed: Activity created");
+        locationServiceIntent = new Intent("org.com.unchiujar.LocationService");
+        startService(locationServiceIntent);
+        recorder = VisitedAreaCache.getInstance(getApplicationContext());
     }
 
     @Override
@@ -186,14 +191,9 @@ public class FogOfExplore extends MapActivity {
     @Override
     protected void onResume() {
         super.onResume();
-
-        IntentFilter movementFilter;
-        movementFilter = new IntentFilter(LocationService.MOVEMENT_UPDATE);
-        locationChangeReceiver = new LocationChangeReceiver();
-        registerReceiver(locationChangeReceiver, movementFilter);
         // register zoom && pan handler
         handler.postDelayed(zoomChecker, ZOOM_CHECKING_DELAY);
-        startLocationService();
+        checkConnectivity();
         visible = true;
         redrawOverlay();
         dialog.cancel();
@@ -223,13 +223,16 @@ public class FogOfExplore extends MapActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        unregisterReceiver(locationChangeReceiver);
+        handler.removeCallbacks(zoomChecker);
+        doUnbindService();
         Log.d(TAG, "onDestroy completed.");
     }
 
     // =================END LIFECYCLE METHODS ====================
 
-    private void startLocationService() {
+    
+    
+    private void checkConnectivity() {
 
         boolean isGPS = ((LocationManager) getSystemService(LOCATION_SERVICE))
                 .isProviderEnabled(LocationManager.GPS_PROVIDER);
@@ -238,10 +241,9 @@ public class FogOfExplore extends MapActivity {
             showDialog(DIALOG_START_GPS);
         }
         displayConnectivityWarning();
+        
         // bind to location service
-        locationServiceIntent = new Intent(this, LocationService.class);
-        bindService(locationServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
-
+        doBindService();
     }
 
     @Override
@@ -291,43 +293,11 @@ public class FogOfExplore extends MapActivity {
         return builder.create();
     }
 
-    public class LocationChangeReceiver extends BroadcastReceiver {
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Log.d(TAG, "Location change notification received");
-
-            Bundle bundle = intent.getExtras();
-            double latitude = (Double) bundle.get(LocationService.LATITUDE);
-            double longitude = (Double) bundle.get(LocationService.LONGITUDE);
-            float accuracy = (Float) bundle.get(LocationService.ACCURACY);
-
-            Log.d(TAG, "Received point" + numberLogList(latitude, longitude));
-            redrawOverlay();
-            currentLat = latitude;
-            currentLong = longitude;
-            currentAccuracy = accuracy;
-            // mapController.setCenter(coordinatesToGeoPoint(latitude, longitude));
-        }
-    }
 
     @Override
     protected boolean isRouteDisplayed() {
         return false;
     }
-
-    private ServiceConnection mConnection = new ServiceConnection() {
-        public void onServiceConnected(ComponentName className, IBinder service) {
-            Log.d(TAG, "Connection to the location service established.");
-        }
-
-        public void onServiceDisconnected(ComponentName className) {
-            // As our service is in the
-            // same process, this should
-            // never be called
-            assert false;
-        }
-    };
 
     private Handler handler = new Handler();
 
@@ -353,5 +323,112 @@ public class FogOfExplore extends MapActivity {
             handler.postDelayed(zoomChecker, ZOOM_CHECKING_DELAY);
         }
     };
+
+    /** Messenger for communicating with service. */
+    Messenger mService = null;
+    /** Flag indicating whether we have called bind on the service. */
+    boolean mIsBound;
+
+    /**
+     * Handler of incoming messages from service.
+     */
+    class IncomingHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+            case LocationService.MSG_SET_VALUE:
+                Log.d(TAG, "Received from service: " + msg.arg1);
+                break;
+            case 9000:
+                if (msg.obj != null) {
+                    Log.d(TAG, ((Location) msg.obj).toString());
+                    redrawOverlay();
+                    
+                    currentLat = ((Location) msg.obj).getLatitude();
+                    currentLong = ((Location) msg.obj).getLongitude();
+                    currentAccuracy = ((Location) msg.obj).getAccuracy();
+                } else 
+                {
+                    Log.d(TAG, "@@@@ Null object received");
+                }
+                break;
+            default:
+                super.handleMessage(msg);
+            }
+        }
+    }
+
+    /**
+     * Target we publish for clients to send messages to IncomingHandler.
+     */
+    final Messenger mMessenger = new Messenger(new IncomingHandler());
+
+    /**
+     * Class for interacting with the main interface of the service.
+     */
+    private ServiceConnection mConnection = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            // This is called when the connection with the service has been
+            // established, giving us the service object we can use to
+            // interact with the service. We are communicating with our
+            // service through an IDL interface, so get a client-side
+            // representation of that from the raw service object.
+            mService = new Messenger(service);
+            Log.d(TAG, "Client Attached.");
+
+            // We want to monitor the service for as long as we are
+            // connected to it.
+            try {
+                Message msg = Message.obtain(null, LocationService.MSG_REGISTER_CLIENT);
+                msg.replyTo = mMessenger;
+                mService.send(msg);
+
+                // Give it some value as an example.
+                msg = Message.obtain(null, LocationService.MSG_SET_VALUE, this.hashCode(), 0);
+                mService.send(msg);
+            } catch (RemoteException e) {
+                // In this case the service has crashed before we could even
+                // do anything with it; we can count on soon being
+                // disconnected (and then reconnected if it can be restarted)
+                // so there is no need to do anything here.
+            }
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            // This is called when the connection with the service has been
+            // unexpectedly disconnected -- that is, its process crashed.
+            mService = null;
+            Log.d(TAG, "Disconnected from location service");
+        }
+    };
+
+    void doBindService() {        
+        bindService(locationServiceIntent, mConnection,
+                Context.BIND_AUTO_CREATE);
+        mIsBound = true;
+        Log.d(TAG, "Binding to location service");
+    }
+
+    void doUnbindService() {
+        if (mIsBound) {
+            // If we have received the service, and hence registered with
+            // it, then now is the time to unregister.
+            if (mService != null) {
+                try {
+                    Message msg = Message.obtain(null, LocationService.MSG_UNREGISTER_CLIENT);
+                    msg.replyTo = mMessenger;
+                    mService.send(msg);
+                } catch (RemoteException e) {
+                    // There is nothing special we need to do if the service
+                    // has crashed.
+                }
+            }
+
+            // Detach our existing connection.
+            unbindService(mConnection);
+            mIsBound = false;
+            Log.d(TAG, "Unbinding from location service.");
+        }
+    }
 
 }

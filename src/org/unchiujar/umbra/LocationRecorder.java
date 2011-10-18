@@ -76,7 +76,7 @@ public class LocationRecorder implements LocationProvider {
         return (instance == null) ? instance = new LocationRecorder(context) : instance;
     }
 
-    public long insert(AproximateLocation location) {
+    public long insert(ApproximateLocation location) {
 
         this.insertStmt.bindDouble(1, location.getLatitude());
         this.insertStmt.bindDouble(2, location.getLongitude());
@@ -88,13 +88,13 @@ public class LocationRecorder implements LocationProvider {
         return index;
     }
 
-    public void insert(List<AproximateLocation> locations) {
+    public void insert(List<ApproximateLocation> locations) {
         DatabaseUtils.InsertHelper batchInserter = new DatabaseUtils.InsertHelper(db, TABLE_NAME);
         int latitudeIndex = batchInserter.getColumnIndex(LATITUDE);
         int longitudeIndex = batchInserter.getColumnIndex(LONGITUDE);
 
         // see http://notes.theorbis.net/2010/02/batch-insert-to-sqlite-on-android.html
-        for (AproximateLocation aproximateLocation : locations) {
+        for (ApproximateLocation aproximateLocation : locations) {
             batchInserter.prepareForInsert();
             batchInserter.bind(latitudeIndex, aproximateLocation.getLatitude());
             batchInserter.bind(longitudeIndex, aproximateLocation.getLongitude());
@@ -112,15 +112,15 @@ public class LocationRecorder implements LocationProvider {
         this.db.delete(TABLE_NAME, null, null);
     }
 
-    public List<AproximateLocation> selectAll() {
+    public List<ApproximateLocation> selectAll() {
 
-        List<AproximateLocation> list = new ArrayList<AproximateLocation>();
+        List<ApproximateLocation> list = new ArrayList<ApproximateLocation>();
         Cursor cursor = this.db.query(TABLE_NAME, new String[] { LATITUDE, LONGITUDE }, null, null, null,
                 null, LONGITUDE + " desc");
         Log.d(TAG, "Results obtained: " + cursor.getCount());
         if (cursor.moveToFirst()) {
             do {
-                AproximateLocation location = new AproximateLocation(DATABASE_PROVIDER);
+                ApproximateLocation location = new ApproximateLocation(DATABASE_PROVIDER);
                 location.setLatitude(cursor.getDouble(0));
                 location.setLongitude(cursor.getDouble(1));
                 list.add(location);
@@ -133,9 +133,9 @@ public class LocationRecorder implements LocationProvider {
         return list;
     }
 
-    public List<AproximateLocation> selectVisited(AproximateLocation upperLeft, AproximateLocation lowerRight) {
+    public List<ApproximateLocation> selectVisited(ApproximateLocation upperLeft, ApproximateLocation lowerRight) {
 
-        List<AproximateLocation> list = new ArrayList<AproximateLocation>();
+        List<ApproximateLocation> list = new ArrayList<ApproximateLocation>();
         double longitudeMin = upperLeft.getLongitude();
         double latitudeMax = upperLeft.getLatitude();
         double longitudeMax = lowerRight.getLongitude();
@@ -150,7 +150,7 @@ public class LocationRecorder implements LocationProvider {
         Log.d(TAG, "Results obtained: " + cursor.getCount());
         if (cursor.moveToFirst()) {
             do {
-                AproximateLocation location = new AproximateLocation(DATABASE_PROVIDER);
+                ApproximateLocation location = new ApproximateLocation(DATABASE_PROVIDER);
                 location.setLatitude(cursor.getDouble(0));
                 location.setLongitude(cursor.getDouble(1));
                 Log.v(TAG, "Added to list of results obtained: " + location);

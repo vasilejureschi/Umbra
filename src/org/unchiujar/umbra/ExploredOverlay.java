@@ -51,7 +51,7 @@ import com.google.android.maps.Projection;
 
 public class ExploredOverlay extends Overlay {
     private static final String TAG = ExploredOverlay.class.getName();
-    private List<AproximateLocation> locations;
+    private List<ApproximateLocation> locations;
     private Context context;
     private Paint rectPaint;
     private double currentLat;
@@ -166,7 +166,7 @@ public class ExploredOverlay extends Overlay {
         coverCanvas.drawRect(screenCover, rectPaint);
         
         
-        for (AproximateLocation location : locations) {
+        for (ApproximateLocation location : locations) {
             // BUG - do not use
             // point = mapView.getProjection().toPixels(geoPoint, null);
             // returns an incorrect value in point
@@ -196,8 +196,9 @@ public class ExploredOverlay extends Overlay {
         // super.draw(canvadb des, mapView, false);
     }
 
-    public void setExplored(List<AproximateLocation> locations) {
+    public void setExplored(List<ApproximateLocation> locations) {
         this.locations = locations;
+        Log.d(TAG, "Explored size is: " + this.locations.size());
     }
 
     public void setCurrent(double currentLat, double currentLong, double currentAccuracy) {

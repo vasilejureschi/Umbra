@@ -29,17 +29,17 @@ package org.unchiujar.umbra;
 
 import android.location.Location;
 
-public class AproximateLocation extends Location {
+public class ApproximateLocation extends Location {
 
     private double x;
     private double y;
     private double z;
     
-    public AproximateLocation(String provider) {
+    public ApproximateLocation(String provider) {
         super(provider);
     }
 
-    public AproximateLocation(Location l) {
+    public ApproximateLocation(Location l) {
         super(l);
     }
 
@@ -50,14 +50,12 @@ public class AproximateLocation extends Location {
     }
     @Override
     public void setLatitude(double latitude) {
-        // TODO Auto-generated method stub
         super.setLatitude(latitude);
         updateNVector();
     }
 
     @Override
     public void setLongitude(double longitude) {
-        // TODO Auto-generated method stub
         super.setLongitude(longitude);
         updateNVector();
     }
@@ -65,11 +63,11 @@ public class AproximateLocation extends Location {
     @Override
     public boolean equals(Object location) {
         // sanity checks
-        if (!(location instanceof AproximateLocation)) {
+        if (!(location instanceof ApproximateLocation)) {
             return false;
         }
         // check if it is outside the preset radius
-        if (this.distanceTo((AproximateLocation) location) > LocationOrder.METERS_RADIUS) {
+        if (this.distanceTo((ApproximateLocation) location) > LocationOrder.METERS_RADIUS) {
             return false;
         }
         return true;

@@ -30,9 +30,9 @@ package org.unchiujar.umbra;
 import java.util.List;
 
 interface LocationProvider {
-    long insert(AproximateLocation location);
+    long insert(ApproximateLocation location);
     void deleteAll();
-    List<AproximateLocation> selectAll();
+    List<ApproximateLocation> selectAll();
     /**
      * Returns a list of visited points in the specified area. The coordinate system used
      * is the latitude longitude decimal system. 
@@ -40,5 +40,5 @@ interface LocationProvider {
      * @param bottomRight the bottom right coordinates using the latitude/longitude system
      * @return a List of visited locations
      */
-    List<AproximateLocation> selectVisited(AproximateLocation upperLeft, AproximateLocation bottomRight);
+    List<ApproximateLocation> selectVisited(ApproximateLocation upperLeft, ApproximateLocation bottomRight);
 }
