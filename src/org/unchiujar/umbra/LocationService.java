@@ -61,19 +61,13 @@ public class LocationService extends Service implements LocationListener {
     public static final String ACCURACY = "org.unchiujar.umbra.LocationService.ACCURACY";
 
     private LocationManager locationManager;
-    private LocationProvider locationRecorder = VisitedAreaCache.getInstance(this);
+//    private LocationProvider locationRecorder = VisitedAreaCache.getInstance(this);
 
 
     @Override
     public void onLocationChanged(Location location) {
         Log.d(TAG, "Location changed: " + location);
         // test if the accuracy is good enough
-        if (location.getAccuracy() < LocationOrder.METERS_RADIUS * 2) {
-            // record to database
-            long size = locationRecorder.insert(new AproximateLocation(location));
-            Log.d(TAG, "Tree size is :" + size);
-        }
-
         
         for (int i=mClients.size()-1; i>=0; i--) {
             try {
@@ -128,14 +122,11 @@ public class LocationService extends Service implements LocationListener {
         enableGPS();
         displayRunningNotification();
         Log.d(TAG, "Location manager set up.");
-        // locationRecorder = LocationRecorder.getInstance(this);
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        // TODO Auto-generated method stub
-//        return super.onStartCommand(intent, flags, startId);
-        return Service.START_STICKY;
+        return super.onStartCommand(intent, flags, startId);
     }
 
     @Override
@@ -183,7 +174,7 @@ public class LocationService extends Service implements LocationListener {
         CharSequence tickerText = contentTitle + " " + running;
         Notification notification = new Notification(R.drawable.icon, tickerText, System.currentTimeMillis());
         notification.flags |= Notification.FLAG_NO_CLEAR;
-        notification.flags |= Notification.FLAG_FOREGROUND_SERVICE;
+        notification.flags |= Notification.FLAG_ONGOING_EVENT;
         
 
         // Define the Notification's expanded message and Intent:

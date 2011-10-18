@@ -76,7 +76,7 @@ public class FogOfExplore extends MapActivity {
 
 
     private MapController mapController;
-    LocationProvider recorder = VisitedAreaCache.getInstance(this);
+    LocationProvider recorder;
     private double currentLat;
     private double currentLong;
     private boolean visible = true;
@@ -108,7 +108,7 @@ public class FogOfExplore extends MapActivity {
             Log.d(TAG, "Exit requested...");
             // cleanup
             stopService(locationServiceIntent);
-            VisitedAreaCache.getInstance(this).stopDbUpdate();
+            VisitedAreaCache.getInstance(this).destroy();
             finish();
             return true;
         case R.id.settings:
@@ -121,6 +121,7 @@ public class FogOfExplore extends MapActivity {
     }
 
     private void redrawOverlay() {
+        //FIXME hack
         if (!visible) {
             return;
         }
@@ -131,9 +132,9 @@ public class FogOfExplore extends MapActivity {
         int mapCenterLat = mapView.getMapCenter().getLatitudeE6();
         int mapCenterLong = mapView.getMapCenter().getLongitudeE6();
 
-        AproximateLocation upperLeft = coordinatesToLocation(mapCenterLat + halfLatSpan, mapCenterLong
+        ApproximateLocation upperLeft = coordinatesToLocation(mapCenterLat + halfLatSpan, mapCenterLong
                 - halfLongSpan);
-        AproximateLocation bottomRight = coordinatesToLocation(mapCenterLat - halfLatSpan, mapCenterLong
+        ApproximateLocation bottomRight = coordinatesToLocation(mapCenterLat - halfLatSpan, mapCenterLong
                 + halfLongSpan);
         // TODO - optimization get points for rectangle only if a zoomout
         // or a pan action occured - ie new points come into view
@@ -144,6 +145,7 @@ public class FogOfExplore extends MapActivity {
                         + numberLogList(bottomRight.getLatitude(), bottomRight.getLongitude()));
         explored.setCurrent(currentLat, currentLong, currentAccuracy);
         explored.setExplored(recorder.selectVisited(upperLeft, bottomRight));
+
         mapView.postInvalidate();
 
     }
@@ -177,6 +179,7 @@ public class FogOfExplore extends MapActivity {
         Log.d(TAG, "onCreate completed: Activity created");
         locationServiceIntent = new Intent("org.com.unchiujar.LocationService");
         startService(locationServiceIntent);
+        recorder = VisitedAreaCache.getInstance(getApplicationContext());
     }
 
     @Override
@@ -339,11 +342,11 @@ public class FogOfExplore extends MapActivity {
             case 9000:
                 if (msg.obj != null) {
                     Log.d(TAG, ((Location) msg.obj).toString());
+                    redrawOverlay();
                     
                     currentLat = ((Location) msg.obj).getLatitude();
                     currentLong = ((Location) msg.obj).getLongitude();
                     currentAccuracy = ((Location) msg.obj).getAccuracy();
-                    redrawOverlay();
                 } else 
                 {
                     Log.d(TAG, "@@@@ Null object received");
