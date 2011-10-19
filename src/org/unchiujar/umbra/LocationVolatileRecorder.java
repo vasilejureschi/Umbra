@@ -33,16 +33,17 @@ import java.util.List;
 public class LocationVolatileRecorder implements LocationProvider {
 
     private List<ApproximateLocation> locations = new ArrayList<ApproximateLocation>();
-    
+
     private static LocationVolatileRecorder instance;
 
-    private LocationVolatileRecorder() {        
+    private LocationVolatileRecorder() {
         super();
     }
 
     public static LocationVolatileRecorder getInstance() {
         return (instance == null) ? instance = new LocationVolatileRecorder() : instance;
     }
+
     @Override
     public void deleteAll() {
         locations.clear();
@@ -61,7 +62,8 @@ public class LocationVolatileRecorder implements LocationProvider {
     }
 
     @Override
-    public List<ApproximateLocation> selectVisited(ApproximateLocation upperLeft, ApproximateLocation bottomRight) {
+    public List<ApproximateLocation> selectVisited(ApproximateLocation upperLeft,
+            ApproximateLocation bottomRight) {
         ArrayList<ApproximateLocation> visited = new ArrayList<ApproximateLocation>();
         for (ApproximateLocation location : locations) {
             if (location.getLatitude() >= upperLeft.getLatitude() &&

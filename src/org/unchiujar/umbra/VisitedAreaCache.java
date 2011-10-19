@@ -27,14 +27,6 @@
 
 package org.unchiujar.umbra;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.TreeSet;
-
-import org.unchiujar.umbra.FogOfExplore.IncomingHandler;
-
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -46,6 +38,12 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.TreeSet;
 
 public class VisitedAreaCache implements LocationProvider {
     private static final String TAG = VisitedAreaCache.class.getName();
@@ -63,10 +61,12 @@ public class VisitedAreaCache implements LocationProvider {
     private boolean dirty = false;
 
     /** Actual Locations cached. */
-    private TreeSet<ApproximateLocation> locations = new TreeSet<ApproximateLocation>(new LocationOrder());
+    private TreeSet<ApproximateLocation> locations = new TreeSet<ApproximateLocation>(
+            new LocationOrder());
 
     /** TreeSet used to keep new locations between database updates. */
-    private TreeSet<ApproximateLocation> newLocations = new TreeSet<ApproximateLocation>(new LocationOrder());
+    private TreeSet<ApproximateLocation> newLocations = new TreeSet<ApproximateLocation>(
+            new LocationOrder());
 
     /** Upper left bound of cached rectangle area. */
     private ApproximateLocation upperLeftBoundCached;
@@ -90,8 +90,10 @@ public class VisitedAreaCache implements LocationProvider {
             @Override
             public void run() {
                 if (dirty) {
-                    Log.d(TAG, "Updating database with " + newLocations.size() + " new locations...");
-                    LocationRecorder recorder = LocationRecorder.getInstance(VisitedAreaCache.this.context);
+                    Log.d(TAG, "Updating database with " + newLocations.size()
+                            + " new locations...");
+                    LocationRecorder recorder = LocationRecorder
+                            .getInstance(VisitedAreaCache.this.context);
 
                     // TODO lame list creation
                     ArrayList<ApproximateLocation> addedLocations = new ArrayList<ApproximateLocation>();
@@ -155,10 +157,9 @@ public class VisitedAreaCache implements LocationProvider {
 
     /*
      * (non-Javadoc)
-     * 
      * @see
-     * org.unchiujar.umbra.LocationProvider#selectVisited(org.unchiujar.umbra.ApproximateLocation ,
-     * org.unchiujar.umbra.ApproximateLocation)
+     * org.unchiujar.umbra.LocationProvider#selectVisited(org.unchiujar.umbra
+     * .ApproximateLocation , org.unchiujar.umbra.ApproximateLocation)
      */
     @Override
     public List<ApproximateLocation> selectVisited(ApproximateLocation upperLeft,
@@ -173,8 +174,9 @@ public class VisitedAreaCache implements LocationProvider {
             Log.d(TAG, "Loaded " + locations.size() + " points.");
 
         }
-        ArrayList<ApproximateLocation> visited = new ArrayList<ApproximateLocation>(locations.subSet(
-                upperLeft, lowerRight));
+        ArrayList<ApproximateLocation> visited = new ArrayList<ApproximateLocation>(
+                locations.subSet(upperLeft,
+                        lowerRight));
         Log.d(TAG, "Returning  " + visited.size() + "  cached results");
         return visited;
     }
@@ -191,27 +193,27 @@ public class VisitedAreaCache implements LocationProvider {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-            case LocationService.MSG_SET_VALUE:
-                Log.d(TAG, "Received from service: " + msg.arg1);
-                break;
-            case 9000:
-                if (msg.obj != null) {
-                    Location location = (Location) msg.obj;
-                    Log.d(TAG, location.toString());
+                case LocationService.MSG_SET_VALUE:
+                    Log.d(TAG, "Received from service: " + msg.arg1);
+                    break;
+                case 9000:
+                    if (msg.obj != null) {
+                        Location location = (Location) msg.obj;
+                        Log.d(TAG, location.toString());
 
-                    if (location.getAccuracy() < LocationOrder.METERS_RADIUS * 2) {
-                        // record to database
-                        long size = insert(new ApproximateLocation(location));
-                        Log.d(TAG, "New tree size is :" + size);
+                        if (location.getAccuracy() < LocationOrder.METERS_RADIUS * 2) {
+                            // record to database
+                            long size = insert(new ApproximateLocation(location));
+                            Log.d(TAG, "New tree size is :" + size);
 
+                        }
+
+                    } else {
+                        Log.d(TAG, "@@@@ Null object received");
                     }
-
-                } else {
-                    Log.d(TAG, "@@@@ Null object received");
-                }
-                break;
-            default:
-                super.handleMessage(msg);
+                    break;
+                default:
+                    super.handleMessage(msg);
             }
         }
     }
@@ -261,7 +263,8 @@ public class VisitedAreaCache implements LocationProvider {
     };
 
     private void doBindService() {
-        context.bindService(locationServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
+        context.bindService(locationServiceIntent, mConnection,
+                Context.BIND_AUTO_CREATE);
         mIsBound = true;
         Log.d(TAG, "Binding to location service");
     }

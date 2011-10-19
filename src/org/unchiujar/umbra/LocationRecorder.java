@@ -29,9 +29,6 @@ package org.unchiujar.umbra;
 
 import static org.unchiujar.umbra.LogUtilities.numberLogList;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import android.content.Context;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
@@ -40,12 +37,15 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
 import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class LocationRecorder implements LocationProvider {
     private static final String TAG = LocationRecorder.class.getName();
     private static final String DATABASE_NAME = "visited.db";
     /**
-     * The version number for the database used by SQLiteOpenHelper when for database upgrades.
-     * Increment when database structure is modified.
+     * The version number for the database used by SQLiteOpenHelper when for
+     * database upgrades. Increment when database structure is modified.
      */
     private static final int DATABASE_VERSION = 1;
     private static final String TABLE_NAME = "coordinates";
@@ -57,7 +57,8 @@ public class LocationRecorder implements LocationProvider {
     private Context context;
     private SQLiteDatabase db;
     private SQLiteStatement insertStmt;
-    private static final String INSERT = "insert into " + TABLE_NAME + "(" + LATITUDE + "," + LONGITUDE
+    private static final String INSERT = "insert into " + TABLE_NAME + "(" + LATITUDE + ","
+            + LONGITUDE
             + ") values (?,?)";
 
     private static LocationRecorder instance;
@@ -93,7 +94,8 @@ public class LocationRecorder implements LocationProvider {
         int latitudeIndex = batchInserter.getColumnIndex(LATITUDE);
         int longitudeIndex = batchInserter.getColumnIndex(LONGITUDE);
 
-        // see http://notes.theorbis.net/2010/02/batch-insert-to-sqlite-on-android.html
+        // see
+        // http://notes.theorbis.net/2010/02/batch-insert-to-sqlite-on-android.html
         for (ApproximateLocation aproximateLocation : locations) {
             batchInserter.prepareForInsert();
             batchInserter.bind(latitudeIndex, aproximateLocation.getLatitude());
@@ -115,7 +117,9 @@ public class LocationRecorder implements LocationProvider {
     public List<ApproximateLocation> selectAll() {
 
         List<ApproximateLocation> list = new ArrayList<ApproximateLocation>();
-        Cursor cursor = this.db.query(TABLE_NAME, new String[] { LATITUDE, LONGITUDE }, null, null, null,
+        Cursor cursor = this.db.query(TABLE_NAME, new String[] {
+                LATITUDE, LONGITUDE
+        }, null, null, null,
                 null, LONGITUDE + " desc");
         Log.d(TAG, "Results obtained: " + cursor.getCount());
         if (cursor.moveToFirst()) {
@@ -133,7 +137,8 @@ public class LocationRecorder implements LocationProvider {
         return list;
     }
 
-    public List<ApproximateLocation> selectVisited(ApproximateLocation upperLeft, ApproximateLocation lowerRight) {
+    public List<ApproximateLocation> selectVisited(ApproximateLocation upperLeft,
+            ApproximateLocation lowerRight) {
 
         List<ApproximateLocation> list = new ArrayList<ApproximateLocation>();
         double longitudeMin = upperLeft.getLongitude();
@@ -141,11 +146,15 @@ public class LocationRecorder implements LocationProvider {
         double longitudeMax = lowerRight.getLongitude();
         double latitudeMin = lowerRight.getLatitude();
 
-        String condition = LONGITUDE + " >= " + longitudeMin + " AND " + LONGITUDE + " <= " + longitudeMax
-                + " AND " + LATITUDE + " >= " + latitudeMin + " AND " + LATITUDE + " <= " + latitudeMax;
+        String condition = LONGITUDE + " >= " + longitudeMin + " AND " + LONGITUDE + " <= "
+                + longitudeMax
+                + " AND " + LATITUDE + " >= " + latitudeMin + " AND " + LATITUDE + " <= "
+                + latitudeMax;
 
         Log.v(TAG, "Select condition is " + condition);
-        Cursor cursor = this.db.query(TABLE_NAME, new String[] { LATITUDE, LONGITUDE }, condition, null,
+        Cursor cursor = this.db.query(TABLE_NAME, new String[] {
+                LATITUDE, LONGITUDE
+        }, condition, null,
                 null, null, LATITUDE + " desc");
         Log.d(TAG, "Results obtained: " + cursor.getCount());
         if (cursor.moveToFirst()) {
@@ -172,7 +181,8 @@ public class LocationRecorder implements LocationProvider {
         @Override
         public void onCreate(SQLiteDatabase db) {
             Log.d(TAG, "Creating database: " + TABLE_NAME);
-            db.execSQL("CREATE TABLE " + TABLE_NAME + "(id INTEGER PRIMARY KEY, " + LATITUDE + " REAL, "
+            db.execSQL("CREATE TABLE " + TABLE_NAME + "(id INTEGER PRIMARY KEY, " + LATITUDE
+                    + " REAL, "
                     + LONGITUDE + " REAL)");
         }
 
@@ -184,12 +194,12 @@ public class LocationRecorder implements LocationProvider {
                 for (int i = oldVersion; i < newVersion; ++i) {
                     int nextVersion = i + 1;
                     switch (nextVersion) {
-                    case 2:
-                        // success = upgradeToVersion2(db);
-                        break;
-                    case 3:
-                        // success = upgrateToVersion3(db);
-                        break;
+                        case 2:
+                            // success = upgradeToVersion2(db);
+                            break;
+                        case 3:
+                            // success = upgrateToVersion3(db);
+                            break;
                     // etc. for later versions.
                     }
                     if (!success) {

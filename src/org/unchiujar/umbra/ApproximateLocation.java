@@ -34,7 +34,7 @@ public class ApproximateLocation extends Location {
     private double x;
     private double y;
     private double z;
-    
+
     public ApproximateLocation(String provider) {
         super(provider);
     }
@@ -43,11 +43,12 @@ public class ApproximateLocation extends Location {
         super(l);
     }
 
-    private void updateNVector(){
-        x = Math.cos(getLatitude())* Math.cos(getLongitude());
-        y = Math.cos(getLatitude())* Math.sin(getLongitude());
+    private void updateNVector() {
+        x = Math.cos(getLatitude()) * Math.cos(getLongitude());
+        y = Math.cos(getLatitude()) * Math.sin(getLongitude());
         z = Math.sin(getLatitude());
     }
+
     @Override
     public void setLatitude(double latitude) {
         super.setLatitude(latitude);
