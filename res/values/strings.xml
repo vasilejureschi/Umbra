@@ -50,6 +50,7 @@
 	 <string name="email_body">Complain here :)</string>
 	 <string name="email_chooser">Send email using:</string>
 	 <string name="transparency_label">Set the fog transparency</string>
+	 <string name="measurement_label">Check to use the imperial system</string>
 	 
 
      <string name="remote_service_started">Location service started</string>

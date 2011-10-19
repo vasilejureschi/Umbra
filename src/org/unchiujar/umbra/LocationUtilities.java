@@ -46,6 +46,10 @@ public class LocationUtilities {
 
     private static final String TAG = LocationUtilities.class.getName();
 
+    private static final double METER_IN_FEET = 3.2808399;
+    private static final String FEET_UNIT = " ft";
+    private static final String METERS_UNIT = " m";
+
     public static GeoPoint locationToGeoPoint(Location location) {
         return coordinatesToGeoPoint(location.getLatitude(), location.getLongitude());
     }
@@ -87,6 +91,21 @@ public class LocationUtilities {
         location.setLongitude(longitudeE6 / 1e6);
         return location;
 
+    }
+
+    /**
+     * Gets the distance in the unit for the current settings. The measure value
+     * is false for metric and true for imperial.
+     * 
+     * @param meters the distance in meters
+     * @param measure metric or imperial system.
+     * @return
+     */
+    public static String getFormattedDistance(double meters, boolean imperial) {
+        if (imperial) {
+            return Math.round(meters * METER_IN_FEET) + FEET_UNIT;
+        }
+        return Math.round(meters) + METERS_UNIT;
     }
 
     // FIXME broken

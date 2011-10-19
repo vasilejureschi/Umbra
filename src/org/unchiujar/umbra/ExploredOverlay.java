@@ -189,11 +189,15 @@ public class ExploredOverlay extends Overlay {
 
         canvas.drawBitmap(cover, 0, 0, rectPaint);
         canvas.drawRect(topBar, topBarPaint);
+
+        String accuracyText = LocationUtilities.getFormattedDistance(currentAccuracy,
+                settings.getBoolean(Settings.MEASUREMENT_SYSTEM, false));
+
         if (currentAccuracy < LocationOrder.METERS_RADIUS * 2) {
-            canvas.drawText(" Accuracy: " + currentAccuracy + " m ", 17, 19,
+            canvas.drawText(" Accuracy: " + accuracyText, 17, 19,
                     textPaint);
         } else {
-            canvas.drawText(" Accuracy is too low: " + currentAccuracy + " m ", 17, 19,
+            canvas.drawText(" Accuracy is too low: " + accuracyText, 17, 19,
                     alertPaint);
         }
 

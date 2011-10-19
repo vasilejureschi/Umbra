@@ -31,15 +31,19 @@ import android.app.Activity;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 
-public class Settings extends Activity implements SeekBar.OnSeekBarChangeListener {
+public class Settings extends Activity implements SeekBar.OnSeekBarChangeListener,
+        CheckBox.OnClickListener {
     public static final String UMBRA_PREFS = "org.unchiujar.umbra.settings";
     public static final String TRANSPARENCY = "org.unchiujar.umbra.settings.transparency";
-
+    public static final String MEASUREMENT_SYSTEM = "org.unchiujar.umbra.settings.measurement";
     private static final String TAG = Settings.class.getName();
     private SeekBar setTransparency;
+    private CheckBox imperial;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +52,11 @@ public class Settings extends Activity implements SeekBar.OnSeekBarChangeListene
         setTransparency = (SeekBar) findViewById(R.id.transparency_seek);
         setTransparency.setOnSeekBarChangeListener(this);
         setTransparency.setProgress(getSharedPreferences(UMBRA_PREFS, 0).getInt(TRANSPARENCY, 120));
+
+        imperial = (CheckBox) findViewById(R.id.check_metric);
+        imperial.setChecked(getSharedPreferences(UMBRA_PREFS, 0).getBoolean(MEASUREMENT_SYSTEM,
+                false));
+        imperial.setOnClickListener(this);
     }
 
     @Override
@@ -73,6 +82,15 @@ public class Settings extends Activity implements SeekBar.OnSeekBarChangeListene
     public void onStopTrackingTouch(SeekBar seekBar) {
         // TODO Auto-generated method stub
 
+    }
+
+    @Override
+    public void onClick(View v) {
+        Log.d(TAG, "Checkbox clicked");
+        SharedPreferences settings = getSharedPreferences(UMBRA_PREFS, 0);
+        SharedPreferences.Editor editor = settings.edit();
+        editor.putBoolean(MEASUREMENT_SYSTEM, imperial.isChecked());
+        editor.commit();
     }
 
 }
