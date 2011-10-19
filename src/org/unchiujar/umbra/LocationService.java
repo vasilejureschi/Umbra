@@ -33,6 +33,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentSender.SendIntentException;
 import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationListener;
@@ -253,6 +254,16 @@ public class LocationService extends Service {
 
     // =================END LIFECYCLE METHODS ====================
 
+    private void sendLocationOnRegistration() {
+
+        Location network = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        Location gps = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        Location toSend = (gps != null) ? gps : (network != null) ? network : null;
+        if (toSend != null) {
+            sendLocation(toSend);
+        }
+    }
+
     private void doFastLocationFix() {
         gpsSlowFix = false;
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
@@ -295,21 +306,21 @@ public class LocationService extends Service {
      * service. The Message's replyTo field must be a Messenger of the client
      * where callbacks should be sent.
      */
-    static final int MSG_REGISTER_CLIENT = 1;
+    public static final int MSG_REGISTER_CLIENT = 1;
 
     /**
-     * Command to the service to unregister a client, ot stop receiving
+     * Command to the service to unregister a client, or stop receiving
      * callbacks from the service. The Message's replyTo field must be a
      * Messenger of the client as previously given with MSG_REGISTER_CLIENT.
      */
-    static final int MSG_UNREGISTER_CLIENT = 2;
+    public static final int MSG_UNREGISTER_CLIENT = 2;
 
     /**
      * Command to service to set a new value. This can be sent to the service to
      * supply a new value, and will be sent by the service to any registered
      * clients with the new value.
      */
-    static final int MSG_SET_VALUE = 3;
+    public static final int MSG_SET_VALUE = 3;
 
     /**
      * Handler of incoming messages from clients`.
@@ -320,6 +331,7 @@ public class LocationService extends Service {
             switch (msg.what) {
                 case MSG_REGISTER_CLIENT:
                     mClients.add(msg.replyTo);
+                    sendLocationOnRegistration();
                     break;
                 case MSG_UNREGISTER_CLIENT:
                     mClients.remove(msg.replyTo);
