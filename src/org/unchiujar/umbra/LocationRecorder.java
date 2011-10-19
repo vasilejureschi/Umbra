@@ -130,7 +130,7 @@ public class LocationRecorder implements LocationProvider {
                 list.add(location);
             } while (cursor.moveToNext());
         }
-        if (cursor != null && !cursor.isClosed()) {
+        if (!cursor.isClosed()) {
             cursor.close();
         }
 
@@ -166,7 +166,7 @@ public class LocationRecorder implements LocationProvider {
                 list.add(location);
             } while (cursor.moveToNext());
         }
-        if (cursor != null && !cursor.isClosed()) {
+        if (!cursor.isClosed()) {
             cursor.close();
         }
         return list;

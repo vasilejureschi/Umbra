@@ -39,19 +39,18 @@ public class LogUtilities {
      * @return a formatted string
      */
     public static String numberLogList(double... numbers) {
-        String formatted = "[";
+        StringBuffer formatted = new StringBuffer("[");
         for (double d : numbers) {
-            formatted += d + ",";
+            formatted.append(d + ",");
         }
-        return formatted + "\b]";
+        return formatted.append("\b]").toString();
     }
 
     public static String locationLogList(Location... locations) {
-        String formatted = "[";
+        StringBuffer formatted = new StringBuffer("[");
         for (Location location : locations) {
-            formatted += location.getLatitude() + " " + location.getLongitude() + "][";
+            formatted.append(location.getLatitude() + " " + location.getLongitude() + "][");
         }
-
-        return formatted + "\b";
+        return formatted.append("\b]").toString();
     }
 }

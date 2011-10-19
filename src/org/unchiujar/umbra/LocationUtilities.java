@@ -61,8 +61,7 @@ public class LocationUtilities {
      * @return a GeoPoint with the coordinates
      */
     public static GeoPoint coordinatesToGeoPoint(double latitude, double longitude) {
-        return new GeoPoint(new Double(latitude * 1e6).intValue(),
-                new Double(longitude * 1e6).intValue());
+        return new GeoPoint((int) (latitude * 1e6), (int) (longitude * 1e6));
     }
 
     /**
