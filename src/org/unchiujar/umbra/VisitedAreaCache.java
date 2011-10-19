@@ -79,7 +79,7 @@ public class VisitedAreaCache implements LocationProvider {
     private static VisitedAreaCache instance;
 
     private Intent locationServiceIntent = new Intent("org.com.unchiujar.LocationService");
-    
+
     private VisitedAreaCache(Context context) {
         super();
         this.context = context;
@@ -145,8 +145,6 @@ public class VisitedAreaCache implements LocationProvider {
             dirty = true;
             previousSize = locations.size();
         }
-        Log.d(TAG, "1############ " + locations.size());
-
         return previousSize;
     }
 
@@ -159,11 +157,12 @@ public class VisitedAreaCache implements LocationProvider {
      * (non-Javadoc)
      * 
      * @see
-     * org.unchiujar.umbra.LocationProvider#selectVisited(org.unchiujar.umbra.ApproximateLocation
-     * , org.unchiujar.umbra.ApproximateLocation)
+     * org.unchiujar.umbra.LocationProvider#selectVisited(org.unchiujar.umbra.ApproximateLocation ,
+     * org.unchiujar.umbra.ApproximateLocation)
      */
     @Override
-    public List<ApproximateLocation> selectVisited(ApproximateLocation upperLeft, ApproximateLocation lowerRight) {
+    public List<ApproximateLocation> selectVisited(ApproximateLocation upperLeft,
+            ApproximateLocation lowerRight) {
         if (!cached) {
             Log.d(TAG, "Loading all visited points form database...");
             // TODO find a better method
@@ -171,17 +170,14 @@ public class VisitedAreaCache implements LocationProvider {
             LocationRecorder recorder = LocationRecorder.getInstance(context);
             locations.addAll(recorder.selectAll());
             cached = true;
-            Log.d(TAG, "Loaded " + locations.size() +" points.");            
+            Log.d(TAG, "Loaded " + locations.size() + " points.");
 
         }
-        Log.d(TAG, "2############ " + locations.size());
-        ArrayList<ApproximateLocation> visited = new ArrayList<ApproximateLocation>(locations.subSet(upperLeft,
-                lowerRight));
+        ArrayList<ApproximateLocation> visited = new ArrayList<ApproximateLocation>(locations.subSet(
+                upperLeft, lowerRight));
         Log.d(TAG, "Returning  " + visited.size() + "  cached results");
         return visited;
     }
-
-    
 
     /** Messenger for communicating with service. */
     Messenger mService = null;
@@ -264,9 +260,8 @@ public class VisitedAreaCache implements LocationProvider {
         }
     };
 
-    private void doBindService() {        
-        context.bindService(locationServiceIntent, mConnection,
-                Context.BIND_AUTO_CREATE);
+    private void doBindService() {
+        context.bindService(locationServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
         mIsBound = true;
         Log.d(TAG, "Binding to location service");
     }
@@ -293,5 +288,4 @@ public class VisitedAreaCache implements LocationProvider {
         }
     }
 
- 
 }

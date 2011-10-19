@@ -176,10 +176,10 @@ public class LocationService extends Service {
                 if (mLastLocation != null) {
                     hasGPSFix = (SystemClock.elapsedRealtime() - mLastLocationMillis) < 5 * 1000;
                 }
-                if (!hasGPSFix && gpsSlowFix)  {
+                if (!hasGPSFix && gpsSlowFix) {
                     Log.d(TAG, "Retrying fast location fix as GPS fix is lost.");
                     doFastLocationFix();
-                } 
+                }
                 break;
             case GpsStatus.GPS_EVENT_FIRST_FIX:
                 hasGPSFix = true;
@@ -190,9 +190,8 @@ public class LocationService extends Service {
 
     private void sendLocation(Location location) {
         Log.d(TAG, "Location changed: " + location);
-        // test if the accuracy is good enough
-
         for (int i = mClients.size() - 1; i >= 0; i--) {
+
             try {
                 // Send data as an Integer
                 mClients.get(i).send(Message.obtain(null, 9000, location));
