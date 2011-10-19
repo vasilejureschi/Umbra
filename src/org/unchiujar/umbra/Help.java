@@ -24,6 +24,7 @@
  *     Contributors:
  *        Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
  ******************************************************************************/
+
 package org.unchiujar.umbra;
 
 import android.app.Activity;
@@ -48,12 +49,15 @@ public class Help extends Activity {
 
     private void sendEmail() {
         Intent emailIntent = new Intent(android.content.Intent.ACTION_SEND);
-        String recipients[] = { getString(R.string.feedback_email) };
+        String recipients[] = {
+            getString(R.string.feedback_email)
+        };
 
         emailIntent.putExtra(android.content.Intent.EXTRA_EMAIL, recipients);
-        emailIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, getString(R.string.email_subject));
+        emailIntent.putExtra(android.content.Intent.EXTRA_SUBJECT,
+                getString(R.string.email_subject));
         emailIntent.setType("plain/text");
-        
+
         emailIntent.putExtra(android.content.Intent.EXTRA_TEXT, getString(R.string.email_body));
         startActivity(Intent.createChooser(emailIntent, getString(R.string.email_chooser)));
     }

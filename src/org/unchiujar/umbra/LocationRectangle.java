@@ -27,23 +27,22 @@
 
 package org.unchiujar.umbra;
 
-import android.location.Location;
 
 // TODO: Auto-generated Javadoc
 /**
  * The Class LocationRectangle.
  */
 public class LocationRectangle {
-    
+
     /** The upper left. */
     private ApproximateLocation upperLeft;
-    
+
     /** The lower right. */
     private ApproximateLocation lowerRight;
-    
+
     /**
      * Instantiates a new location rectangle.
-     *
+     * 
      * @param upperLeft the upper left
      * @param lowerRight the lower right
      */
@@ -52,40 +51,40 @@ public class LocationRectangle {
         this.upperLeft = upperLeft;
         this.lowerRight = lowerRight;
     }
-    
+
     /**
      * Gets the upper left.
-     *
+     * 
      * @return the upper left
      */
     public ApproximateLocation getUpperLeft() {
         return upperLeft;
     }
-    
+
     /**
      * Sets the upper left.
-     *
+     * 
      * @param upperLeft the new upper left
      */
     public void setUpperLeft(ApproximateLocation upperLeft) {
         this.upperLeft = upperLeft;
     }
-    
+
     /**
      * Gets the lower right.
-     *
+     * 
      * @return the lower right
      */
     public ApproximateLocation getLowerRight() {
         return lowerRight;
     }
-    
+
     /**
      * Sets the lower right.
-     *
+     * 
      * @param lowerRight the new lower right
      */
     public void setLowerRight(ApproximateLocation lowerRight) {
         this.lowerRight = lowerRight;
-    }        
+    }
 }

@@ -31,7 +31,10 @@ import static org.unchiujar.umbra.LocationUtilities.coordinatesToGeoPoint;
 import static org.unchiujar.umbra.LocationUtilities.coordinatesToLocation;
 import static org.unchiujar.umbra.LogUtilities.numberLogList;
 
-import java.util.List;
+import com.google.android.maps.MapActivity;
+import com.google.android.maps.MapController;
+import com.google.android.maps.MapView;
+import com.google.android.maps.Overlay;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -40,7 +43,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.location.Location;
@@ -59,10 +61,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.Toast;
 
-import com.google.android.maps.MapActivity;
-import com.google.android.maps.MapController;
-import com.google.android.maps.MapView;
-import com.google.android.maps.Overlay;
+import java.util.List;
 
 public class FogOfExplore extends MapActivity {
     private static final String TAG = FogOfExplore.class.getName();
@@ -73,10 +72,9 @@ public class FogOfExplore extends MapActivity {
     private static final String BUNDLE_ACCURACY = "org.unchiujar.umbra.accuracy";
     private static final String BUNDLE_LATITUDE = "org.unchiujar.umbra.latitude";
     private static final String BUNDLE_LONGITUDE = "org.unchiujar.umbra.longitude";
-    
+
     private Intent locationServiceIntent;
     private ExploredOverlay explored;
-
 
     private MapController mapController;
     private LocationProvider recorder;
@@ -97,34 +95,34 @@ public class FogOfExplore extends MapActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle item selection
         switch (item.getItemId()) {
-        case R.id.where_am_i:
-            Log.d(TAG, "Moving to current location...");
-            mapController.setCenter(coordinatesToGeoPoint(currentLat, currentLong));
-            redrawOverlay();
-            return true;
-        case R.id.help:
-            Log.d(TAG, "Showing help...");
-            Intent helpIntent = new Intent(this, Help.class);
-            startActivity(helpIntent);
-            return true;
-        case R.id.exit:
-            Log.d(TAG, "Exit requested...");
-            // cleanup
-            stopService(locationServiceIntent);
-            VisitedAreaCache.getInstance(this).destroy();
-            finish();
-            return true;
-        case R.id.settings:
-            Intent settingsIntent = new Intent(this, Settings.class);
-            startActivity(settingsIntent);
-            return true;
-        default:
-            return super.onOptionsItemSelected(item);
+            case R.id.where_am_i:
+                Log.d(TAG, "Moving to current location...");
+                mapController.setCenter(coordinatesToGeoPoint(currentLat, currentLong));
+                redrawOverlay();
+                return true;
+            case R.id.help:
+                Log.d(TAG, "Showing help...");
+                Intent helpIntent = new Intent(this, Help.class);
+                startActivity(helpIntent);
+                return true;
+            case R.id.exit:
+                Log.d(TAG, "Exit requested...");
+                // cleanup
+                stopService(locationServiceIntent);
+                VisitedAreaCache.getInstance(this).destroy();
+                finish();
+                return true;
+            case R.id.settings:
+                Intent settingsIntent = new Intent(this, Settings.class);
+                startActivity(settingsIntent);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
     }
 
     private void redrawOverlay() {
-        //FIXME hack
+        // FIXME hack
         if (!visible) {
             return;
         }
@@ -135,10 +133,12 @@ public class FogOfExplore extends MapActivity {
         int mapCenterLat = mapView.getMapCenter().getLatitudeE6();
         int mapCenterLong = mapView.getMapCenter().getLongitudeE6();
 
-        ApproximateLocation upperLeft = coordinatesToLocation(mapCenterLat + halfLatSpan, mapCenterLong
-                - halfLongSpan);
-        ApproximateLocation bottomRight = coordinatesToLocation(mapCenterLat - halfLatSpan, mapCenterLong
-                + halfLongSpan);
+        ApproximateLocation upperLeft = coordinatesToLocation(mapCenterLat + halfLatSpan,
+                mapCenterLong
+                        - halfLongSpan);
+        ApproximateLocation bottomRight = coordinatesToLocation(mapCenterLat - halfLatSpan,
+                mapCenterLong
+                        + halfLongSpan);
         // TODO - optimization get points for rectangle only if a zoomout
         // or a pan action occured - ie new points come into view
 
@@ -157,8 +157,6 @@ public class FogOfExplore extends MapActivity {
 
     // ==================== LIFECYCLE METHODS ====================
 
-    
-    
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -173,7 +171,8 @@ public class FogOfExplore extends MapActivity {
 
         List<Overlay> listOfOverlays = mapView.getOverlays();
         // listOfOverlays.clear();
-        // MyLocationOverlay myLocation = new MyLocationOverlay(getApplicationContext(), mapView);
+        // MyLocationOverlay myLocation = new
+        // MyLocationOverlay(getApplicationContext(), mapView);
         // myLocation.enableCompass();
         // myLocation.enableMyLocation();
         // listOfOverlays.add(myLocation);
@@ -251,8 +250,6 @@ public class FogOfExplore extends MapActivity {
 
     // =================END LIFECYCLE METHODS ====================
 
-    
-    
     private void checkConnectivity() {
 
         boolean isGPS = ((LocationManager) getSystemService(LOCATION_SERVICE))
@@ -262,7 +259,7 @@ public class FogOfExplore extends MapActivity {
             showDialog(DIALOG_START_GPS);
         }
         displayConnectivityWarning();
-        
+
         // bind to location service
         doBindService();
     }
@@ -271,12 +268,12 @@ public class FogOfExplore extends MapActivity {
     protected Dialog onCreateDialog(int id) {
         Log.d(TAG, "Showing dialog with id " + id);
         switch (id) {
-        case DIALOG_START_GPS:
-            return createGPSDialog();
-        case DIALOG_START_NET:
-            // TODO internet starting dialog
-            break;
-        default:
+            case DIALOG_START_GPS:
+                return createGPSDialog();
+            case DIALOG_START_NET:
+                // TODO internet starting dialog
+                break;
+            default:
         }
         return null;
     }
@@ -293,7 +290,8 @@ public class FogOfExplore extends MapActivity {
         }
 
         if (!connected) {
-            Toast.makeText(getApplicationContext(), R.string.connectivity_warning, Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(), R.string.connectivity_warning,
+                    Toast.LENGTH_LONG).show();
 
         }
     }
@@ -307,13 +305,13 @@ public class FogOfExplore extends MapActivity {
                         startActivityForResult(new Intent(
                                 android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS), 0);
                     }
-                }).setNegativeButton(R.string.continue_no_gps, new DialogInterface.OnClickListener() {
+                })
+                .setNegativeButton(R.string.continue_no_gps, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                     }
                 });
         return builder.create();
     }
-
 
     @Override
     protected boolean isRouteDisplayed() {
@@ -357,25 +355,25 @@ public class FogOfExplore extends MapActivity {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-            case LocationService.MSG_SET_VALUE:
-                Log.d(TAG, "Received from service: " + msg.arg1);
-                break;
-            case 9000:
-                if (msg.obj != null) {
-                    Log.d(TAG, ((Location) msg.obj).toString());
-                    
-                    currentLat = ((Location) msg.obj).getLatitude();
-                    currentLong = ((Location) msg.obj).getLongitude();
-                    currentAccuracy = ((Location) msg.obj).getAccuracy();
-                    redrawOverlay();
+                case LocationService.MSG_SET_VALUE:
+                    Log.d(TAG, "Received from service: " + msg.arg1);
+                    break;
+                case 9000:
+                    if (msg.obj != null) {
+                        Log.d(TAG, ((Location) msg.obj).toString());
 
-                } else 
-                {
-                    Log.d(TAG, "@@@@ Null object received");
-                }
-                break;
-            default:
-                super.handleMessage(msg);
+                        currentLat = ((Location) msg.obj).getLatitude();
+                        currentLong = ((Location) msg.obj).getLongitude();
+                        currentAccuracy = ((Location) msg.obj).getAccuracy();
+                        redrawOverlay();
+
+                    } else
+                    {
+                        Log.d(TAG, "@@@@ Null object received");
+                    }
+                    break;
+                default:
+                    super.handleMessage(msg);
             }
         }
     }
@@ -424,7 +422,7 @@ public class FogOfExplore extends MapActivity {
         }
     };
 
-    void doBindService() {        
+    void doBindService() {
         bindService(locationServiceIntent, mConnection,
                 Context.BIND_AUTO_CREATE);
         mIsBound = true;

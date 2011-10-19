@@ -27,20 +27,20 @@
 
 package org.unchiujar.umbra;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import com.google.android.maps.GeoPoint;
 
 import android.location.Location;
 import android.util.Log;
 
-import com.google.android.maps.GeoPoint;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
- * Utility class used for transforming between various representations for locations.
+ * Utility class used for transforming between various representations for
+ * locations.
  * 
  * @author vasile
- * 
  */
 public class LocationUtilities {
 
@@ -51,25 +51,23 @@ public class LocationUtilities {
     }
 
     public static ApproximateLocation geoPointToLocation(GeoPoint geoPoint) {
-        return coordinatesToLocation(geoPoint.getLatitudeE6() / 1e6, geoPoint.getLongitudeE6() / 1e6);
+        return coordinatesToLocation(geoPoint.getLatitudeE6() / 1e6,
+                geoPoint.getLongitudeE6() / 1e6);
     }
 
     /**
-     * @param latitude
-     *            in decimal degrees
-     * @param longitude
-     *            in decimal degrees
+     * @param latitude in decimal degrees
+     * @param longitude in decimal degrees
      * @return a GeoPoint with the coordinates
      */
     public static GeoPoint coordinatesToGeoPoint(double latitude, double longitude) {
-        return new GeoPoint(new Double(latitude * 1e6).intValue(), new Double(longitude * 1e6).intValue());
+        return new GeoPoint(new Double(latitude * 1e6).intValue(),
+                new Double(longitude * 1e6).intValue());
     }
 
     /**
-     * @param latitude
-     *            in decimal degrees
-     * @param longitude
-     *            in decimal degrees
+     * @param latitude in decimal degrees
+     * @param longitude in decimal degrees
      * @return a ApproximateLocation with the coordinates
      */
     public static ApproximateLocation coordinatesToLocation(double latitude, double longitude) {
@@ -80,10 +78,8 @@ public class LocationUtilities {
     }
 
     /**
-     * @param latitudeE6
-     *            in microdegrees
-     * @param longitudeE6
-     *            in microdegrees
+     * @param latitudeE6 in microdegrees
+     * @param longitudeE6 in microdegrees
      * @return a ApproximateLocation with the coordinates
      */
     public static ApproximateLocation coordinatesToLocation(int latitudeE6, int longitudeE6) {
@@ -99,10 +95,10 @@ public class LocationUtilities {
     // TODO: write tests
     // TODO: zoom case is not correctly checked, rectangle A included in B
     /**
-     * The A region is the region already known while the B region is the unkown one. The method
-     * returns the areas of B that are not in A and the rectangles around A that are next to B.
-     * 
-     * In the following example the starred regions should be returned.
+     * The A region is the region already known while the B region is the unkown
+     * one. The method returns the areas of B that are not in A and the
+     * rectangles around A that are next to B. In the following example the
+     * starred regions should be returned.
      * 
      * <pre>
      *   _____
@@ -147,7 +143,8 @@ public class LocationUtilities {
         double eastestLongitude = 0;
         // calculate upper left bounds
         // largest latitude
-        northestLatitude = (upperLeftA.getLatitude() > upperLeftB.getLatitude()) ? upperLeftA.getLatitude()
+        northestLatitude = (upperLeftA.getLatitude() > upperLeftB.getLatitude()) ? upperLeftA
+                .getLatitude()
                 : upperLeftB.getLatitude();
         // smallest longitude
         westestLongitude = (upperLeftA.getLongitude() < upperLeftB.getLongitude()) ? upperLeftA
@@ -162,7 +159,8 @@ public class LocationUtilities {
                 .getLongitude() : lowerRightB.getLongitude();
 
         // if B is included in A return an empty array
-        if (northestLatitude == upperLeftA.getLatitude() && westestLongitude == upperLeftA.getLongitude()
+        if (northestLatitude == upperLeftA.getLatitude()
+                && westestLongitude == upperLeftA.getLongitude()
                 && southestLatitude == lowerRightA.getLatitude()
                 && eastestLongitude == lowerRightA.getLongitude()) {
             return Collections.emptyList();
@@ -185,12 +183,11 @@ public class LocationUtilities {
          *  |__|__| |
          *  ***| A  |
          *  ***|____|
-         *           
+         * 
          * </pre>
-         * 
-         * 
          */
-        if (northestLatitude > upperLeftA.getLatitude() && westestLongitude < upperLeftA.getLongitude()) {
+        if (northestLatitude > upperLeftA.getLatitude()
+                && westestLongitude < upperLeftA.getLongitude()) {
             rect1UL.setLatitude(northestLatitude);
             rect1UL.setLongitude(westestLongitude);
 
@@ -219,11 +216,10 @@ public class LocationUtilities {
          *     |____|****
          * 
          * </pre>
-         * 
-         * 
          */
 
-        if (northestLatitude > upperLeftA.getLatitude() && eastestLongitude > lowerRightA.getLongitude()) {
+        if (northestLatitude > upperLeftA.getLatitude()
+                && eastestLongitude > lowerRightA.getLongitude()) {
 
             rect1UL.setLatitude(northestLatitude);
             rect1UL.setLongitude(upperLeftA.getLongitude());
@@ -253,10 +249,9 @@ public class LocationUtilities {
          *  ***|____|
          * 
          * </pre>
-         * 
-         * 
          */
-        if (eastestLongitude > lowerRightA.getLongitude() && southestLatitude > lowerRightA.getLatitude()) {
+        if (eastestLongitude > lowerRightA.getLongitude()
+                && southestLatitude > lowerRightA.getLatitude()) {
 
             rect1UL.setLatitude(upperLeftA.getLatitude());
             rect1UL.setLongitude(lowerRightA.getLongitude());
@@ -286,11 +281,10 @@ public class LocationUtilities {
          *     |...*|***
          * 
          * </pre>
-         * 
-         * 
          */
 
-        if (southestLatitude < lowerRightA.getLatitude() && westestLongitude > upperLeftA.getLongitude()) {
+        if (southestLatitude < lowerRightA.getLatitude()
+                && westestLongitude > upperLeftA.getLongitude()) {
 
             rect1UL.setLatitude(upperLeftA.getLatitude());
             rect1UL.setLongitude(westestLongitude);
@@ -306,7 +300,8 @@ public class LocationUtilities {
             return createList(new LocationRectangle(rect1UL, rect1BR),
                     new LocationRectangle(rect2UL, rect2BR));
         }
-        assert false : "Unexpected rectangle values were passed : " + upperLeftA + " " + lowerRightA + " "
+        assert false : "Unexpected rectangle values were passed : " + upperLeftA + " "
+                + lowerRightA + " "
                 + upperLeftB + " " + lowerRightB;
 
         return Collections.emptyList();

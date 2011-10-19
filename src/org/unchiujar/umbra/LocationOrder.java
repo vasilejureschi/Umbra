@@ -27,15 +27,15 @@
 /**
  * 
  */
-package org.unchiujar.umbra;
 
-import java.util.Comparator;
+package org.unchiujar.umbra;
 
 import android.location.Location;
 
+import java.util.Comparator;
+
 /**
  * @author vasile
- * 
  */
 public class LocationOrder implements Comparator<Location> {
 
@@ -82,7 +82,8 @@ public class LocationOrder implements Comparator<Location> {
 
         }
 
-        // if (firstLocation.getLatitude() < secondLocation.getLatitude() - DEGREES_RADIUS) {
+        // if (firstLocation.getLatitude() < secondLocation.getLatitude() -
+        // DEGREES_RADIUS) {
         return -1;
         // }
 

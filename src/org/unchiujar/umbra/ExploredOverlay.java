@@ -29,7 +29,10 @@ package org.unchiujar.umbra;
 
 import static org.unchiujar.umbra.LocationUtilities.locationToGeoPoint;
 
-import java.util.List;
+import com.google.android.maps.GeoPoint;
+import com.google.android.maps.MapView;
+import com.google.android.maps.Overlay;
+import com.google.android.maps.Projection;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -44,10 +47,7 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.util.Log;
 
-import com.google.android.maps.GeoPoint;
-import com.google.android.maps.MapView;
-import com.google.android.maps.Overlay;
-import com.google.android.maps.Projection;
+import java.util.List;
 
 public class ExploredOverlay extends Overlay {
     private static final String TAG = ExploredOverlay.class.getName();
@@ -79,12 +79,10 @@ public class ExploredOverlay extends Overlay {
     public ExploredOverlay(Context context) {
         this.context = context;
 
-
         topBarPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         topBarPaint.setColor(Color.WHITE);
         topBarPaint.setAlpha(120);
         topBarPaint.setStyle(Style.FILL_AND_STROKE);
-
 
         accuracyPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         accuracyPaint.setColor(Color.RED);
@@ -102,7 +100,8 @@ public class ExploredOverlay extends Overlay {
         circlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         // set PorterDuff mode in order to create transparent holes in
         // the canvas
-        // see http://developer.android.com/reference/android/graphics/PorterDuff.Mode.html
+        // see
+        // http://developer.android.com/reference/android/graphics/PorterDuff.Mode.html
         // see http://en.wikipedia.org/wiki/Alpha_compositing
         // see
         // http://groups.google.com/group/android-developers/browse_thread/thread/5b0a498664b17aa0/de4aab6fb7e97e38?lnk=gst&q=erase+transparent&pli=1
@@ -128,8 +127,8 @@ public class ExploredOverlay extends Overlay {
         assert !shadow : "The overlay does not need a shadow as it only covers the explored areas.";
         Projection projection = mapView.getProjection();
 
-        //top bar rectangle
-        
+        // top bar rectangle
+
         topBar = new Rect(0, 0, mapView.getMeasuredWidth(), 30);
 
         // the size of the displayed area is dependent on the zoom level
@@ -148,14 +147,15 @@ public class ExploredOverlay extends Overlay {
         int accuracy = (int) ((double) currentAccuracy * pixelsMeter);
         accuracy = (accuracy <= 1) ? 1 : accuracy;
 
-
-        Log.v(TAG, "View distance is " + LocationOrder.METERS_RADIUS + " meters, radius in pixels is "
+        Log.v(TAG, "View distance is " + LocationOrder.METERS_RADIUS
+                + " meters, radius in pixels is "
                 + radius + " pixel per meter is " + pixelsMeter);
         if (!bitmapCreated) {
             cover = Bitmap.createBitmap(mapView.getMeasuredWidth(), mapView.getMeasuredHeight(),
                     Bitmap.Config.ALPHA_8);
             coverCanvas = new Canvas(cover);
-            // TODO check is width, height is always the same - rotation may be a problem
+            // TODO check is width, height is always the same - rotation may be
+            // a problem
             screenCover = new Rect(0, 0, mapView.getMeasuredWidth(), mapView.getMeasuredHeight());
 
             bitmapCreated = true;
@@ -164,8 +164,7 @@ public class ExploredOverlay extends Overlay {
         }
 
         coverCanvas.drawRect(screenCover, rectPaint);
-        
-        
+
         for (ApproximateLocation location : locations) {
             // BUG - do not use
             // point = mapView.getProjection().toPixels(geoPoint, null);
@@ -181,17 +180,18 @@ public class ExploredOverlay extends Overlay {
 
         }
         // draw blue location circle
-        projection.toPixels(new GeoPoint((int) (currentLat * 1e6), (int) (currentLong * 1e6)), tempPoint);
+        projection.toPixels(new GeoPoint((int) (currentLat * 1e6), (int) (currentLong * 1e6)),
+                tempPoint);
         coverCanvas.drawCircle(tempPoint.x, tempPoint.y, radius, currentPaint);
         coverCanvas.drawCircle(tempPoint.x, tempPoint.y, accuracy, accuracyPaint);
 
-        
         SharedPreferences settings = context.getSharedPreferences(Settings.UMBRA_PREFS, 0);
         rectPaint.setAlpha(settings.getInt(Settings.TRANSPARENCY, 120));
 
         canvas.drawBitmap(cover, 0, 0, rectPaint);
         canvas.drawRect(topBar, topBarPaint);
-        canvas.drawText("Redraw:" + i++ + " | Accuracy: " + currentAccuracy + " m ", 17, 17, textPaint);
+        canvas.drawText("Redraw:" + i++ + " | Accuracy: " + currentAccuracy + " m ", 17, 17,
+                textPaint);
 
         // super.draw(canvadb des, mapView, false);
     }

@@ -27,8 +27,6 @@
 
 package org.unchiujar.umbra;
 
-import java.util.ArrayList;
-
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -47,6 +45,8 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.util.Log;
+
+import java.util.ArrayList;
 
 public class LocationService extends Service {
     private static final int APPLICATION_ID = 1241241;
@@ -72,7 +72,8 @@ public class LocationService extends Service {
             Log.d(TAG, "Sending coarse location :" + location);
             sendLocation(location);
             // make the updates slower as we already have a fix
-            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 2 * 60 * 1000, 500,
+            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 2 * 60 * 1000,
+                    500,
                     coarse);
 
         }
@@ -172,18 +173,18 @@ public class LocationService extends Service {
         @Override
         public void onGpsStatusChanged(int event) {
             switch (event) {
-            case GpsStatus.GPS_EVENT_SATELLITE_STATUS:
-                if (mLastLocation != null) {
-                    hasGPSFix = (SystemClock.elapsedRealtime() - mLastLocationMillis) < 5 * 1000;
-                }
-                if (!hasGPSFix && gpsSlowFix)  {
-                    Log.d(TAG, "Retrying fast location fix as GPS fix is lost.");
-                    doFastLocationFix();
-                } 
-                break;
-            case GpsStatus.GPS_EVENT_FIRST_FIX:
-                hasGPSFix = true;
-                break;
+                case GpsStatus.GPS_EVENT_SATELLITE_STATUS:
+                    if (mLastLocation != null) {
+                        hasGPSFix = (SystemClock.elapsedRealtime() - mLastLocationMillis) < 5 * 1000;
+                    }
+                    if (!hasGPSFix && gpsSlowFix) {
+                        Log.d(TAG, "Retrying fast location fix as GPS fix is lost.");
+                        doFastLocationFix();
+                    }
+                    break;
+                case GpsStatus.GPS_EVENT_FIRST_FIX:
+                    hasGPSFix = true;
+                    break;
             }
         }
     };
@@ -198,7 +199,8 @@ public class LocationService extends Service {
                 mClients.get(i).send(Message.obtain(null, 9000, location));
 
             } catch (RemoteException e) {
-                // The client is dead. Remove it from the list; we are going through the list from
+                // The client is dead. Remove it from the list; we are going
+                // through the list from
                 // back to front so this is safe to do inside the loop.
                 mClients.remove(i);
             }
@@ -269,7 +271,8 @@ public class LocationService extends Service {
         notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         // instantiate notification
         CharSequence tickerText = contentTitle + " " + running;
-        Notification notification = new Notification(R.drawable.icon, tickerText, System.currentTimeMillis());
+        Notification notification = new Notification(R.drawable.icon, tickerText,
+                System.currentTimeMillis());
         notification.flags |= Notification.FLAG_NO_CLEAR;
         notification.flags |= Notification.FLAG_ONGOING_EVENT;
 
@@ -289,21 +292,23 @@ public class LocationService extends Service {
     int mValue = 0;
 
     /**
-     * Command to the service to register a client, receiving callbacks from the service. The
-     * Message's replyTo field must be a Messenger of the client where callbacks should be sent.
+     * Command to the service to register a client, receiving callbacks from the
+     * service. The Message's replyTo field must be a Messenger of the client
+     * where callbacks should be sent.
      */
     static final int MSG_REGISTER_CLIENT = 1;
 
     /**
-     * Command to the service to unregister a client, ot stop receiving callbacks from the service.
-     * The Message's replyTo field must be a Messenger of the client as previously given with
-     * MSG_REGISTER_CLIENT.
+     * Command to the service to unregister a client, ot stop receiving
+     * callbacks from the service. The Message's replyTo field must be a
+     * Messenger of the client as previously given with MSG_REGISTER_CLIENT.
      */
     static final int MSG_UNREGISTER_CLIENT = 2;
 
     /**
-     * Command to service to set a new value. This can be sent to the service to supply a new value,
-     * and will be sent by the service to any registered clients with the new value.
+     * Command to service to set a new value. This can be sent to the service to
+     * supply a new value, and will be sent by the service to any registered
+     * clients with the new value.
      */
     static final int MSG_SET_VALUE = 3;
 
@@ -314,27 +319,27 @@ public class LocationService extends Service {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-            case MSG_REGISTER_CLIENT:
-                mClients.add(msg.replyTo);
-                break;
-            case MSG_UNREGISTER_CLIENT:
-                mClients.remove(msg.replyTo);
-                break;
-            case MSG_SET_VALUE:
-                mValue = msg.arg1;
-                for (int i = mClients.size() - 1; i >= 0; i--) {
-                    try {
-                        mClients.get(i).send(Message.obtain(null, MSG_SET_VALUE, mValue, 0));
-                    } catch (RemoteException e) {
-                        // The client is dead. Remove it from the list;
-                        // we are going through the list from back to front
-                        // so this is safe to do inside the loop.
-                        mClients.remove(i);
+                case MSG_REGISTER_CLIENT:
+                    mClients.add(msg.replyTo);
+                    break;
+                case MSG_UNREGISTER_CLIENT:
+                    mClients.remove(msg.replyTo);
+                    break;
+                case MSG_SET_VALUE:
+                    mValue = msg.arg1;
+                    for (int i = mClients.size() - 1; i >= 0; i--) {
+                        try {
+                            mClients.get(i).send(Message.obtain(null, MSG_SET_VALUE, mValue, 0));
+                        } catch (RemoteException e) {
+                            // The client is dead. Remove it from the list;
+                            // we are going through the list from back to front
+                            // so this is safe to do inside the loop.
+                            mClients.remove(i);
+                        }
                     }
-                }
-                break;
-            default:
-                super.handleMessage(msg);
+                    break;
+                default:
+                    super.handleMessage(msg);
             }
         }
     }
@@ -345,8 +350,8 @@ public class LocationService extends Service {
     final Messenger mMessenger = new Messenger(new IncomingHandler());
 
     /**
-     * When binding to the service, we return an interface to our messenger for sending messages to
-     * the service.
+     * When binding to the service, we return an interface to our messenger for
+     * sending messages to the service.
      */
     @Override
     public IBinder onBind(Intent intent) {
