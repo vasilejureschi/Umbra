@@ -67,10 +67,8 @@ public class ExploredOverlay extends Overlay {
     private Bitmap cover;
     private Canvas coverCanvas;
 
-    // TODO remove - DEBUG code
     private Paint textPaint = new Paint();
-    private int i;
-    // TODO remove - DEBUG code
+    private Paint alertPaint = new Paint();
     private Rect topBar;
 
     private Rect screenCover;
@@ -110,11 +108,14 @@ public class ExploredOverlay extends Overlay {
         circlePaint.setColor(Color.BLACK);
         circlePaint.setStyle(Style.FILL_AND_STROKE);
 
-        // TODO remove - DEBUG code
-        i = -1000000000;
         textPaint.setAntiAlias(true);
         textPaint.setTextSize(15);
-        // TODO remove - DEBUG code
+        textPaint.setFakeBoldText(true);
+
+        alertPaint.setAntiAlias(true);
+        alertPaint.setTextSize(15);
+        alertPaint.setFakeBoldText(true);
+        alertPaint.setColor(Color.RED);
 
     }
 
@@ -122,8 +123,6 @@ public class ExploredOverlay extends Overlay {
     public void draw(Canvas canvas, MapView mapView, boolean shadow) {
 
         super.draw(canvas, mapView, shadow);
-
-        Log.d(TAG, "########Called");
         assert !shadow : "The overlay does not need a shadow as it only covers the explored areas.";
         Projection projection = mapView.getProjection();
 
@@ -166,7 +165,7 @@ public class ExploredOverlay extends Overlay {
         coverCanvas.drawRect(screenCover, rectPaint);
 
         for (ApproximateLocation location : locations) {
-            // BUG - do not use
+            // XXX BUG - do not use
             // point = mapView.getProjection().toPixels(geoPoint, null);
             // returns an incorrect value in point
             // you'll cry debugger tears if you do
@@ -190,8 +189,13 @@ public class ExploredOverlay extends Overlay {
 
         canvas.drawBitmap(cover, 0, 0, rectPaint);
         canvas.drawRect(topBar, topBarPaint);
-        canvas.drawText("Redraw:" + i++ + " | Accuracy: " + currentAccuracy + " m ", 17, 17,
-                textPaint);
+        if (currentAccuracy < LocationOrder.METERS_RADIUS * 2) {
+            canvas.drawText(" Accuracy: " + currentAccuracy + " m ", 17, 19,
+                    textPaint);
+        } else {
+            canvas.drawText(" Accuracy is too low: " + currentAccuracy + " m ", 17, 19,
+                    alertPaint);
+        }
 
         // super.draw(canvadb des, mapView, false);
     }
