@@ -29,13 +29,13 @@ package org.unchiujar.umbra;
 
 import java.util.ArrayList;
 
-import android.app.IntentService;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -45,9 +45,10 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.os.SystemClock;
 import android.util.Log;
 
-public class LocationService extends Service implements LocationListener {
+public class LocationService extends Service {
     private static final int APPLICATION_ID = 1241241;
     private NotificationManager notificationManager;
 
@@ -60,31 +61,152 @@ public class LocationService extends Service implements LocationListener {
     public static final String LONGITUDE = "org.unchiujar.umbra.LocationService.LONGITUDE";
     public static final String ACCURACY = "org.unchiujar.umbra.LocationService.ACCURACY";
 
+    private boolean gpsSlowFix;
+    private boolean hasGPSFix;
     private LocationManager locationManager;
-//    private LocationProvider locationRecorder = VisitedAreaCache.getInstance(this);
 
+    private LocationListener coarse = new LocationListener() {
 
-    @Override
-    public void onLocationChanged(Location location) {
+        @Override
+        public void onLocationChanged(Location location) {
+            Log.d(TAG, "Sending coarse location :" + location);
+            sendLocation(location);
+            // make the updates slower as we already have a fix
+            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 2 * 60 * 1000, 500,
+                    coarse);
+
+        }
+
+        @Override
+        public void onProviderDisabled(String provider) {
+            // TODO Auto-generated method stub
+        }
+
+        @Override
+        public void onProviderEnabled(String provider) {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {
+            // TODO Auto-generated method stub
+
+        }
+
+    };
+
+    private LocationListener fine = new LocationListener() {
+
+        @Override
+        public void onLocationChanged(Location location) {
+            Log.d(TAG, "Sending fine fast location :" + location);
+            // send the location before doing any other work
+            sendLocation(location);
+            // unregister the coarse listener as we have a better fix
+            locationManager.removeUpdates(coarse);
+            locationManager.removeUpdates(fine);
+            // we already have a fix so
+            // set a slower time and longer distance for location updates
+            // in order to conserve battery
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5 * 1000,
+                    (float) LocationOrder.METERS_RADIUS * 2, gpsSlow);
+            gpsSlowFix = true;
+        }
+
+        @Override
+        public void onProviderDisabled(String provider) {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        public void onProviderEnabled(String provider) {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {
+        }
+
+    };
+
+    private long mLastLocationMillis;
+    protected Location mLastLocation;
+
+    private LocationListener gpsSlow = new LocationListener() {
+
+        @Override
+        public void onLocationChanged(Location location) {
+            if (location == null) {
+                return;
+            }
+            mLastLocationMillis = SystemClock.elapsedRealtime();
+
+            Log.d(TAG, "Sending regular  location :" + location);
+            // send the location before doing any other work
+            sendLocation(location);
+            mLastLocation = location;
+        }
+
+        @Override
+        public void onProviderDisabled(String provider) {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        public void onProviderEnabled(String provider) {
+            // TODO Auto-generated method stub
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {
+        }
+
+    };
+
+    private GpsStatus.Listener gpsListener = new GpsStatus.Listener() {
+
+        @Override
+        public void onGpsStatusChanged(int event) {
+            switch (event) {
+            case GpsStatus.GPS_EVENT_SATELLITE_STATUS:
+                if (mLastLocation != null) {
+                    hasGPSFix = (SystemClock.elapsedRealtime() - mLastLocationMillis) < 5 * 1000;
+                }
+                if (!hasGPSFix && gpsSlowFix)  {
+                    Log.d(TAG, "Retrying fast location fix as GPS fix is lost.");
+                    doFastLocationFix();
+                } 
+                break;
+            case GpsStatus.GPS_EVENT_FIRST_FIX:
+                hasGPSFix = true;
+                break;
+            }
+        }
+    };
+
+    private void sendLocation(Location location) {
         Log.d(TAG, "Location changed: " + location);
         // test if the accuracy is good enough
-        
-        for (int i=mClients.size()-1; i>=0; i--) {
+
+        for (int i = mClients.size() - 1; i >= 0; i--) {
             try {
                 // Send data as an Integer
                 mClients.get(i).send(Message.obtain(null, 9000, location));
 
-
             } catch (RemoteException e) {
-                // The client is dead. Remove it from the list; we are going through the list from back to front so this is safe to do inside the loop.
+                // The client is dead. Remove it from the list; we are going through the list from
+                // back to front so this is safe to do inside the loop.
                 mClients.remove(i);
             }
         }
-        
-        
+
         Message message = Message.obtain();
         message.obj = location;
-        
+
         try {
             mMessenger.send(message);
         } catch (RemoteException e) {
@@ -94,34 +216,15 @@ public class LocationService extends Service implements LocationListener {
 
     }
 
-    @Override
-    public void onProviderDisabled(String arg0) {
-        Log.d(TAG, "Provider disabled");
-
-    }
-
-    @Override
-    public void onProviderEnabled(String arg0) {
-        Log.d(TAG, "Provider enabled");
-
-    }
-
-    @Override
-    public void onStatusChanged(String arg0, int arg1, Bundle arg2) {
-        Log.d(TAG, "Status changed");
-    }
-
     // ==================== LIFECYCLE METHODS ====================
 
-    
     @Override
     public void onCreate() {
 
         super.onCreate();
-        // initialize GPS
-        enableGPS();
         displayRunningNotification();
         Log.d(TAG, "Location manager set up.");
+        doFastLocationFix();
     }
 
     @Override
@@ -132,11 +235,14 @@ public class LocationService extends Service implements LocationListener {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        locationManager.removeUpdates(this);        
+
+        locationManager.removeUpdates(coarse);
+        locationManager.removeUpdates(fine);
+        locationManager.removeUpdates(gpsSlow);
+
         notificationManager.cancel(APPLICATION_ID);
         Log.d(TAG, "Service on destroy called.");
     }
-
 
     @Override
     public boolean onUnbind(Intent intent) {
@@ -146,23 +252,14 @@ public class LocationService extends Service implements LocationListener {
 
     // =================END LIFECYCLE METHODS ====================
 
-
-    private void enableGPS() {
+    private void doFastLocationFix() {
+        gpsSlowFix = false;
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        // set up
-
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000,
-                (float) LocationOrder.METERS_RADIUS * 2, this);
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000,
-                (float) LocationOrder.METERS_RADIUS * 2, this);
-
-        // set the last known location
-        if (locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) != null) {
-            onLocationChanged(locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER));
-        } else {
-            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000,
-                    (float) LocationOrder.METERS_RADIUS * 2, this);
-        }
+        locationManager.addGpsStatusListener(gpsListener);
+        // register a coarse listener for fast location update
+        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 500, 500, coarse);
+        // register a fine listener with fast location update for a fast fix
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 500, 1, fine);
     }
 
     private void displayRunningNotification() {
@@ -175,44 +272,38 @@ public class LocationService extends Service implements LocationListener {
         Notification notification = new Notification(R.drawable.icon, tickerText, System.currentTimeMillis());
         notification.flags |= Notification.FLAG_NO_CLEAR;
         notification.flags |= Notification.FLAG_ONGOING_EVENT;
-        
 
         // Define the Notification's expanded message and Intent:
         CharSequence contentText = contentTitle + " " + running;
         Intent notificationIntent = new Intent(this, FogOfExplore.class);
         // notificationIntent.setAction("android.intent.action.VIEW");
-        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
         notification.setLatestEventInfo(this, contentTitle, contentText, contentIntent);
         notificationManager.notify(APPLICATION_ID, notification);
     }
-    
-         
-    
-    
-    
+
     /** Keeps track of all current registered clients. */
     ArrayList<Messenger> mClients = new ArrayList<Messenger>();
     /** Holds last value set by a client. */
     int mValue = 0;
 
     /**
-     * Command to the service to register a client, receiving callbacks
-     * from the service.  The Message's replyTo field must be a Messenger of
-     * the client where callbacks should be sent.
+     * Command to the service to register a client, receiving callbacks from the service. The
+     * Message's replyTo field must be a Messenger of the client where callbacks should be sent.
      */
     static final int MSG_REGISTER_CLIENT = 1;
 
     /**
-     * Command to the service to unregister a client, ot stop receiving callbacks
-     * from the service.  The Message's replyTo field must be a Messenger of
-     * the client as previously given with MSG_REGISTER_CLIENT.
+     * Command to the service to unregister a client, ot stop receiving callbacks from the service.
+     * The Message's replyTo field must be a Messenger of the client as previously given with
+     * MSG_REGISTER_CLIENT.
      */
     static final int MSG_UNREGISTER_CLIENT = 2;
 
     /**
-     * Command to service to set a new value.  This can be sent to the
-     * service to supply a new value, and will be sent by the service to
-     * any registered clients with the new value.
+     * Command to service to set a new value. This can be sent to the service to supply a new value,
+     * and will be sent by the service to any registered clients with the new value.
      */
     static final int MSG_SET_VALUE = 3;
 
@@ -223,28 +314,27 @@ public class LocationService extends Service implements LocationListener {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case MSG_REGISTER_CLIENT:
-                    mClients.add(msg.replyTo);
-                    break;
-                case MSG_UNREGISTER_CLIENT:
-                    mClients.remove(msg.replyTo);
-                    break;
-                case MSG_SET_VALUE:
-                    mValue = msg.arg1;
-                    for (int i=mClients.size()-1; i>=0; i--) {
-                        try {
-                            mClients.get(i).send(Message.obtain(null,
-                                    MSG_SET_VALUE, mValue, 0));
-                        } catch (RemoteException e) {
-                            // The client is dead.  Remove it from the list;
-                            // we are going through the list from back to front
-                            // so this is safe to do inside the loop.
-                            mClients.remove(i);
-                        }
+            case MSG_REGISTER_CLIENT:
+                mClients.add(msg.replyTo);
+                break;
+            case MSG_UNREGISTER_CLIENT:
+                mClients.remove(msg.replyTo);
+                break;
+            case MSG_SET_VALUE:
+                mValue = msg.arg1;
+                for (int i = mClients.size() - 1; i >= 0; i--) {
+                    try {
+                        mClients.get(i).send(Message.obtain(null, MSG_SET_VALUE, mValue, 0));
+                    } catch (RemoteException e) {
+                        // The client is dead. Remove it from the list;
+                        // we are going through the list from back to front
+                        // so this is safe to do inside the loop.
+                        mClients.remove(i);
                     }
-                    break;
-                default:
-                    super.handleMessage(msg);
+                }
+                break;
+            default:
+                super.handleMessage(msg);
             }
         }
     }
@@ -253,11 +343,10 @@ public class LocationService extends Service implements LocationListener {
      * Target we publish for clients to send messages to IncomingHandler.
      */
     final Messenger mMessenger = new Messenger(new IncomingHandler());
-    
-    
+
     /**
-     * When binding to the service, we return an interface to our messenger
-     * for sending messages to the service.
+     * When binding to the service, we return an interface to our messenger for sending messages to
+     * the service.
      */
     @Override
     public IBinder onBind(Intent intent) {

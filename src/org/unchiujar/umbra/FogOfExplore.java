@@ -70,17 +70,20 @@ public class FogOfExplore extends MapActivity {
     public static final int ZOOM_CHECKING_DELAY = 500;
     private static final int DIALOG_START_GPS = 0;
     private static final int DIALOG_START_NET = 1;
-
+    private static final String BUNDLE_ACCURACY = "org.unchiujar.umbra.accuracy";
+    private static final String BUNDLE_LATITUDE = "org.unchiujar.umbra.latitude";
+    private static final String BUNDLE_LONGITUDE = "org.unchiujar.umbra.longitude";
+    
     private Intent locationServiceIntent;
     private ExploredOverlay explored;
 
 
     private MapController mapController;
-    LocationProvider recorder;
+    private LocationProvider recorder;
     private double currentLat;
     private double currentLong;
     private boolean visible = true;
-    public double currentAccuracy;
+    private double currentAccuracy;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -154,6 +157,8 @@ public class FogOfExplore extends MapActivity {
 
     // ==================== LIFECYCLE METHODS ====================
 
+    
+    
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -180,6 +185,22 @@ public class FogOfExplore extends MapActivity {
         locationServiceIntent = new Intent("org.com.unchiujar.LocationService");
         startService(locationServiceIntent);
         recorder = VisitedAreaCache.getInstance(getApplicationContext());
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        currentAccuracy = savedInstanceState.getDouble(BUNDLE_ACCURACY);
+        currentLat = savedInstanceState.getDouble(BUNDLE_LATITUDE);
+        currentLong = savedInstanceState.getDouble(BUNDLE_LONGITUDE);
+        super.onRestoreInstanceState(savedInstanceState);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putDouble(BUNDLE_ACCURACY, currentAccuracy);
+        outState.putDouble(BUNDLE_LATITUDE, currentLat);
+        outState.putDouble(BUNDLE_LONGITUDE, currentLong);
+        super.onSaveInstanceState(outState);
     }
 
     @Override
@@ -342,11 +363,12 @@ public class FogOfExplore extends MapActivity {
             case 9000:
                 if (msg.obj != null) {
                     Log.d(TAG, ((Location) msg.obj).toString());
-                    redrawOverlay();
                     
                     currentLat = ((Location) msg.obj).getLatitude();
                     currentLong = ((Location) msg.obj).getLongitude();
                     currentAccuracy = ((Location) msg.obj).getAccuracy();
+                    redrawOverlay();
+
                 } else 
                 {
                     Log.d(TAG, "@@@@ Null object received");
