@@ -32,13 +32,16 @@ package org.unchiujar.umbra;
 
 import android.location.Location;
 
+import java.io.Serializable;
 import java.util.Comparator;
 
 /**
  * @author vasile
  */
-public class LocationOrder implements Comparator<Location> {
+public class LocationOrder implements Comparator<Location>, Serializable {
 
+    /** Generated serial ID. */
+    private static final long serialVersionUID = 400346177869141960L;
     /**
      * The distance in meters to which we consider something explored.
      * 
