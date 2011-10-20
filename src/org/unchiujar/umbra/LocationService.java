@@ -33,7 +33,6 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentSender.SendIntentException;
 import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationListener;
@@ -62,58 +61,96 @@ public class LocationService extends Service {
     public static final String LONGITUDE = "org.unchiujar.umbra.LocationService.LONGITUDE";
     public static final String ACCURACY = "org.unchiujar.umbra.LocationService.ACCURACY";
 
-    private boolean gpsSlowFix;
-    private boolean hasGPSFix;
-    private LocationManager locationManager;
+    /**
+     * Command to the service to register a client, receiving callbacks from the
+     * service. The Message's replyTo field must be a Messenger of the client
+     * where callbacks should be sent.
+     */
+    public static final int MSG_REGISTER_CLIENT = 1;
 
-    private LocationListener coarse = new LocationListener() {
+    /**
+     * Command to the service to unregister a client, ot stop receiving
+     * callbacks from the service. The Message's replyTo field must be a
+     * Messenger of the client as previously given with MSG_REGISTER_CLIENT.
+     */
+    public static final int MSG_UNREGISTER_CLIENT = 2;
+
+    /**
+     * Command to service to set a new value. This can be sent to the service to
+     * supply a new value, and will be sent by the service to any registered
+     * clients with the new value.
+     */
+    public static final int MSG_SET_VALUE = 3;
+
+    /** Keeps track of all current registered clients. */
+    private ArrayList<Messenger> mClients = new ArrayList<Messenger>();
+    /** Holds last value set by a client. */
+    private int mValue = 0;
+
+    /**
+     * Flag signaling we have a fix and the location taken through the GPS is
+     * updated at a slow rate.
+     */
+    private boolean mGPSSlowMode;
+    /**
+     * Flag signaling we have a GPS fix. If we don't have a GPS fix (is false)
+     * and the GPS slow mode is active than we have lost the GPS signal and need
+     * to get the location through the network until a GPS fix is reestablished.
+     */
+    private boolean mHasGPSFix;
+    private LocationManager mLocationManager;
+    private long mLastLocationMillis;
+    private Location mLastLocation;
+
+    private LocationListener mCoarse = new LocationListener() {
 
         @Override
         public void onLocationChanged(Location location) {
-            Log.d(TAG, "Sending coarse location :" + location);
+            Log.d(TAG, "Sending mCoarse location :" + location);
             sendLocation(location);
             // make the updates slower as we already have a fix
-            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 2 * 60 * 1000,
+            mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
+                    2 * 60 * 1000,
                     500,
-                    coarse);
+                    mCoarse);
 
         }
 
         @Override
         public void onProviderDisabled(String provider) {
-            // TODO Auto-generated method stub
+            // NO-OP
         }
 
         @Override
         public void onProviderEnabled(String provider) {
-            // TODO Auto-generated method stub
+            // NO-OP
 
         }
 
         @Override
         public void onStatusChanged(String provider, int status, Bundle extras) {
-            // TODO Auto-generated method stub
+            // NO-OP
 
         }
 
     };
 
-    private LocationListener fine = new LocationListener() {
+    private LocationListener mFine = new LocationListener() {
 
         @Override
         public void onLocationChanged(Location location) {
             Log.d(TAG, "Sending fine fast location :" + location);
             // send the location before doing any other work
             sendLocation(location);
-            // unregister the coarse listener as we have a better fix
-            locationManager.removeUpdates(coarse);
-            locationManager.removeUpdates(fine);
+            // unregister the mCoarse listener as we have a better fix
+            mLocationManager.removeUpdates(mCoarse);
+            mLocationManager.removeUpdates(mFine);
             // we already have a fix so
             // set a slower time and longer distance for location updates
             // in order to conserve battery
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5 * 1000,
-                    (float) LocationOrder.METERS_RADIUS * 2, gpsSlow);
-            gpsSlowFix = true;
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5 * 1000,
+                    (float) LocationOrder.METERS_RADIUS * 2, mGPSSlow);
+            mGPSSlowMode = true;
         }
 
         @Override
@@ -134,10 +171,7 @@ public class LocationService extends Service {
 
     };
 
-    private long mLastLocationMillis;
-    protected Location mLastLocation;
-
-    private LocationListener gpsSlow = new LocationListener() {
+    private LocationListener mGPSSlow = new LocationListener() {
 
         @Override
         public void onLocationChanged(Location location) {
@@ -169,22 +203,22 @@ public class LocationService extends Service {
 
     };
 
-    private GpsStatus.Listener gpsListener = new GpsStatus.Listener() {
+    private GpsStatus.Listener mGPSListener = new GpsStatus.Listener() {
 
         @Override
         public void onGpsStatusChanged(int event) {
             switch (event) {
                 case GpsStatus.GPS_EVENT_SATELLITE_STATUS:
                     if (mLastLocation != null) {
-                        hasGPSFix = (SystemClock.elapsedRealtime() - mLastLocationMillis) < 5 * 1000;
+                        mHasGPSFix = (SystemClock.elapsedRealtime() - mLastLocationMillis) < 5 * 1000;
                     }
-                    if (!hasGPSFix && gpsSlowFix) {
+                    if (!mHasGPSFix && mGPSSlowMode) {
                         Log.d(TAG, "Retrying fast location fix as GPS fix is lost.");
                         doFastLocationFix();
                     }
                     break;
                 case GpsStatus.GPS_EVENT_FIRST_FIX:
-                    hasGPSFix = true;
+                    mHasGPSFix = true;
                     break;
             }
         }
@@ -238,9 +272,9 @@ public class LocationService extends Service {
     public void onDestroy() {
         super.onDestroy();
 
-        locationManager.removeUpdates(coarse);
-        locationManager.removeUpdates(fine);
-        locationManager.removeUpdates(gpsSlow);
+        mLocationManager.removeUpdates(mCoarse);
+        mLocationManager.removeUpdates(mFine);
+        mLocationManager.removeUpdates(mGPSSlow);
 
         notificationManager.cancel(APPLICATION_ID);
         Log.d(TAG, "Service on destroy called.");
@@ -256,8 +290,8 @@ public class LocationService extends Service {
 
     private void sendLocationOnRegistration() {
 
-        Location network = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-        Location gps = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        Location network = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        Location gps = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
         Location toSend = (gps != null) ? gps : (network != null) ? network : null;
         if (toSend != null) {
             sendLocation(toSend);
@@ -265,13 +299,14 @@ public class LocationService extends Service {
     }
 
     private void doFastLocationFix() {
-        gpsSlowFix = false;
-        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        locationManager.addGpsStatusListener(gpsListener);
-        // register a coarse listener for fast location update
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 500, 500, coarse);
-        // register a fine listener with fast location update for a fast fix
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 500, 1, fine);
+        mGPSSlowMode = false;
+        mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        mLocationManager.addGpsStatusListener(mGPSListener);
+        // register a mCoarse listener for fast location update
+        mLocationManager
+                .requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 500, 500, mCoarse);
+        // register a mFine listener with fast location update for a fast fix
+        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 500, 1, mFine);
     }
 
     private void displayRunningNotification() {
@@ -296,36 +331,10 @@ public class LocationService extends Service {
         notificationManager.notify(APPLICATION_ID, notification);
     }
 
-    /** Keeps track of all current registered clients. */
-    ArrayList<Messenger> mClients = new ArrayList<Messenger>();
-    /** Holds last value set by a client. */
-    int mValue = 0;
-
-    /**
-     * Command to the service to register a client, receiving callbacks from the
-     * service. The Message's replyTo field must be a Messenger of the client
-     * where callbacks should be sent.
-     */
-    public static final int MSG_REGISTER_CLIENT = 1;
-
-    /**
-     * Command to the service to unregister a client, or stop receiving
-     * callbacks from the service. The Message's replyTo field must be a
-     * Messenger of the client as previously given with MSG_REGISTER_CLIENT.
-     */
-    public static final int MSG_UNREGISTER_CLIENT = 2;
-
-    /**
-     * Command to service to set a new value. This can be sent to the service to
-     * supply a new value, and will be sent by the service to any registered
-     * clients with the new value.
-     */
-    public static final int MSG_SET_VALUE = 3;
-
     /**
      * Handler of incoming messages from clients`.
      */
-    class IncomingHandler extends Handler {
+    private class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
@@ -358,7 +367,7 @@ public class LocationService extends Service {
     /**
      * Target we publish for clients to send messages to IncomingHandler.
      */
-    final Messenger mMessenger = new Messenger(new IncomingHandler());
+    private final Messenger mMessenger = new Messenger(new IncomingHandler());
 
     /**
      * When binding to the service, we return an interface to our messenger for
