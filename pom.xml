@@ -81,4 +81,17 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
       </plugin>
     </plugins>
   </build>
+  
+    <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>5.4</version>
+        <configuration>
+          <configLocation>dev/android_cs.xml</configLocation>
+        </configuration>
+      </plugin>
+    </plugins>
+  </reporting>
 </project>
