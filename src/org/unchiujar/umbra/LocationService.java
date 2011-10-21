@@ -368,6 +368,7 @@ public class LocationService extends Service {
                     sendLocationOnRegistration();
                     //get a fast location to display to the user
                     doFastLocationFix();
+                    break;
                 case MSG_SET_VALUE:
                     mValue = msg.arg1;
                     for (int i = mClients.size() - 1; i >= 0; i--) {
