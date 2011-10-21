@@ -75,12 +75,18 @@ public class LocationService extends Service {
      */
     public static final int MSG_UNREGISTER_CLIENT = 2;
 
+
+    public static final int MSG_UNREGISTER_INTERFACE = 4;
+    public static final int MSG_REGISTER_INTERFACE = 5;
+
+    
     /**
      * Command to service to set a new value. This can be sent to the service to
      * supply a new value, and will be sent by the service to any registered
      * clients with the new value.
      */
     public static final int MSG_SET_VALUE = 3;
+    protected static final long LOCATION_UPDATE_INTERVAL = 15 * 1000;
 
     /** Keeps track of all current registered clients. */
     private ArrayList<Messenger> mClients = new ArrayList<Messenger>();
@@ -148,7 +154,8 @@ public class LocationService extends Service {
             // we already have a fix so
             // set a slower time and longer distance for location updates
             // in order to conserve battery
-            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5 * 1000,
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                    LOCATION_UPDATE_INTERVAL,
                     (float) LocationOrder.METERS_RADIUS * 2, mGPSSlow);
             mGPSSlowMode = true;
         }
@@ -207,6 +214,7 @@ public class LocationService extends Service {
 
         @Override
         public void onGpsStatusChanged(int event) {
+            Log.v(TAG, "Checking sattelite state " + event);
             switch (event) {
                 case GpsStatus.GPS_EVENT_SATELLITE_STATUS:
                     if (mLastLocation != null) {
@@ -335,6 +343,7 @@ public class LocationService extends Service {
      * Handler of incoming messages from clients`.
      */
     private class IncomingHandler extends Handler {
+
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
@@ -345,6 +354,20 @@ public class LocationService extends Service {
                 case MSG_UNREGISTER_CLIENT:
                     mClients.remove(msg.replyTo);
                     break;
+                case MSG_UNREGISTER_INTERFACE:
+                    // remove client
+                    mClients.remove(msg.replyTo);
+                    Log.d(TAG, "Setting the service to off screen state.");
+                    moveToOffScreenState();
+                    break;
+
+                case MSG_REGISTER_INTERFACE:
+                    Log.d(TAG, "Setting the service to on screen state.");
+                    //register client
+                    mClients.add(msg.replyTo);
+                    sendLocationOnRegistration();
+                    //get a fast location to display to the user
+                    doFastLocationFix();
                 case MSG_SET_VALUE:
                     mValue = msg.arg1;
                     for (int i = mClients.size() - 1; i >= 0; i--) {
@@ -361,6 +384,22 @@ public class LocationService extends Service {
                 default:
                     super.handleMessage(msg);
             }
+        }
+
+        private void moveToOffScreenState() {
+            // stop the gps status listener as it is
+            // used to always have an update to date location to
+            // be displayed to the user
+            mLocationManager.removeGpsStatusListener(mGPSListener);
+            // stop network and fast GPS updates
+            // as they are only useful for informing the user
+            mLocationManager.removeUpdates(mCoarse);
+            mLocationManager.removeUpdates(mFine);
+            // make sure the slow gps update is on
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                    LOCATION_UPDATE_INTERVAL,
+                    (float) LocationOrder.METERS_RADIUS * 2, mGPSSlow);
+            mGPSSlowMode = true;
         }
     }
 

@@ -218,6 +218,9 @@ public class FogOfExplore extends MapActivity {
         redrawOverlay();
         dialog.cancel();
         Log.d(TAG, "onResume completed.");
+        // bind to location service
+        doBindService();
+
     }
 
     @Override
@@ -225,6 +228,7 @@ public class FogOfExplore extends MapActivity {
         super.onPause();
         handler.removeCallbacks(zoomChecker);
         visible = false;
+        doUnbindService();
         Log.d(TAG, "onPause completed.");
     }
 
@@ -243,8 +247,7 @@ public class FogOfExplore extends MapActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        handler.removeCallbacks(zoomChecker);
-        doUnbindService();
+        handler.removeCallbacks(zoomChecker);        
         Log.d(TAG, "onDestroy completed.");
     }
 
@@ -259,9 +262,6 @@ public class FogOfExplore extends MapActivity {
             showDialog(DIALOG_START_GPS);
         }
         displayConnectivityWarning();
-
-        // bind to location service
-        doBindService();
     }
 
     @Override
@@ -399,7 +399,7 @@ public class FogOfExplore extends MapActivity {
             // We want to monitor the service for as long as we are
             // connected to it.
             try {
-                Message msg = Message.obtain(null, LocationService.MSG_REGISTER_CLIENT);
+                Message msg = Message.obtain(null, LocationService.MSG_REGISTER_INTERFACE);
                 msg.replyTo = mMessenger;
                 mService.send(msg);
 
@@ -435,7 +435,7 @@ public class FogOfExplore extends MapActivity {
             // it, then now is the time to unregister.
             if (mService != null) {
                 try {
-                    Message msg = Message.obtain(null, LocationService.MSG_UNREGISTER_CLIENT);
+                    Message msg = Message.obtain(null, LocationService.MSG_UNREGISTER_INTERFACE);
                     msg.replyTo = mMessenger;
                     mService.send(msg);
                 } catch (RemoteException e) {
