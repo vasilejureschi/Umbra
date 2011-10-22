@@ -36,27 +36,59 @@ import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 
-public class Settings extends Activity implements SeekBar.OnSeekBarChangeListener,
-        CheckBox.OnClickListener {
+public class Settings extends Activity implements SeekBar.OnSeekBarChangeListener {
     public static final String UMBRA_PREFS = "org.unchiujar.umbra.settings";
     public static final String TRANSPARENCY = "org.unchiujar.umbra.settings.transparency";
     public static final String MEASUREMENT_SYSTEM = "org.unchiujar.umbra.settings.measurement";
+    public static final String ANIMATE = "org.unchiujar.umbra.settings.animate";
+
     private static final String TAG = Settings.class.getName();
-    private SeekBar setTransparency;
-    private CheckBox imperial;
+    private SeekBar mSetTransparency;
+    private CheckBox mImperial;
+    private CheckBox mAnimate;
+    private SharedPreferences mSettings;
+
+    CheckBox.OnClickListener mImperialListener = new CheckBox.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            Log.d(TAG, "Checkbox clicked");
+            SharedPreferences.Editor editor = mSettings.edit();
+            editor.putBoolean(MEASUREMENT_SYSTEM, mImperial.isChecked());
+            editor.commit();
+        }
+
+    };
+
+    CheckBox.OnClickListener mAnimateListener = new CheckBox.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            Log.d(TAG, "Checkbox clicked");
+            SharedPreferences.Editor editor = mSettings.edit();
+            editor.putBoolean(ANIMATE, mAnimate.isChecked());
+            editor.commit();
+        }
+
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.settings);
-        setTransparency = (SeekBar) findViewById(R.id.transparency_seek);
-        setTransparency.setOnSeekBarChangeListener(this);
-        setTransparency.setProgress(getSharedPreferences(UMBRA_PREFS, 0).getInt(TRANSPARENCY, 120));
+        mSettings = getSharedPreferences(UMBRA_PREFS, 0);
 
-        imperial = (CheckBox) findViewById(R.id.check_metric);
-        imperial.setChecked(getSharedPreferences(UMBRA_PREFS, 0).getBoolean(MEASUREMENT_SYSTEM,
+        setContentView(R.layout.settings);
+        mSetTransparency = (SeekBar) findViewById(R.id.transparency_seek);
+        mSetTransparency.setOnSeekBarChangeListener(this);
+        mSetTransparency.setProgress(mSettings.getInt(TRANSPARENCY, 120));
+
+        mAnimate = (CheckBox) findViewById(R.id.check_animate);
+        mAnimate.setChecked(mSettings.getBoolean(ANIMATE,
                 false));
-        imperial.setOnClickListener(this);
+        mAnimate.setOnClickListener(mAnimateListener);
+
+        mImperial = (CheckBox) findViewById(R.id.check_metric);
+        mImperial.setChecked(mSettings.getBoolean(MEASUREMENT_SYSTEM,
+                false));
+        mImperial.setOnClickListener(mImperialListener);
     }
 
     @Override
@@ -65,9 +97,8 @@ public class Settings extends Activity implements SeekBar.OnSeekBarChangeListene
         Log.d(TAG, "Transparency set to " + progress);
         ImageView view = (ImageView) findViewById(R.id.transparency_image);
         view.setAlpha(Math.abs(progress - 255));
-        // save settings
-        SharedPreferences settings = getSharedPreferences(UMBRA_PREFS, 0);
-        SharedPreferences.Editor editor = settings.edit();
+        // save mSettings
+        SharedPreferences.Editor editor = mSettings.edit();
         editor.putInt(TRANSPARENCY, progress);
         editor.commit();
     }
@@ -82,15 +113,6 @@ public class Settings extends Activity implements SeekBar.OnSeekBarChangeListene
     public void onStopTrackingTouch(SeekBar seekBar) {
         // TODO Auto-generated method stub
 
-    }
-
-    @Override
-    public void onClick(View v) {
-        Log.d(TAG, "Checkbox clicked");
-        SharedPreferences settings = getSharedPreferences(UMBRA_PREFS, 0);
-        SharedPreferences.Editor editor = settings.edit();
-        editor.putBoolean(MEASUREMENT_SYSTEM, imperial.isChecked());
-        editor.commit();
     }
 
 }

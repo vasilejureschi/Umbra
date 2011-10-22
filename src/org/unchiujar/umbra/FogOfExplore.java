@@ -148,7 +148,10 @@ public class FogOfExplore extends MapActivity {
                         + numberLogList(bottomRight.getLatitude(), bottomRight.getLongitude()));
         explored.setCurrent(currentLat, currentLong, currentAccuracy);
         explored.setExplored(recorder.selectVisited(upperLeft, bottomRight));
-
+        if (getSharedPreferences(Settings.UMBRA_PREFS, 0).getBoolean(Settings.ANIMATE, false)) {
+            mapController.animateTo(LocationUtilities
+                    .coordinatesToGeoPoint(currentLat, currentLong));
+        }
         mapView.postInvalidate();
 
     }
@@ -247,7 +250,7 @@ public class FogOfExplore extends MapActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        handler.removeCallbacks(zoomChecker);        
+        handler.removeCallbacks(zoomChecker);
         Log.d(TAG, "onDestroy completed.");
     }
 

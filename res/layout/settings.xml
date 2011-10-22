@@ -37,9 +37,15 @@
 		android:max="255" android:layout_margin="10px"></SeekBar>
 	<ImageView android:id="@+id/transparency_image" android:src="@drawable/transparency"
 		android:layout_height="wrap_content" android:layout_width="fill_parent"></ImageView>
+
 	<CheckBox  android:id="@+id/check_metric"
 		android:layout_height="wrap_content"
 		android:layout_margin="10px" android:layout_width="fill_parent"
 		android:text="@string/measurement_label"></CheckBox>
-
+	
+	<CheckBox  android:id="@+id/check_animate"
+		android:layout_height="wrap_content"
+		android:layout_margin="10px" android:layout_width="fill_parent"
+		android:text="@string/animate_label" android:checked="false"></CheckBox>
+	    
 </LinearLayout>
