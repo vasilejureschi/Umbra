@@ -41,11 +41,14 @@ public class Settings extends Activity implements SeekBar.OnSeekBarChangeListene
     public static final String TRANSPARENCY = "org.unchiujar.umbra.settings.transparency";
     public static final String MEASUREMENT_SYSTEM = "org.unchiujar.umbra.settings.measurement";
     public static final String ANIMATE = "org.unchiujar.umbra.settings.animate";
+    public static final String UPDATE_MODE = "org.unchiujar.umbra.settings.update_mode";
 
     private static final String TAG = Settings.class.getName();
     private SeekBar mSetTransparency;
     private CheckBox mImperial;
     private CheckBox mAnimate;
+    private CheckBox mUpdate;
+
     private SharedPreferences mSettings;
 
     CheckBox.OnClickListener mImperialListener = new CheckBox.OnClickListener() {
@@ -55,8 +58,8 @@ public class Settings extends Activity implements SeekBar.OnSeekBarChangeListene
             SharedPreferences.Editor editor = mSettings.edit();
             editor.putBoolean(MEASUREMENT_SYSTEM, mImperial.isChecked());
             editor.commit();
+            updateCheckbox(mImperial, R.string.measurement_metric, R.string.measurement_imperial);
         }
-
     };
 
     CheckBox.OnClickListener mAnimateListener = new CheckBox.OnClickListener() {
@@ -66,6 +69,19 @@ public class Settings extends Activity implements SeekBar.OnSeekBarChangeListene
             SharedPreferences.Editor editor = mSettings.edit();
             editor.putBoolean(ANIMATE, mAnimate.isChecked());
             editor.commit();
+            updateCheckbox(mAnimate, R.string.animate_none, R.string.animate_move);
+        }
+
+    };
+
+    CheckBox.OnClickListener mUpdateListener = new CheckBox.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            Log.d(TAG, "Checkbox clicked");
+            SharedPreferences.Editor editor = mSettings.edit();
+            editor.putBoolean(UPDATE_MODE, mUpdate.isChecked());
+            editor.commit();
+            updateCheckbox(mUpdate, R.string.updates_walk, R.string.updates_car);
         }
 
     };
@@ -84,11 +100,27 @@ public class Settings extends Activity implements SeekBar.OnSeekBarChangeListene
         mAnimate.setChecked(mSettings.getBoolean(ANIMATE,
                 false));
         mAnimate.setOnClickListener(mAnimateListener);
-
+        updateCheckbox(mAnimate, R.string.animate_none, R.string.animate_move);
+        
         mImperial = (CheckBox) findViewById(R.id.check_metric);
         mImperial.setChecked(mSettings.getBoolean(MEASUREMENT_SYSTEM,
                 false));
         mImperial.setOnClickListener(mImperialListener);
+        updateCheckbox(mImperial, R.string.measurement_metric, R.string.measurement_imperial);
+
+        mUpdate = (CheckBox) findViewById(R.id.check_updates);
+        mUpdate.setChecked(mSettings.getBoolean(UPDATE_MODE,
+                false));
+        mUpdate.setOnClickListener(mUpdateListener);
+        updateCheckbox(mUpdate, R.string.updates_walk, R.string.updates_car);
+    }
+
+    private void updateCheckbox(CheckBox checkbox, int checkedMessage, int uncheckedMessage) {
+        if (checkbox.isChecked()) {
+            checkbox.setText(checkedMessage);
+        } else {
+            checkbox.setText(uncheckedMessage);
+        }
     }
 
     @Override

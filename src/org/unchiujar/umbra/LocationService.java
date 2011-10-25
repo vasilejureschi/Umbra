@@ -86,7 +86,7 @@ public class LocationService extends Service {
      * clients with the new value.
      */
     public static final int MSG_SET_VALUE = 3;
-    protected static final long LOCATION_UPDATE_INTERVAL = 15 * 1000;
+    protected static final long LOCATION_UPDATE_INTERVAL = 60 * 1000;
 
     /** Keeps track of all current registered clients. */
     private ArrayList<Messenger> mClients = new ArrayList<Messenger>();
@@ -396,6 +396,7 @@ public class LocationService extends Service {
             // as they are only useful for informing the user
             mLocationManager.removeUpdates(mCoarse);
             mLocationManager.removeUpdates(mFine);
+            mLocationManager.removeUpdates(mGPSSlow);
             // make sure the slow gps update is on
             mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
                     LOCATION_UPDATE_INTERVAL,

@@ -50,9 +50,16 @@
 	 <string name="email_body">Complain here :)</string>
 	 <string name="email_chooser">Send email using:</string>
 	 <string name="transparency_label">Set the fog transparency</string>
-	 <string name="measurement_label">Use the imperial system</string>
-	 <string name="animate_label">Move on location changes</string>
+	 
+	 <string name="measurement_metric">Uncheck to use the metric system</string>
+	 <string name="measurement_imperial">Check to use the imperial system</string>
 	     	 
+	 <string name="animate_move">Check to center map on location changes</string>
+	 <string name="animate_none">Uncheck to move map manually</string>
+	     	 
+	 <string name="updates_car">Check for car mode</string>
+	 <string name="updates_walk">Uncheck for walk mode</string>
+	     	     	     	 
 
      <string name="remote_service_started">Location service started</string>
      <string name="remote_service_connected">Connected to location service</string>

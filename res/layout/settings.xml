@@ -41,11 +41,16 @@
 	<CheckBox  android:id="@+id/check_metric"
 		android:layout_height="wrap_content"
 		android:layout_margin="10px" android:layout_width="fill_parent"
-		android:text="@string/measurement_label"></CheckBox>
+		android:text="@string/measurement_metric"></CheckBox>
 	
 	<CheckBox  android:id="@+id/check_animate"
 		android:layout_height="wrap_content"
 		android:layout_margin="10px" android:layout_width="fill_parent"
-		android:text="@string/animate_label" android:checked="false"></CheckBox>
-	    
+		android:text="@string/animate_none" android:checked="false"></CheckBox>
+
+	<CheckBox  android:id="@+id/check_updates"
+		android:layout_height="wrap_content"
+		android:layout_margin="10px" android:layout_width="fill_parent"
+		android:text="@string/updates_walk" android:checked="false"></CheckBox>
+	    	    
 </LinearLayout>
