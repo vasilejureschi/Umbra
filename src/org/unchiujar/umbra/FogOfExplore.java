@@ -44,6 +44,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationManager;
@@ -82,6 +83,15 @@ public class FogOfExplore extends MapActivity {
     private double currentLong;
     private boolean visible = true;
     private double currentAccuracy;
+    private boolean mWalk;
+    private SharedPreferences.OnSharedPreferenceChangeListener mPrefListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+
+        @Override
+        public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+            Log.d(TAG, "Settings changed :" + sharedPreferences + " " + key);
+                    mWalk = sharedPreferences.getBoolean(org.unchiujar.umbra.Settings.UPDATE_MODE, false);
+        }
+    };
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -164,6 +174,7 @@ public class FogOfExplore extends MapActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         dialog = ProgressDialog.show(this, "", "Loading. Please wait...", true);
+        getSharedPreferences(Settings.UMBRA_PREFS, 0).registerOnSharedPreferenceChangeListener(mPrefListener);
         setContentView(R.layout.main);
         MapView mapView = (MapView) findViewById(R.id.mapview);
         mapView.setBuiltInZoomControls(true);
@@ -399,15 +410,16 @@ public class FogOfExplore extends MapActivity {
             mService = new Messenger(service);
             Log.d(TAG, "Client Attached.");
 
-            // We want to monitor the service for as long as we are
-            // connected to it.
             try {
-                Message msg = Message.obtain(null, LocationService.MSG_REGISTER_INTERFACE);
+                Message msg = Message.obtain(null, LocationService.MSG_REGISTER_CLIENT);
                 msg.replyTo = mMessenger;
+
                 mService.send(msg);
 
-                // Give it some value as an example.
-                msg = Message.obtain(null, LocationService.MSG_SET_VALUE, this.hashCode(), 0);
+                msg = Message.obtain(null, LocationService.MSG_REGISTER_INTERFACE);
+                mService.send(msg);
+                // send walk or drive mode  
+                msg =  (mWalk)?Message.obtain(null, LocationService.MSG_WALK):Message.obtain(null, LocationService.MSG_DRIVE);
                 mService.send(msg);
             } catch (RemoteException e) {
                 // In this case the service has crashed before we could even

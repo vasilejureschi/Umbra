@@ -33,6 +33,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationListener;
@@ -69,24 +70,48 @@ public class LocationService extends Service {
     public static final int MSG_REGISTER_CLIENT = 1;
 
     /**
-     * Command to the service to unregister a client, ot stop receiving
+     * Command to the service to unregister a client, or stop receiving
      * callbacks from the service. The Message's replyTo field must be a
      * Messenger of the client as previously given with MSG_REGISTER_CLIENT.
      */
-    public static final int MSG_UNREGISTER_CLIENT = 2;
-
+    public static final int MSG_UNREGISTER_CLIENT = 2; // This is called when
+                                                       // the connection with
+                                                       // the service has been
+    // established, giving us the service object we can use to
+    // interact with the service. We are communicating with our
+    // service through an IDL interface, so get a client-side
+    // representation of that from the raw service object.
 
     public static final int MSG_UNREGISTER_INTERFACE = 4;
     public static final int MSG_REGISTER_INTERFACE = 5;
 
-    
+    public static final int MSG_WALK = 6;
+    public static final int MSG_DRIVE = 7;
+
     /**
      * Command to service to set a new value. This can be sent to the service to
      * supply a new value, and will be sent by the service to any registered
      * clients with the new value.
      */
     public static final int MSG_SET_VALUE = 3;
-    protected static final long LOCATION_UPDATE_INTERVAL = 60 * 1000;
+
+    /** Update frequency for average walking speed is 1.3 m/s . */
+    private static final long WALK_UPDATE_INTERVAL = (int)
+            (LocationOrder.METERS_RADIUS * 2 / (1.3) * 1000);
+
+    /** Update frequency for driving at 50 km/h . */
+    private static final long DRIVE_UPDATE_INTERVAL = (int)
+            (LocationOrder.METERS_RADIUS * 2 / (13) * 1000);
+
+    /** Fast update frequency for initial location fix. */
+    private static final long FAST_UPDATE_INTERVAL = 500;
+
+    /** Slow network update frequency after initial location fix. */
+    private static final long SLOW_UPDATE_INTERVAL = 6 * 10 * 1000;
+    /** Slow update distance after initial location fix. */
+    private static final long SLOW_UPDATE_DISTANCE = 500;
+
+    private boolean mWalking = true;
 
     /** Keeps track of all current registered clients. */
     private ArrayList<Messenger> mClients = new ArrayList<Messenger>();
@@ -116,8 +141,8 @@ public class LocationService extends Service {
             sendLocation(location);
             // make the updates slower as we already have a fix
             mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
-                    2 * 60 * 1000,
-                    500,
+                    SLOW_UPDATE_INTERVAL,
+                    SLOW_UPDATE_DISTANCE,
                     mCoarse);
 
         }
@@ -154,9 +179,8 @@ public class LocationService extends Service {
             // we already have a fix so
             // set a slower time and longer distance for location updates
             // in order to conserve battery
-            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                    LOCATION_UPDATE_INTERVAL,
-                    (float) LocationOrder.METERS_RADIUS * 2, mGPSSlow);
+            // set walking or driving depending user selection
+            setUpdateMode(mWalking);
             mGPSSlowMode = true;
         }
 
@@ -188,7 +212,7 @@ public class LocationService extends Service {
             mLastLocationMillis = SystemClock.elapsedRealtime();
 
             Log.d(TAG, "Sending regular  location :" + location);
-            // send the location before doing any other work
+            // send the location to update the interface
             sendLocation(location);
             mLastLocation = location;
         }
@@ -312,7 +336,8 @@ public class LocationService extends Service {
         mLocationManager.addGpsStatusListener(mGPSListener);
         // register a mCoarse listener for fast location update
         mLocationManager
-                .requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 500, 500, mCoarse);
+                .requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 500,
+                        SLOW_UPDATE_DISTANCE, mCoarse);
         // register a mFine listener with fast location update for a fast fix
         mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 500, 1, mFine);
     }
@@ -347,9 +372,11 @@ public class LocationService extends Service {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case MSG_REGISTER_CLIENT:
-                    mClients.add(msg.replyTo);
-                    sendLocationOnRegistration();
+                case MSG_WALK:
+                    mWalking = true;
+                    break;
+                case MSG_DRIVE:
+                    mWalking = false;
                     break;
                 case MSG_UNREGISTER_CLIENT:
                     mClients.remove(msg.replyTo);
@@ -363,14 +390,15 @@ public class LocationService extends Service {
 
                 case MSG_REGISTER_INTERFACE:
                     Log.d(TAG, "Setting the service to on screen state.");
-                    //register client
-                    mClients.add(msg.replyTo);
+                    // register client
                     sendLocationOnRegistration();
-                    //get a fast location to display to the user
+                    // get a fast location to display to the user
                     doFastLocationFix();
                     break;
-                case MSG_SET_VALUE:
+                case MSG_REGISTER_CLIENT:
+                    Log.d(TAG, "Registering new client.");
                     mValue = msg.arg1;
+                    mClients.add(msg.replyTo);
                     for (int i = mClients.size() - 1; i >= 0; i--) {
                         try {
                             mClients.get(i).send(Message.obtain(null, MSG_SET_VALUE, mValue, 0));
@@ -397,11 +425,10 @@ public class LocationService extends Service {
             mLocationManager.removeUpdates(mCoarse);
             mLocationManager.removeUpdates(mFine);
             mLocationManager.removeUpdates(mGPSSlow);
-            // make sure the slow gps update is on
-            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                    LOCATION_UPDATE_INTERVAL,
-                    (float) LocationOrder.METERS_RADIUS * 2, mGPSSlow);
             mGPSSlowMode = true;
+
+            setUpdateMode(mWalking);
+
         }
     }
 
@@ -418,4 +445,22 @@ public class LocationService extends Service {
     public IBinder onBind(Intent intent) {
         return mMessenger.getBinder();
     }
+
+    private void setUpdateMode(boolean driving) {
+        if (driving) {
+            Log.d(TAG, "Setting slow update frequency for walk mode.");
+            setUpdateInterval(DRIVE_UPDATE_INTERVAL);
+        } else {
+            Log.d(TAG, "Setting fast update frequency for drive mode.");
+            setUpdateInterval(DRIVE_UPDATE_INTERVAL);
+        }
+
+    }
+
+    private void setUpdateInterval(long interval) {
+        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                interval,
+                (float) LocationOrder.METERS_RADIUS * 2, mGPSSlow);
+    }
+
 }
