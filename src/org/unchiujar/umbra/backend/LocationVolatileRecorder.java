@@ -34,40 +34,40 @@ import java.util.List;
 
 public class LocationVolatileRecorder implements LocationProvider {
 
-    private List<ApproximateLocation> locations = new ArrayList<ApproximateLocation>();
+    private List<ApproximateLocation> mLocations = new ArrayList<ApproximateLocation>();
 
-    private static LocationVolatileRecorder instance;
+    private static LocationVolatileRecorder mInstance;
 
     private LocationVolatileRecorder() {
         super();
     }
 
     public static LocationVolatileRecorder getInstance() {
-        return (instance == null) ? instance = new LocationVolatileRecorder() : instance;
+        return (mInstance == null) ? mInstance = new LocationVolatileRecorder() : mInstance;
     }
 
     @Override
     public void deleteAll() {
-        locations.clear();
+        mLocations.clear();
 
     }
 
     @Override
     public synchronized long insert(ApproximateLocation location) {
-        locations.add(location);
-        return locations.size();
+        mLocations.add(location);
+        return mLocations.size();
     }
 
     @Override
     public List<ApproximateLocation> selectAll() {
-        return locations;
+        return mLocations;
     }
 
     @Override
     public List<ApproximateLocation> selectVisited(ApproximateLocation upperLeft,
             ApproximateLocation bottomRight) {
         ArrayList<ApproximateLocation> visited = new ArrayList<ApproximateLocation>();
-        for (ApproximateLocation location : locations) {
+        for (ApproximateLocation location : mLocations) {
             if (location.getLatitude() >= upperLeft.getLatitude() &&
                     location.getLatitude() <= bottomRight.getLatitude() &&
                     location.getLongitude() >= upperLeft.getLongitude() &&

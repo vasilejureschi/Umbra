@@ -53,7 +53,7 @@ public class Settings extends Activity implements SeekBar.OnSeekBarChangeListene
 
     private SharedPreferences mSettings;
 
-    CheckBox.OnClickListener mImperialListener = new CheckBox.OnClickListener() {
+    private final CheckBox.OnClickListener mImperialListener = new CheckBox.OnClickListener() {
         @Override
         public void onClick(View v) {
             Log.d(TAG, "Checkbox clicked");
@@ -64,7 +64,7 @@ public class Settings extends Activity implements SeekBar.OnSeekBarChangeListene
         }
     };
 
-    CheckBox.OnClickListener mAnimateListener = new CheckBox.OnClickListener() {
+    private final CheckBox.OnClickListener mAnimateListener = new CheckBox.OnClickListener() {
         @Override
         public void onClick(View v) {
             Log.d(TAG, "Checkbox clicked");
@@ -76,7 +76,7 @@ public class Settings extends Activity implements SeekBar.OnSeekBarChangeListene
 
     };
 
-    CheckBox.OnClickListener mUpdateListener = new CheckBox.OnClickListener() {
+    private final CheckBox.OnClickListener mUpdateListener = new CheckBox.OnClickListener() {
         @Override
         public void onClick(View v) {
             Log.d(TAG, "Checkbox clicked");

@@ -82,15 +82,17 @@ public class FogOfExplore extends MapActivity {
     private static final String BUNDLE_LATITUDE = "org.unchiujar.umbra.latitude";
     private static final String BUNDLE_LONGITUDE = "org.unchiujar.umbra.longitude";
 
-    private Intent locationServiceIntent;
-    private ExploredOverlay explored;
+    private ProgressDialog mDialog;
 
-    private MapController mapController;
-    private LocationProvider recorder;
-    private double currentLat;
-    private double currentLong;
-    private boolean visible = true;
-    private double currentAccuracy;
+    private Intent mLocationServiceIntent;
+    private ExploredOverlay mExplored;
+
+    private MapController mMapController;
+    private LocationProvider mRecorder;
+    private double mCurrentLat;
+    private double mCurrentLong;
+    private boolean mVisible = true;
+    private double mCurrentAccuracy;
     private boolean mWalk;
     private SharedPreferences.OnSharedPreferenceChangeListener mPrefListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
 
@@ -115,7 +117,7 @@ public class FogOfExplore extends MapActivity {
         switch (item.getItemId()) {
             case R.id.where_am_i:
                 Log.d(TAG, "Moving to current location...");
-                mapController.setCenter(coordinatesToGeoPoint(currentLat, currentLong));
+                mMapController.setCenter(coordinatesToGeoPoint(mCurrentLat, mCurrentLong));
                 redrawOverlay();
                 return true;
             case R.id.help:
@@ -126,7 +128,7 @@ public class FogOfExplore extends MapActivity {
             case R.id.exit:
                 Log.d(TAG, "Exit requested...");
                 // cleanup
-                stopService(locationServiceIntent);
+                stopService(mLocationServiceIntent);
                 VisitedAreaCache.getInstance(this).destroy();
                 finish();
                 return true;
@@ -141,7 +143,7 @@ public class FogOfExplore extends MapActivity {
 
     private void redrawOverlay() {
         // FIXME hack
-        if (!visible) {
+        if (!mVisible) {
             return;
         }
 
@@ -164,24 +166,23 @@ public class FogOfExplore extends MapActivity {
                 "Getting points for rectangle:  "
                         + numberLogList(upperLeft.getLatitude(), upperLeft.getLongitude())
                         + numberLogList(bottomRight.getLatitude(), bottomRight.getLongitude()));
-        explored.setCurrent(currentLat, currentLong, currentAccuracy);
-        explored.setExplored(recorder.selectVisited(upperLeft, bottomRight));
+        mExplored.setCurrent(mCurrentLat, mCurrentLong, mCurrentAccuracy);
+        mExplored.setExplored(mRecorder.selectVisited(upperLeft, bottomRight));
         if (getSharedPreferences(Settings.UMBRA_PREFS, 0).getBoolean(Settings.ANIMATE, false)) {
-            mapController.animateTo(LocationUtilities
-                    .coordinatesToGeoPoint(currentLat, currentLong));
+            mMapController.animateTo(LocationUtilities
+                    .coordinatesToGeoPoint(mCurrentLat, mCurrentLong));
         }
         mapView.postInvalidate();
 
     }
 
-    ProgressDialog dialog;
 
     // ==================== LIFECYCLE METHODS ====================
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        dialog = ProgressDialog.show(this, "", "Loading. Please wait...", true);
+        mDialog = ProgressDialog.show(this, "", "Loading. Please wait...", true);
         getSharedPreferences(Settings.UMBRA_PREFS, 0).registerOnSharedPreferenceChangeListener(
                 mPrefListener);
         setContentView(R.layout.main);
@@ -190,7 +191,7 @@ public class FogOfExplore extends MapActivity {
         mapView.setReticleDrawMode(MapView.ReticleDrawMode.DRAW_RETICLE_NEVER);
         mapView.setBackgroundColor(Color.RED);
         // add overlay to the list of overlays
-        explored = new ExploredOverlay(this);
+        mExplored = new ExploredOverlay(this);
 
         List<Overlay> listOfOverlays = mapView.getOverlays();
         // listOfOverlays.clear();
@@ -199,29 +200,29 @@ public class FogOfExplore extends MapActivity {
         // myLocation.enableCompass();
         // myLocation.enableMyLocation();
         // listOfOverlays.add(myLocation);
-        listOfOverlays.add(explored);
-        mapController = mapView.getController();
+        listOfOverlays.add(mExplored);
+        mMapController = mapView.getController();
         // set city level zoom
-        mapController.setZoom(17);
+        mMapController.setZoom(17);
         Log.d(TAG, "onCreate completed: Activity created");
-        locationServiceIntent = new Intent("org.com.unchiujar.LocationService");
-        startService(locationServiceIntent);
-        recorder = VisitedAreaCache.getInstance(getApplicationContext());
+        mLocationServiceIntent = new Intent("org.com.unchiujar.LocationService");
+        startService(mLocationServiceIntent);
+        mRecorder = VisitedAreaCache.getInstance(getApplicationContext());
     }
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        currentAccuracy = savedInstanceState.getDouble(BUNDLE_ACCURACY);
-        currentLat = savedInstanceState.getDouble(BUNDLE_LATITUDE);
-        currentLong = savedInstanceState.getDouble(BUNDLE_LONGITUDE);
+        mCurrentAccuracy = savedInstanceState.getDouble(BUNDLE_ACCURACY);
+        mCurrentLat = savedInstanceState.getDouble(BUNDLE_LATITUDE);
+        mCurrentLong = savedInstanceState.getDouble(BUNDLE_LONGITUDE);
         super.onRestoreInstanceState(savedInstanceState);
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        outState.putDouble(BUNDLE_ACCURACY, currentAccuracy);
-        outState.putDouble(BUNDLE_LATITUDE, currentLat);
-        outState.putDouble(BUNDLE_LONGITUDE, currentLong);
+        outState.putDouble(BUNDLE_ACCURACY, mCurrentAccuracy);
+        outState.putDouble(BUNDLE_LATITUDE, mCurrentLat);
+        outState.putDouble(BUNDLE_LONGITUDE, mCurrentLong);
         super.onSaveInstanceState(outState);
     }
 
@@ -237,9 +238,9 @@ public class FogOfExplore extends MapActivity {
         // register zoom && pan handler
         handler.postDelayed(zoomChecker, ZOOM_CHECKING_DELAY);
         checkConnectivity();
-        visible = true;
+        mVisible = true;
         redrawOverlay();
-        dialog.cancel();
+        mDialog.cancel();
         Log.d(TAG, "onResume completed.");
         // bind to location service
         doBindService();
@@ -250,7 +251,7 @@ public class FogOfExplore extends MapActivity {
     protected void onPause() {
         super.onPause();
         handler.removeCallbacks(zoomChecker);
-        visible = false;
+        mVisible = false;
         doUnbindService();
         Log.d(TAG, "onPause completed.");
     }
@@ -289,12 +290,12 @@ public class FogOfExplore extends MapActivity {
 
     @Override
     protected Dialog onCreateDialog(int id) {
-        Log.d(TAG, "Showing dialog with id " + id);
+        Log.d(TAG, "Showing mDialog with id " + id);
         switch (id) {
             case DIALOG_START_GPS:
                 return createGPSDialog();
             case DIALOG_START_NET:
-                // TODO internet starting dialog
+                // TODO internet starting mDialog
                 break;
             default:
         }
@@ -367,14 +368,14 @@ public class FogOfExplore extends MapActivity {
     };
 
     /** Messenger for communicating with service. */
-    Messenger mService = null;
+    private Messenger mService = null;
     /** Flag indicating whether we have called bind on the service. */
-    boolean mIsBound;
+    private boolean mIsBound;
 
     /**
      * Handler of incoming messages from service.
      */
-    class IncomingHandler extends Handler {
+    private class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
@@ -385,9 +386,9 @@ public class FogOfExplore extends MapActivity {
                     if (msg.obj != null) {
                         Log.d(TAG, ((Location) msg.obj).toString());
 
-                        currentLat = ((Location) msg.obj).getLatitude();
-                        currentLong = ((Location) msg.obj).getLongitude();
-                        currentAccuracy = ((Location) msg.obj).getAccuracy();
+                        mCurrentLat = ((Location) msg.obj).getLatitude();
+                        mCurrentLong = ((Location) msg.obj).getLongitude();
+                        mCurrentAccuracy = ((Location) msg.obj).getAccuracy();
                         redrawOverlay();
 
                     } else
@@ -404,7 +405,7 @@ public class FogOfExplore extends MapActivity {
     /**
      * Target we publish for clients to send messages to IncomingHandler.
      */
-    final Messenger mMessenger = new Messenger(new IncomingHandler());
+    private final Messenger mMessenger = new Messenger(new IncomingHandler());
 
     /**
      * Class for interacting with the main interface of the service.
@@ -447,14 +448,14 @@ public class FogOfExplore extends MapActivity {
         }
     };
 
-    void doBindService() {
-        bindService(locationServiceIntent, mConnection,
+    private void doBindService() {
+        bindService(mLocationServiceIntent, mConnection,
                 Context.BIND_AUTO_CREATE);
         mIsBound = true;
         Log.d(TAG, "Binding to location service");
     }
 
-    void doUnbindService() {
+    private void doUnbindService() {
         if (mIsBound) {
             // If we have received the service, and hence registered with
             // it, then now is the time to unregister.

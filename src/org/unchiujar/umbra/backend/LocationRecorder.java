@@ -55,35 +55,36 @@ public class LocationRecorder implements LocationProvider {
     private static final String LATITUDE = "latitude";
 
     private static final String DATABASE_PROVIDER = "Visited";
-
-    private Context context;
-    private SQLiteDatabase db;
-    private SQLiteStatement insertStmt;
+    
     private static final String INSERT = "insert into " + TABLE_NAME + "(" + LATITUDE + ","
             + LONGITUDE
             + ") values (?,?)";
+    private Context mContext;
+    private SQLiteDatabase mDatabase;
+    private SQLiteStatement mInsertStmt;
 
-    private static LocationRecorder instance;
+
+    private static LocationRecorder mInstance;
 
     private LocationRecorder(Context context) {
-        this.context = context;
-        OpenHelper openHelper = new OpenHelper(this.context);
-        this.db = openHelper.getWritableDatabase();
+        this.mContext = context;
+        OpenHelper openHelper = new OpenHelper(this.mContext);
+        this.mDatabase = openHelper.getWritableDatabase();
         // this.db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
-        // openHelper.onCreate(db);
-        this.insertStmt = this.db.compileStatement(INSERT);
+        // openHelper.onCreate(mDatabase);
+        this.mInsertStmt = this.mDatabase.compileStatement(INSERT);
 
     }
 
     public static LocationRecorder getInstance(Context context) {
-        return (instance == null) ? instance = new LocationRecorder(context) : instance;
+        return (mInstance == null) ? mInstance = new LocationRecorder(context) : mInstance;
     }
 
     public long insert(ApproximateLocation location) {
 
-        this.insertStmt.bindDouble(1, location.getLatitude());
-        this.insertStmt.bindDouble(2, location.getLongitude());
-        long index = this.insertStmt.executeInsert();
+        this.mInsertStmt.bindDouble(1, location.getLatitude());
+        this.mInsertStmt.bindDouble(2, location.getLongitude());
+        long index = this.mInsertStmt.executeInsert();
         Log.d(TAG,
                 DATABASE_NAME + "Inserted latitude and longitude: "
                         + numberLogList(location.getLatitude(), location.getLongitude()));
@@ -93,7 +94,7 @@ public class LocationRecorder implements LocationProvider {
 
     public void insert(List<ApproximateLocation> locations) {
         // TODO test batch insert speed
-        DatabaseUtils.InsertHelper batchInserter = new DatabaseUtils.InsertHelper(db, TABLE_NAME);
+        DatabaseUtils.InsertHelper batchInserter = new DatabaseUtils.InsertHelper(mDatabase, TABLE_NAME);
         int latitudeIndex = batchInserter.getColumnIndex(LATITUDE);
         int longitudeIndex = batchInserter.getColumnIndex(LONGITUDE);
 
@@ -112,13 +113,13 @@ public class LocationRecorder implements LocationProvider {
     }
 
     public void deleteAll() {
-        this.db.delete(TABLE_NAME, null, null);
+        this.mDatabase.delete(TABLE_NAME, null, null);
     }
 
     public List<ApproximateLocation> selectAll() {
 
         List<ApproximateLocation> list = new ArrayList<ApproximateLocation>();
-        Cursor cursor = this.db.query(TABLE_NAME, new String[] {
+        Cursor cursor = this.mDatabase.query(TABLE_NAME, new String[] {
                 LATITUDE, LONGITUDE
         }, null, null, null,
                 null, LONGITUDE + " desc");
@@ -153,7 +154,7 @@ public class LocationRecorder implements LocationProvider {
                 + latitudeMax;
 
         Log.v(TAG, "Select condition is " + condition);
-        Cursor cursor = this.db.query(TABLE_NAME, new String[] {
+        Cursor cursor = this.mDatabase.query(TABLE_NAME, new String[] {
                 LATITUDE, LONGITUDE
         }, condition, null,
                 null, null, LATITUDE + " desc");
@@ -196,10 +197,10 @@ public class LocationRecorder implements LocationProvider {
                     int nextVersion = i + 1;
                     switch (nextVersion) {
                         case 2:
-                            // success = upgradeToVersion2(db);
+                            // success = upgradeToVersion2(mDatabase);
                             break;
                         case 3:
-                            // success = upgrateToVersion3(db);
+                            // success = upgrateToVersion3(mDatabase);
                             break;
                     // etc. for later versions.
                     }

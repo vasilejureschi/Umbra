@@ -31,9 +31,9 @@ import android.location.Location;
 
 public class ApproximateLocation extends Location {
 
-    private double x;
-    private double y;
-    private double z;
+    private double mX;
+    private double mY;
+    private double mZ;
 
     public ApproximateLocation(String provider) {
         super(provider);
@@ -44,9 +44,9 @@ public class ApproximateLocation extends Location {
     }
 
     private void updateNVector() {
-        x = Math.cos(getLatitude()) * Math.cos(getLongitude());
-        y = Math.cos(getLatitude()) * Math.sin(getLongitude());
-        z = Math.sin(getLatitude());
+        mX = Math.cos(getLatitude()) * Math.cos(getLongitude());
+        mY = Math.cos(getLatitude()) * Math.sin(getLongitude());
+        mZ = Math.sin(getLatitude());
     }
 
     @Override

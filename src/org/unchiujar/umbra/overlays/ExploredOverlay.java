@@ -56,51 +56,51 @@ import java.util.List;
 
 public class ExploredOverlay extends Overlay {
     private static final String TAG = ExploredOverlay.class.getName();
-    private List<ApproximateLocation> locations;
-    private Context context;
-    private Paint rectPaint;
-    private double currentLat;
-    private double currentLong;
+    private List<ApproximateLocation> mLocations;
+    private Context mContext;
+    private Paint mRectPaint;
+    private double mCurrentLat;
+    private double mCurrentLong;
 
-    private Paint topBarPaint;
-    private Paint currentPaint;
-    private Paint circlePaint;
-    private Paint accuracyPaint;
+    private Paint mTopBarPaint;
+    private Paint mCurrentPaint;
+    private Paint mCirclePaint;
+    private Paint mAccuracyPaint;
 
-    private Point tempPoint = new Point();
-    private boolean bitmapCreated;
-    private Bitmap cover;
-    private Canvas coverCanvas;
+    private Point mTempPoint = new Point();
+    private boolean mBitmapCreated;
+    private Bitmap mCover;
+    private Canvas mCoverCanvas;
 
-    private Paint textPaint = new Paint();
-    private Paint alertPaint = new Paint();
-    private Rect topBar;
+    private Paint mTextPaint = new Paint();
+    private Paint mAlertPaint = new Paint();
+    private Rect mTopBar;
 
-    private Rect screenCover;
-    private double currentAccuracy;
+    private Rect mScreenCover;
+    private double mCurrentAccuracy;
 
     public ExploredOverlay(Context context) {
-        this.context = context;
+        this.mContext = context;
 
-        topBarPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        topBarPaint.setColor(Color.WHITE);
-        topBarPaint.setAlpha(120);
-        topBarPaint.setStyle(Style.FILL_AND_STROKE);
+        mTopBarPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        mTopBarPaint.setColor(Color.WHITE);
+        mTopBarPaint.setAlpha(120);
+        mTopBarPaint.setStyle(Style.FILL_AND_STROKE);
 
-        accuracyPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        accuracyPaint.setColor(Color.RED);
-        accuracyPaint.setAlpha(70);
-        accuracyPaint.setStyle(Style.FILL_AND_STROKE);
+        mAccuracyPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        mAccuracyPaint.setColor(Color.RED);
+        mAccuracyPaint.setAlpha(70);
+        mAccuracyPaint.setStyle(Style.FILL_AND_STROKE);
 
-        rectPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        rectPaint.setColor(Color.BLACK);
-        rectPaint.setStyle(Style.FILL_AND_STROKE);
+        mRectPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        mRectPaint.setColor(Color.BLACK);
+        mRectPaint.setStyle(Style.FILL_AND_STROKE);
 
-        currentPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        currentPaint.setColor(Color.BLUE);
-        currentPaint.setStyle(Style.STROKE);
+        mCurrentPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        mCurrentPaint.setColor(Color.BLUE);
+        mCurrentPaint.setStyle(Style.STROKE);
 
-        circlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        mCirclePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         // set PorterDuff mode in order to create transparent holes in
         // the canvas
         // see
@@ -108,19 +108,19 @@ public class ExploredOverlay extends Overlay {
         // see http://en.wikipedia.org/wiki/Alpha_compositing
         // see
         // http://groups.google.com/group/android-developers/browse_thread/thread/5b0a498664b17aa0/de4aab6fb7e97e38?lnk=gst&q=erase+transparent&pli=1
-        circlePaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-        circlePaint.setAlpha(255);
-        circlePaint.setColor(Color.BLACK);
-        circlePaint.setStyle(Style.FILL_AND_STROKE);
+        mCirclePaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+        mCirclePaint.setAlpha(255);
+        mCirclePaint.setColor(Color.BLACK);
+        mCirclePaint.setStyle(Style.FILL_AND_STROKE);
 
-        textPaint.setAntiAlias(true);
-        textPaint.setTextSize(15);
-        textPaint.setFakeBoldText(true);
+        mTextPaint.setAntiAlias(true);
+        mTextPaint.setTextSize(15);
+        mTextPaint.setFakeBoldText(true);
 
-        alertPaint.setAntiAlias(true);
-        alertPaint.setTextSize(15);
-        alertPaint.setFakeBoldText(true);
-        alertPaint.setColor(Color.RED);
+        mAlertPaint.setAntiAlias(true);
+        mAlertPaint.setTextSize(15);
+        mAlertPaint.setFakeBoldText(true);
+        mAlertPaint.setColor(Color.RED);
 
     }
 
@@ -133,7 +133,7 @@ public class ExploredOverlay extends Overlay {
 
         // top bar rectangle
 
-        topBar = new Rect(0, 0, mapView.getMeasuredWidth(), 30);
+        mTopBar = new Rect(0, 0, mapView.getMeasuredWidth(), 30);
 
         // the size of the displayed area is dependent on the zoom level
         // 1 - 19 levels
@@ -144,79 +144,79 @@ public class ExploredOverlay extends Overlay {
 
         // 4 / 2 ^ (21 - level)
 
-        double pixelsMeter = 4d / Math.pow(2, 19 - mapView.getZoomLevel());
+        final double pixelsMeter = 4d / Math.pow(2, 19 - mapView.getZoomLevel());
         int radius = (int) ((double) LocationOrder.METERS_RADIUS * pixelsMeter);
         radius = (radius <= 1) ? 1 : radius;
 
-        int accuracy = (int) ((double) currentAccuracy * pixelsMeter);
+        int accuracy = (int) ((double) mCurrentAccuracy * pixelsMeter);
         accuracy = (accuracy <= 1) ? 1 : accuracy;
 
         Log.v(TAG, "View distance is " + LocationOrder.METERS_RADIUS
                 + " meters, radius in pixels is "
                 + radius + " pixel per meter is " + pixelsMeter);
-        if (!bitmapCreated) {
-            cover = Bitmap.createBitmap(mapView.getMeasuredWidth(), mapView.getMeasuredHeight(),
+        if (!mBitmapCreated) {
+            mCover = Bitmap.createBitmap(mapView.getMeasuredWidth(), mapView.getMeasuredHeight(),
                     Bitmap.Config.ALPHA_8);
-            coverCanvas = new Canvas(cover);
+            mCoverCanvas = new Canvas(mCover);
             // TODO check is width, height is always the same - rotation may be
             // a problem
-            screenCover = new Rect(0, 0, mapView.getMeasuredWidth(), mapView.getMeasuredHeight());
+            mScreenCover = new Rect(0, 0, mapView.getMeasuredWidth(), mapView.getMeasuredHeight());
 
-            bitmapCreated = true;
+            mBitmapCreated = true;
         } else {
-            cover.eraseColor(Color.TRANSPARENT);
+            mCover.eraseColor(Color.TRANSPARENT);
         }
 
-        coverCanvas.drawRect(screenCover, rectPaint);
+        mCoverCanvas.drawRect(mScreenCover, mRectPaint);
 
-        for (ApproximateLocation location : locations) {
+        for (ApproximateLocation location : mLocations) {
             // XXX BUG - do not use
             // point = mapView.getProjection().toPixels(geoPoint, null);
             // returns an incorrect value in point
             // you'll cry debugger tears if you do
-            projection.toPixels(locationToGeoPoint(location), tempPoint);
-            // Log.v(TAG, "GeoPoint to screen point: " + tempPoint);
+            projection.toPixels(locationToGeoPoint(location), mTempPoint);
+            // Log.v(TAG, "GeoPoint to screen point: " + mTempPoint);
             // for display use only visible points
-            if (tempPoint.x >= 0 && tempPoint.x <= mapView.getWidth() && tempPoint.y >= 0
-                    && tempPoint.y <= mapView.getHeight()) {
-                coverCanvas.drawCircle(tempPoint.x, tempPoint.y, radius, circlePaint);
+            if (mTempPoint.x >= 0 && mTempPoint.x <= mapView.getWidth() && mTempPoint.y >= 0
+                    && mTempPoint.y <= mapView.getHeight()) {
+                mCoverCanvas.drawCircle(mTempPoint.x, mTempPoint.y, radius, mCirclePaint);
             }
 
         }
         // draw blue location circle
-        projection.toPixels(new GeoPoint((int) (currentLat * 1e6), (int) (currentLong * 1e6)),
-                tempPoint);
-        coverCanvas.drawCircle(tempPoint.x, tempPoint.y, radius, currentPaint);
-        coverCanvas.drawCircle(tempPoint.x, tempPoint.y, accuracy, accuracyPaint);
+        projection.toPixels(new GeoPoint((int) (mCurrentLat * 1e6), (int) (mCurrentLong * 1e6)),
+                mTempPoint);
+        mCoverCanvas.drawCircle(mTempPoint.x, mTempPoint.y, radius, mCurrentPaint);
+        mCoverCanvas.drawCircle(mTempPoint.x, mTempPoint.y, accuracy, mAccuracyPaint);
 
-        SharedPreferences settings = context.getSharedPreferences(Settings.UMBRA_PREFS, 0);
-        rectPaint.setAlpha(settings.getInt(Settings.TRANSPARENCY, 120));
+        SharedPreferences settings = mContext.getSharedPreferences(Settings.UMBRA_PREFS, 0);
+        mRectPaint.setAlpha(settings.getInt(Settings.TRANSPARENCY, 120));
 
-        canvas.drawBitmap(cover, 0, 0, rectPaint);
-        canvas.drawRect(topBar, topBarPaint);
+        canvas.drawBitmap(mCover, 0, 0, mRectPaint);
+        canvas.drawRect(mTopBar, mTopBarPaint);
 
-        String accuracyText = LocationUtilities.getFormattedDistance(currentAccuracy,
+        String accuracyText = LocationUtilities.getFormattedDistance(mCurrentAccuracy,
                 settings.getBoolean(Settings.MEASUREMENT_SYSTEM, false));
 
-        if (currentAccuracy < LocationOrder.METERS_RADIUS * 2) {
+        if (mCurrentAccuracy < LocationOrder.METERS_RADIUS * 2) {
             canvas.drawText(" Accuracy: " + accuracyText, 17, 19,
-                    textPaint);
+                    mTextPaint);
         } else {
             canvas.drawText(" Accuracy is too low: " + accuracyText, 17, 19,
-                    alertPaint);
+                    mAlertPaint);
         }
 
         // super.draw(canvadb des, mapView, false);
     }
 
     public void setExplored(List<ApproximateLocation> locations) {
-        this.locations = locations;
-        Log.d(TAG, "Explored size is: " + this.locations.size());
+        this.mLocations = locations;
+        Log.d(TAG, "Explored size is: " + this.mLocations.size());
     }
 
     public void setCurrent(double currentLat, double currentLong, double currentAccuracy) {
-        this.currentLat = currentLat;
-        this.currentLong = currentLong;
-        this.currentAccuracy = currentAccuracy;
+        this.mCurrentLat = currentLat;
+        this.mCurrentLong = currentLong;
+        this.mCurrentAccuracy = currentAccuracy;
     }
 }

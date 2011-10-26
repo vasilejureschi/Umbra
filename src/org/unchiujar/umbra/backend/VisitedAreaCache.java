@@ -56,61 +56,61 @@ public class VisitedAreaCache implements LocationProvider {
     /** The maximum number of entries in the cache's TreeSet. UNUSED */
     private static final int MAX_CACHE_SIZE = 2000;
 
-    private int previousSize = 0;
+    private int mPreviousSize = 0;
 
-    private TimerTask updateDb;
-    private Timer updateTimer;
+    private TimerTask mUpdateDb;
+    private Timer mUpdateTimer;
 
     /** Flag signaling that unsaved data has been added to cache. */
-    private boolean dirty = false;
+    private boolean mDirty = false;
 
-    /** Actual Locations cached. */
-    private TreeSet<ApproximateLocation> locations = new TreeSet<ApproximateLocation>(
+    /** Actual Locations mCached. */
+    private TreeSet<ApproximateLocation> mLocations = new TreeSet<ApproximateLocation>(
             new LocationOrder());
 
     /** TreeSet used to keep new locations between database updates. */
-    private TreeSet<ApproximateLocation> newLocations = new TreeSet<ApproximateLocation>(
+    private TreeSet<ApproximateLocation> mNewLocations = new TreeSet<ApproximateLocation>(
             new LocationOrder());
 
-    /** Upper left bound of cached rectangle area. */
-    private ApproximateLocation upperLeftBoundCached;
+    /** Upper left bound of mCached rectangle area. */
+    private ApproximateLocation mUpperLeftBoundCached;
 
-    /** Lower right bound of cached rectangle area. */
-    private ApproximateLocation lowerRightBoundCached;
-    private Context context;
-    private boolean cached = false;
+    /** Lower right bound of mCached rectangle area. */
+    private ApproximateLocation mLowerRightBoundCached;
+    private Context mContext;
+    private boolean mCached = false;
 
-    private static VisitedAreaCache instance;
+    private static VisitedAreaCache mInstance;
 
-    private Intent locationServiceIntent = new Intent("org.com.unchiujar.LocationService");
+    private Intent mLocationServiceIntent = new Intent("org.com.unchiujar.LocationService");
 
     private VisitedAreaCache(Context context) {
         super();
-        this.context = context;
+        this.mContext = context;
         // create database update task to be run
         // at UPDATE_TIME intervals
-        updateDb = new TimerTask() {
+        mUpdateDb = new TimerTask() {
 
             @Override
             public void run() {
-                if (dirty) {
-                    Log.d(TAG, "Updating database with " + newLocations.size()
-                            + " new locations...");
+                if (mDirty) {
+                    Log.d(TAG, "Updating database with " + mNewLocations.size()
+                            + " new mLocations...");
                     LocationRecorder recorder = LocationRecorder
-                            .getInstance(VisitedAreaCache.this.context);
+                            .getInstance(VisitedAreaCache.this.mContext);
 
                     // TODO lame list creation
                     ArrayList<ApproximateLocation> addedLocations = new ArrayList<ApproximateLocation>();
-                    for (ApproximateLocation location : newLocations) {
+                    for (ApproximateLocation location : mNewLocations) {
                         addedLocations.add(location);
                     }
                     recorder.insert(addedLocations);
 
                     Log.d(TAG, "Database update completed.");
-                    // reset dirty cache flag
-                    dirty = false;
-                    // clear the TreeSet containing locations
-                    newLocations.clear();
+                    // reset mDirty cache flag
+                    mDirty = false;
+                    // clear the TreeSet containing mLocations
+                    mNewLocations.clear();
                 } else {
                     Log.d(TAG, "No new location added, no update needed.");
                 }
@@ -118,45 +118,45 @@ public class VisitedAreaCache implements LocationProvider {
 
         };
         // create and schedule database updates
-        updateTimer = new Timer();
-        updateTimer.schedule(updateDb, UPDATE_INTERVAL, UPDATE_INTERVAL);
+        mUpdateTimer = new Timer();
+        mUpdateTimer.schedule(mUpdateDb, UPDATE_INTERVAL, UPDATE_INTERVAL);
 
         doBindService();
     }
 
     public void destroy() {
-        updateTimer.cancel();
+        mUpdateTimer.cancel();
         doUnbindService();
     }
 
     public static VisitedAreaCache getInstance(Context context) {
-        return (instance == null) ? instance = new VisitedAreaCache(context) : instance;
+        return (mInstance == null) ? mInstance = new VisitedAreaCache(context) : mInstance;
     }
 
     @Override
     public void deleteAll() {
-        locations.clear();
+        mLocations.clear();
 
     }
 
     @Override
     public synchronized long insert(ApproximateLocation location) {
-        locations.add(location);
-        // set dirty cache flag if an actual location was
+        mLocations.add(location);
+        // set mDirty cache flag if an actual location was
         // inserted in the tree, checks by tree size
-        if (locations.size() != previousSize) {
+        if (mLocations.size() != mPreviousSize) {
             // add the location to the database update treeset
-            newLocations.add(location);
-            Log.d(TAG, "Unsaved locations: " + newLocations.size());
-            dirty = true;
-            previousSize = locations.size();
+            mNewLocations.add(location);
+            Log.d(TAG, "Unsaved mLocations: " + mNewLocations.size());
+            mDirty = true;
+            mPreviousSize = mLocations.size();
         }
-        return previousSize;
+        return mPreviousSize;
     }
 
     @Override
     public List<ApproximateLocation> selectAll() {
-        return new ArrayList<ApproximateLocation>(locations);
+        return new ArrayList<ApproximateLocation>(mLocations);
     }
 
     /*
@@ -168,32 +168,32 @@ public class VisitedAreaCache implements LocationProvider {
     @Override
     public List<ApproximateLocation> selectVisited(ApproximateLocation upperLeft,
             ApproximateLocation lowerRight) {
-        if (!cached) {
+        if (!mCached) {
             Log.d(TAG, "Loading all visited points form database...");
             // TODO find a better method
             // cache the entire database
-            LocationRecorder recorder = LocationRecorder.getInstance(context);
-            locations.addAll(recorder.selectAll());
-            cached = true;
-            Log.d(TAG, "Loaded " + locations.size() + " points.");
+            LocationRecorder recorder = LocationRecorder.getInstance(mContext);
+            mLocations.addAll(recorder.selectAll());
+            mCached = true;
+            Log.d(TAG, "Loaded " + mLocations.size() + " points.");
 
         }
         ArrayList<ApproximateLocation> visited = new ArrayList<ApproximateLocation>(
-                locations.subSet(upperLeft,
+                mLocations.subSet(upperLeft,
                         lowerRight));
-        Log.d(TAG, "Returning  " + visited.size() + "  cached results");
+        Log.d(TAG, "Returning  " + visited.size() + "  mCached results");
         return visited;
     }
 
     /** Messenger for communicating with service. */
     Messenger mService = null;
     /** Flag indicating whether we have called bind on the service. */
-    boolean mIsBound;
+    private boolean mIsBound;
 
     /**
      * Handler of incoming messages from service.
      */
-    class IncomingHandler extends Handler {
+    private class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
@@ -225,7 +225,7 @@ public class VisitedAreaCache implements LocationProvider {
     /**
      * Target we publish for clients to send messages to IncomingHandler.
      */
-    final Messenger mMessenger = new Messenger(new IncomingHandler());
+    private final Messenger mMessenger = new Messenger(new IncomingHandler());
 
     /**
      * Class for interacting with the main interface of the service.
@@ -267,7 +267,7 @@ public class VisitedAreaCache implements LocationProvider {
     };
 
     private void doBindService() {
-        context.bindService(locationServiceIntent, mConnection,
+        mContext.bindService(mLocationServiceIntent, mConnection,
                 Context.BIND_AUTO_CREATE);
         mIsBound = true;
         Log.d(TAG, "Binding to location service");
@@ -289,7 +289,7 @@ public class VisitedAreaCache implements LocationProvider {
             }
 
             // Detach our existing connection.
-            context.unbindService(mConnection);
+            mContext.unbindService(mConnection);
             mIsBound = false;
             Log.d(TAG, "Unbinding from location service.");
         }

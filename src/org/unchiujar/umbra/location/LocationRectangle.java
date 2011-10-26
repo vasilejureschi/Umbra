@@ -34,21 +34,21 @@ package org.unchiujar.umbra.location;
 public class LocationRectangle {
 
     /** The upper left. */
-    private ApproximateLocation upperLeft;
+    private ApproximateLocation mUpperLeft;
 
     /** The lower right. */
-    private ApproximateLocation lowerRight;
+    private ApproximateLocation mLowerRight;
 
     /**
      * Instantiates a new location rectangle.
      * 
-     * @param upperLeft the upper left
-     * @param lowerRight the lower right
+     * @param mUpperLeft the upper left
+     * @param mLowerRight the lower right
      */
     public LocationRectangle(ApproximateLocation upperLeft, ApproximateLocation lowerRight) {
         super();
-        this.upperLeft = upperLeft;
-        this.lowerRight = lowerRight;
+        this.mUpperLeft = upperLeft;
+        this.mLowerRight = lowerRight;
     }
 
     /**
@@ -57,16 +57,16 @@ public class LocationRectangle {
      * @return the upper left
      */
     public ApproximateLocation getUpperLeft() {
-        return upperLeft;
+        return mUpperLeft;
     }
 
     /**
      * Sets the upper left.
      * 
-     * @param upperLeft the new upper left
+     * @param mUpperLeft the new upper left
      */
     public void setUpperLeft(ApproximateLocation upperLeft) {
-        this.upperLeft = upperLeft;
+        this.mUpperLeft = upperLeft;
     }
 
     /**
@@ -75,15 +75,15 @@ public class LocationRectangle {
      * @return the lower right
      */
     public ApproximateLocation getLowerRight() {
-        return lowerRight;
+        return mLowerRight;
     }
 
     /**
      * Sets the lower right.
      * 
-     * @param lowerRight the new lower right
+     * @param mLowerRight the new lower right
      */
     public void setLowerRight(ApproximateLocation lowerRight) {
-        this.lowerRight = lowerRight;
+        this.mLowerRight = lowerRight;
     }
 }
