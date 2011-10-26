@@ -25,9 +25,11 @@
  *        Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
  ******************************************************************************/
 
-package org.unchiujar.umbra;
+package org.unchiujar.umbra.backend;
 
-import static org.unchiujar.umbra.LogUtilities.numberLogList;
+import static org.unchiujar.umbra.utils.LogUtilities.numberLogList;
+
+import org.unchiujar.umbra.location.ApproximateLocation;
 
 import android.content.Context;
 import android.database.Cursor;
@@ -90,12 +92,11 @@ public class LocationRecorder implements LocationProvider {
     }
 
     public void insert(List<ApproximateLocation> locations) {
+        // TODO test batch insert speed
         DatabaseUtils.InsertHelper batchInserter = new DatabaseUtils.InsertHelper(db, TABLE_NAME);
         int latitudeIndex = batchInserter.getColumnIndex(LATITUDE);
         int longitudeIndex = batchInserter.getColumnIndex(LONGITUDE);
 
-        // see
-        // http://notes.theorbis.net/2010/02/batch-insert-to-sqlite-on-android.html
         for (ApproximateLocation aproximateLocation : locations) {
             batchInserter.prepareForInsert();
             batchInserter.bind(latitudeIndex, aproximateLocation.getLatitude());

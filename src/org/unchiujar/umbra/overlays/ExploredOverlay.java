@@ -25,14 +25,19 @@
  *        Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
  ******************************************************************************/
 
-package org.unchiujar.umbra;
+package org.unchiujar.umbra.overlays;
 
-import static org.unchiujar.umbra.LocationUtilities.locationToGeoPoint;
+import static org.unchiujar.umbra.utils.LocationUtilities.locationToGeoPoint;
 
 import com.google.android.maps.GeoPoint;
 import com.google.android.maps.MapView;
 import com.google.android.maps.Overlay;
 import com.google.android.maps.Projection;
+
+import org.unchiujar.umbra.activities.Settings;
+import org.unchiujar.umbra.location.ApproximateLocation;
+import org.unchiujar.umbra.location.LocationOrder;
+import org.unchiujar.umbra.utils.LocationUtilities;
 
 import android.content.Context;
 import android.content.SharedPreferences;

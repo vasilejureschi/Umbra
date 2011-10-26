@@ -25,8 +25,7 @@
  *        Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
  ******************************************************************************/
 
-package org.unchiujar.umbra;
-
+package org.unchiujar.umbra.location;
 
 // TODO: Auto-generated Javadoc
 /**

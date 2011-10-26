@@ -25,9 +25,12 @@
  *        Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
  ******************************************************************************/
 
-package org.unchiujar.umbra;
+package org.unchiujar.umbra.utils;
 
 import com.google.android.maps.GeoPoint;
+
+import org.unchiujar.umbra.location.ApproximateLocation;
+import org.unchiujar.umbra.location.LocationRectangle;
 
 import android.location.Location;
 import android.util.Log;

@@ -25,7 +25,9 @@
  *        Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
  ******************************************************************************/
 
-package org.unchiujar.umbra;
+package org.unchiujar.umbra.backend;
+
+import org.unchiujar.umbra.location.ApproximateLocation;
 
 import java.util.ArrayList;
 import java.util.List;

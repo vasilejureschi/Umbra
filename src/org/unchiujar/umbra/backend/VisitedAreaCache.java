@@ -25,7 +25,11 @@
  *        Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
  ******************************************************************************/
 
-package org.unchiujar.umbra;
+package org.unchiujar.umbra.backend;
+
+import org.unchiujar.umbra.location.ApproximateLocation;
+import org.unchiujar.umbra.location.LocationOrder;
+import org.unchiujar.umbra.services.LocationService;
 
 import android.content.ComponentName;
 import android.content.Context;

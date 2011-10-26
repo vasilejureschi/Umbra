@@ -25,32 +25,43 @@
  *        Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
  ******************************************************************************/
 
-package org.unchiujar.umbra;
+package org.unchiujar.umbra.activities;
 
-import android.location.Location;
+import org.unchiujar.umbra.R;
 
-public class LogUtilities {
+import android.app.Activity;
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
 
-    /**
-     * Logging utility method used for formatting a list of numbers in the
-     * [x,y,z] format.
-     * 
-     * @param numbers the numbers to be formated
-     * @return a formatted string
-     */
-    public static String numberLogList(double... numbers) {
-        StringBuffer formatted = new StringBuffer("[");
-        for (double d : numbers) {
-            formatted.append(d + ",");
-        }
-        return formatted.append("\b]").toString();
+public class Help extends Activity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.help);
+        final Button button = (Button) findViewById(R.id.feedback_btn);
+        button.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                sendEmail();
+            }
+        });
     }
 
-    public static String locationLogList(Location... locations) {
-        StringBuffer formatted = new StringBuffer("[");
-        for (Location location : locations) {
-            formatted.append(location.getLatitude() + " " + location.getLongitude() + "][");
-        }
-        return formatted.append("\b]").toString();
+    private void sendEmail() {
+        Intent emailIntent = new Intent(android.content.Intent.ACTION_SEND);
+        String recipients[] = {
+                getString(R.string.feedback_email)
+        };
+
+        emailIntent.putExtra(android.content.Intent.EXTRA_EMAIL, recipients);
+        emailIntent.putExtra(android.content.Intent.EXTRA_SUBJECT,
+                getString(R.string.email_subject));
+        emailIntent.setType("plain/text");
+
+        emailIntent.putExtra(android.content.Intent.EXTRA_TEXT, getString(R.string.email_body));
+        startActivity(Intent.createChooser(emailIntent, getString(R.string.email_chooser)));
     }
+
 }

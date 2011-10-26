@@ -25,7 +25,9 @@
  *        Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
  ******************************************************************************/
 
-package org.unchiujar.umbra;
+package org.unchiujar.umbra.activities;
+
+import org.unchiujar.umbra.R;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
@@ -101,7 +103,7 @@ public class Settings extends Activity implements SeekBar.OnSeekBarChangeListene
                 false));
         mAnimate.setOnClickListener(mAnimateListener);
         updateCheckbox(mAnimate, R.string.animate_none, R.string.animate_move);
-        
+
         mImperial = (CheckBox) findViewById(R.id.check_metric);
         mImperial.setChecked(mSettings.getBoolean(MEASUREMENT_SYSTEM,
                 false));

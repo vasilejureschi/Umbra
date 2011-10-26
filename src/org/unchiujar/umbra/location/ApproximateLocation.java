@@ -25,7 +25,7 @@
  *        Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
  ******************************************************************************/
 
-package org.unchiujar.umbra;
+package org.unchiujar.umbra.location;
 
 import android.location.Location;
 
@@ -68,10 +68,8 @@ public class ApproximateLocation extends Location {
             return false;
         }
         // check if it is outside the preset radius
-        if (this.distanceTo((ApproximateLocation) location) > LocationOrder.METERS_RADIUS) {
-            return false;
-        }
-        return true;
+        return  this.distanceTo((ApproximateLocation) location) <= LocationOrder.METERS_RADIUS;
+
     }
 
     // TODO - check theory behind implementation, see Effective Java

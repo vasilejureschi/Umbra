@@ -25,7 +25,13 @@
  *        Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
  ******************************************************************************/
 
-package org.unchiujar.umbra;
+package org.unchiujar.umbra.services;
+
+import org.unchiujar.umbra.R;
+import org.unchiujar.umbra.R.drawable;
+import org.unchiujar.umbra.R.string;
+import org.unchiujar.umbra.activities.FogOfExplore;
+import org.unchiujar.umbra.location.LocationOrder;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -33,7 +39,6 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationListener;

@@ -28,7 +28,7 @@
  * 
  */
 
-package org.unchiujar.umbra;
+package org.unchiujar.umbra.location;
 
 import android.location.Location;
 

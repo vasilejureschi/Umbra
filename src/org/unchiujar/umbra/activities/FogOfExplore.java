@@ -25,16 +25,24 @@
  *        Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
  ******************************************************************************/
 
-package org.unchiujar.umbra;
+package org.unchiujar.umbra.activities;
 
-import static org.unchiujar.umbra.LocationUtilities.coordinatesToGeoPoint;
-import static org.unchiujar.umbra.LocationUtilities.coordinatesToLocation;
-import static org.unchiujar.umbra.LogUtilities.numberLogList;
+import static org.unchiujar.umbra.utils.LocationUtilities.coordinatesToGeoPoint;
+import static org.unchiujar.umbra.utils.LocationUtilities.coordinatesToLocation;
+import static org.unchiujar.umbra.utils.LogUtilities.numberLogList;
 
 import com.google.android.maps.MapActivity;
 import com.google.android.maps.MapController;
 import com.google.android.maps.MapView;
 import com.google.android.maps.Overlay;
+
+import org.unchiujar.umbra.R;
+import org.unchiujar.umbra.backend.LocationProvider;
+import org.unchiujar.umbra.backend.VisitedAreaCache;
+import org.unchiujar.umbra.location.ApproximateLocation;
+import org.unchiujar.umbra.overlays.ExploredOverlay;
+import org.unchiujar.umbra.services.LocationService;
+import org.unchiujar.umbra.utils.LocationUtilities;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -89,7 +97,7 @@ public class FogOfExplore extends MapActivity {
         @Override
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
             Log.d(TAG, "Settings changed :" + sharedPreferences + " " + key);
-                    mWalk = sharedPreferences.getBoolean(org.unchiujar.umbra.Settings.UPDATE_MODE, false);
+            mWalk = sharedPreferences.getBoolean(org.unchiujar.umbra.activities.Settings.UPDATE_MODE, false);
         }
     };
 
@@ -174,7 +182,8 @@ public class FogOfExplore extends MapActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         dialog = ProgressDialog.show(this, "", "Loading. Please wait...", true);
-        getSharedPreferences(Settings.UMBRA_PREFS, 0).registerOnSharedPreferenceChangeListener(mPrefListener);
+        getSharedPreferences(Settings.UMBRA_PREFS, 0).registerOnSharedPreferenceChangeListener(
+                mPrefListener);
         setContentView(R.layout.main);
         MapView mapView = (MapView) findViewById(R.id.mapview);
         mapView.setBuiltInZoomControls(true);
@@ -418,8 +427,9 @@ public class FogOfExplore extends MapActivity {
 
                 msg = Message.obtain(null, LocationService.MSG_REGISTER_INTERFACE);
                 mService.send(msg);
-                // send walk or drive mode  
-                msg =  (mWalk)?Message.obtain(null, LocationService.MSG_WALK):Message.obtain(null, LocationService.MSG_DRIVE);
+                // send walk or drive mode
+                msg = (mWalk) ? Message.obtain(null, LocationService.MSG_WALK) : Message.obtain(
+                        null, LocationService.MSG_DRIVE);
                 mService.send(msg);
             } catch (RemoteException e) {
                 // In this case the service has crashed before we could even
