@@ -78,4 +78,10 @@ public class LocationVolatileRecorder implements ExploredProvider {
         return visited;
     }
 
+    @Override
+    public void destroy() {
+        // TODO Auto-generated method stub
+        
+    }
+
 }

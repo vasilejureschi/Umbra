@@ -301,7 +301,7 @@ public class FogOfExplore extends MapActivity {
         Log.d(TAG, "onCreate completed: Activity created");
         mLocationServiceIntent = new Intent(SERVICE_INTENT_NAME);
         startService(mLocationServiceIntent);
-        mRecorder = VisitedAreaCache.getInstance(getApplicationContext());
+        mRecorder = new VisitedAreaCache(getApplicationContext());
     }
 
     /*
@@ -443,7 +443,7 @@ public class FogOfExplore extends MapActivity {
                 Log.d(TAG, "Exit requested...");
                 // cleanup
                 stopService(mLocationServiceIntent);
-                VisitedAreaCache.getInstance(this).destroy();
+                mRecorder.destroy();
                 finish();
                 return true;
             case R.id.settings:

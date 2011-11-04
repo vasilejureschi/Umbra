@@ -50,4 +50,6 @@ public interface ExploredProvider {
      */
     List<ApproximateLocation> selectVisited(ApproximateLocation upperLeft,
             ApproximateLocation bottomRight);
+
+    void destroy();
 }

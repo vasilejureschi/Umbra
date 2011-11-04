@@ -55,7 +55,7 @@ public class LocationRecorder implements ExploredProvider {
     private static final String LATITUDE = "latitude";
 
     private static final String DATABASE_PROVIDER = "Visited";
-    
+
     private static final String INSERT = "insert into " + TABLE_NAME + "(" + LATITUDE + ","
             + LONGITUDE
             + ") values (?,?)";
@@ -63,10 +63,7 @@ public class LocationRecorder implements ExploredProvider {
     private SQLiteDatabase mDatabase;
     private SQLiteStatement mInsertStmt;
 
-
-    private static LocationRecorder mInstance;
-
-    private LocationRecorder(Context context) {
+    public LocationRecorder(Context context) {
         this.mContext = context;
         OpenHelper openHelper = new OpenHelper(this.mContext);
         this.mDatabase = openHelper.getWritableDatabase();
@@ -74,10 +71,6 @@ public class LocationRecorder implements ExploredProvider {
         // openHelper.onCreate(mDatabase);
         this.mInsertStmt = this.mDatabase.compileStatement(INSERT);
 
-    }
-
-    public static LocationRecorder getInstance(Context context) {
-        return (mInstance == null) ? mInstance = new LocationRecorder(context) : mInstance;
     }
 
     public long insert(ApproximateLocation location) {
@@ -94,7 +87,8 @@ public class LocationRecorder implements ExploredProvider {
 
     public void insert(List<ApproximateLocation> locations) {
         // TODO test batch insert speed
-        DatabaseUtils.InsertHelper batchInserter = new DatabaseUtils.InsertHelper(mDatabase, TABLE_NAME);
+        DatabaseUtils.InsertHelper batchInserter = new DatabaseUtils.InsertHelper(mDatabase,
+                TABLE_NAME);
         int latitudeIndex = batchInserter.getColumnIndex(LATITUDE);
         int longitudeIndex = batchInserter.getColumnIndex(LONGITUDE);
 
@@ -217,5 +211,11 @@ public class LocationRecorder implements ExploredProvider {
                 onCreate(db);
             }
         }
+    }
+
+    @Override
+    public void destroy() {
+        // TODO Auto-generated method stub
+
     }
 }

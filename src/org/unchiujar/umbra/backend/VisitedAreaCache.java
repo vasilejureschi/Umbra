@@ -80,13 +80,13 @@ public class VisitedAreaCache implements ExploredProvider {
     private Context mContext;
     private boolean mCached = false;
 
-    private static VisitedAreaCache mInstance;
-
     private Intent mLocationServiceIntent = new Intent("org.com.unchiujar.LocationService");
+    private LocationRecorder recorder;
 
-    private VisitedAreaCache(Context context) {
+    public VisitedAreaCache(Context context) {
         super();
         this.mContext = context;
+        recorder = new LocationRecorder(context);
         // create database update task to be run
         // at UPDATE_TIME intervals
         mUpdateDb = new TimerTask() {
@@ -96,9 +96,6 @@ public class VisitedAreaCache implements ExploredProvider {
                 if (mDirty) {
                     Log.d(TAG, "Updating database with " + mNewLocations.size()
                             + " new mLocations...");
-                    LocationRecorder recorder = LocationRecorder
-                            .getInstance(VisitedAreaCache.this.mContext);
-
                     // TODO lame list creation
                     ArrayList<ApproximateLocation> addedLocations = new ArrayList<ApproximateLocation>();
                     for (ApproximateLocation location : mNewLocations) {
@@ -127,10 +124,6 @@ public class VisitedAreaCache implements ExploredProvider {
     public void destroy() {
         mUpdateTimer.cancel();
         doUnbindService();
-    }
-
-    public static VisitedAreaCache getInstance(Context context) {
-        return (mInstance == null) ? mInstance = new VisitedAreaCache(context) : mInstance;
     }
 
     @Override
@@ -172,7 +165,6 @@ public class VisitedAreaCache implements ExploredProvider {
             Log.d(TAG, "Loading all visited points form database...");
             // TODO find a better method
             // cache the entire database
-            LocationRecorder recorder = LocationRecorder.getInstance(mContext);
             mLocations.addAll(recorder.selectAll());
             mCached = true;
             Log.d(TAG, "Loaded " + mLocations.size() + " points.");
