@@ -42,7 +42,7 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LocationRecorder implements LocationProvider {
+public class LocationRecorder implements ExploredProvider {
     private static final String TAG = LocationRecorder.class.getName();
     private static final String DATABASE_NAME = "visited.db";
     /**

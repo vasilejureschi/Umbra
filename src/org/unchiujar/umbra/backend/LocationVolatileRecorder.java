@@ -32,7 +32,7 @@ import org.unchiujar.umbra.location.ApproximateLocation;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LocationVolatileRecorder implements LocationProvider {
+public class LocationVolatileRecorder implements ExploredProvider {
 
     private List<ApproximateLocation> mLocations = new ArrayList<ApproximateLocation>();
 

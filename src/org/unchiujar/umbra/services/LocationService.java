@@ -93,6 +93,9 @@ public class LocationService extends Service {
     public static final int MSG_WALK = 6;
     public static final int MSG_DRIVE = 7;
 
+    
+    public static final int MSG_LOCATION_CHANGED = 9000;
+
     /**
      * Command to service to set a new value. This can be sent to the service to
      * supply a new value, and will be sent by the service to any registered
@@ -267,7 +270,7 @@ public class LocationService extends Service {
 
             try {
                 // Send data as an Integer
-                mClients.get(i).send(Message.obtain(null, 9000, location));
+                mClients.get(i).send(Message.obtain(null, MSG_LOCATION_CHANGED, location));
 
             } catch (RemoteException e) {
                 // The client is dead. Remove it from the list; we are going

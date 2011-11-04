@@ -49,7 +49,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeSet;
 
-public class VisitedAreaCache implements LocationProvider {
+public class VisitedAreaCache implements ExploredProvider {
     private static final String TAG = VisitedAreaCache.class.getName();
     /** The interval between database updates. */
     private static final long UPDATE_INTERVAL = 30 * 1000;

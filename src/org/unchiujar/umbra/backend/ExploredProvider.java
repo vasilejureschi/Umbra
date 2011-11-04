@@ -31,7 +31,7 @@ import org.unchiujar.umbra.location.ApproximateLocation;
 
 import java.util.List;
 
-public interface LocationProvider {
+public interface ExploredProvider {
     long insert(ApproximateLocation location);
 
     void deleteAll();
