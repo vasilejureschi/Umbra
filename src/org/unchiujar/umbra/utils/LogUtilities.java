@@ -29,8 +29,15 @@ package org.unchiujar.umbra.utils;
 
 import android.location.Location;
 
-public class LogUtilities {
+/**
+ * Logging utilities class. 
+ * @author Vasile Jureschi <vasile.jureschi@gmail.com>
+ */
+public final class LogUtilities {
 
+    /** Utility class, prevent instantiation. */
+    private LogUtilities() {
+    }
     /**
      * Logging utility method used for formatting a list of numbers in the
      * [x,y,z] format.
@@ -46,6 +53,12 @@ public class LogUtilities {
         return formatted.append("\b]").toString();
     }
 
+    /**
+     * Creates a formatted list of location coordinates from 
+     * a list of locations.
+     * @param locations a list of location
+     * @return a formatted list of location coordinates in String format
+     */
     public static String locationLogList(Location... locations) {
         StringBuffer formatted = new StringBuffer("[");
         for (Location location : locations) {

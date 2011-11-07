@@ -43,23 +43,51 @@ import java.util.List;
  * Utility class used for transforming between various representations for
  * locations.
  * 
- * @author vasile
+ * @author "Vasile Jureschi <vasile.jureschi@gmail.com>"
  */
-public class LocationUtilities {
+public final class LocationUtilities {
 
+    /** Logging tag value for this class. */
     private static final String TAG = LocationUtilities.class.getName();
 
+    /**
+     * Meter to feet conversion constant, used in metric to imperial conversion.
+     */
     private static final double METER_IN_FEET = 3.2808399;
+    /** Feet abbreviation used when displaying. */
     private static final String FEET_UNIT = " ft";
+    /** Meters abbreviation used when displaying. */
     private static final String METERS_UNIT = " m";
 
+    /**
+     * Number to divide by when transforming the location from E6 format to
+     * decimal.
+     */
+    private static final double LOCATION_ZEROS = 1e6;
+
+    /** Utility class, prevent instantiation. */
+    private LocationUtilities() {
+    }
+
+    /**
+     * Transforms a Location into a GeoPoint.
+     * 
+     * @param location the Location to transform
+     * @return a GeoPoint containing the latitude and longitude
+     */
     public static GeoPoint locationToGeoPoint(Location location) {
         return coordinatesToGeoPoint(location.getLatitude(), location.getLongitude());
     }
 
+    /**
+     * Transforms a GeoPoint into an ApproximateLocation.
+     * 
+     * @param geoPoint the GeoPoint to transform
+     * @return an ApproximateLocation containing the latitude and longitude
+     */
     public static ApproximateLocation geoPointToLocation(GeoPoint geoPoint) {
-        return coordinatesToLocation(geoPoint.getLatitudeE6() / 1e6,
-                geoPoint.getLongitudeE6() / 1e6);
+        return coordinatesToLocation(geoPoint.getLatitudeE6() / LOCATION_ZEROS,
+                geoPoint.getLongitudeE6() / LOCATION_ZEROS);
     }
 
     /**
@@ -68,7 +96,7 @@ public class LocationUtilities {
      * @return a GeoPoint with the coordinates
      */
     public static GeoPoint coordinatesToGeoPoint(double latitude, double longitude) {
-        return new GeoPoint((int) (latitude * 1e6), (int) (longitude * 1e6));
+        return new GeoPoint((int) (latitude * LOCATION_ZEROS), (int) (longitude * LOCATION_ZEROS));
     }
 
     /**
@@ -90,19 +118,18 @@ public class LocationUtilities {
      */
     public static ApproximateLocation coordinatesToLocation(int latitudeE6, int longitudeE6) {
         ApproximateLocation location = new ApproximateLocation("Translator");
-        location.setLatitude(latitudeE6 / 1e6);
-        location.setLongitude(longitudeE6 / 1e6);
+        location.setLatitude(latitudeE6 / LOCATION_ZEROS);
+        location.setLongitude(longitudeE6 / LOCATION_ZEROS);
         return location;
 
     }
 
     /**
-     * Gets the distance in the unit for the current settings. The measure value
-     * is false for metric and true for imperial.
+     * Formats the distance for display.
      * 
      * @param meters the distance in meters
-     * @param measure metric or imperial system.
-     * @return
+     * @param imperial true for imperial and false for metric
+     * @return a formatted string in either meter of feet format
      */
     public static String getFormattedDistance(double meters, boolean imperial) {
         if (imperial) {
