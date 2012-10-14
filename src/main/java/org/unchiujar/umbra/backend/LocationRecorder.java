@@ -73,6 +73,7 @@ public class LocationRecorder implements ExploredProvider {
 
     }
 
+    @Override
     public long insert(ApproximateLocation location) {
 
         this.mInsertStmt.bindDouble(1, location.getLatitude());
@@ -106,6 +107,7 @@ public class LocationRecorder implements ExploredProvider {
         batchInserter.close();
     }
 
+    @Override
     public void deleteAll() {
         this.mDatabase.delete(TABLE_NAME, null, null);
     }
@@ -133,6 +135,7 @@ public class LocationRecorder implements ExploredProvider {
         return list;
     }
 
+    @Override
     public List<ApproximateLocation> selectVisited(ApproximateLocation upperLeft,
             ApproximateLocation lowerRight) {
 

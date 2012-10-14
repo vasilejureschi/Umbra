@@ -26,31 +26,58 @@
          Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-	android:orientation="vertical" android:layout_width="match_parent"
-	android:layout_height="match_parent">
-	<TextView android:textAppearance="?android:attr/textAppearanceMedium"
-		android:layout_width="wrap_content" android:text="@string/transparency_label"
-		android:layout_height="wrap_content" android:id="@+id/transparency_label"
-		android:layout_margin="10px"></TextView>
-	<SeekBar android:id="@+id/transparency_seek"
-		android:layout_height="wrap_content" android:layout_width="match_parent"
-		android:max="255" android:layout_margin="10px"></SeekBar>
-	<ImageView android:id="@+id/transparency_image" android:src="@drawable/transparency"
-		android:layout_height="wrap_content" android:layout_width="fill_parent"></ImageView>
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
 
-	<CheckBox  android:id="@+id/check_metric"
-		android:layout_height="wrap_content"
-		android:layout_margin="10px" android:layout_width="fill_parent"
-		android:text="@string/measurement_metric"></CheckBox>
-	
-	<CheckBox  android:id="@+id/check_animate"
-		android:layout_height="wrap_content"
-		android:layout_margin="10px" android:layout_width="fill_parent"
-		android:text="@string/animate_none" android:checked="false"></CheckBox>
+    <TextView
+        android:id="@+id/transparency_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:text="@string/transparency_label"
+        android:textAppearance="?android:attr/textAppearanceMedium" >
+    </TextView>
 
-	<CheckBox  android:id="@+id/check_updates"
-		android:layout_height="wrap_content"
-		android:layout_margin="10px" android:layout_width="fill_parent"
-		android:text="@string/updates_walk" android:checked="false"></CheckBox>
-	    	    
+    <SeekBar
+        android:id="@+id/transparency_seek"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:max="255" >
+    </SeekBar>
+
+    <ImageView
+        android:id="@+id/transparency_image"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:src="@drawable/transparency" >
+    </ImageView>
+
+    <CheckBox
+        android:id="@+id/check_metric"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:text="@string/measurement_metric" >
+    </CheckBox>
+
+    <CheckBox
+        android:id="@+id/check_animate"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:checked="false"
+        android:text="@string/animate_none" >
+    </CheckBox>
+
+    <CheckBox
+        android:id="@+id/check_updates"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:checked="false"
+        android:text="@string/updates_walk" >
+    </CheckBox>
+
 </LinearLayout>

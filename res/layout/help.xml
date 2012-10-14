@@ -26,13 +26,33 @@
          Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-	android:orientation="vertical" android:layout_width="match_parent"
-	android:layout_height="match_parent" android:weightSum="1">
-	<TextView android:layout_width="match_parent"
-		android:id="@+id/help"
-		android:text="@string/help_text" android:textColor="#FFFFFF"
-		android:background="#000000" android:layout_margin="25px" android:scrollbars="vertical" android:textSize="6pt" android:inputType="none" android:layout_height="293dp" android:layout_weight="0.60">
-		<requestFocus></requestFocus>
-	</TextView>
-	<Button android:layout_height="wrap_content" android:layout_width="match_parent" android:text="@string/feedback_text" android:id="@+id/feedback_btn"></Button>
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical"
+    android:weightSum="1" >
+
+    <TextView
+        android:id="@+id/help"
+        android:layout_width="fill_parent"
+        android:layout_height="0dp"
+        android:layout_margin="25dp"
+        android:layout_weight="0.60"
+        android:background="#000000"
+        android:inputType="none"
+        android:scrollbars="vertical"
+        android:text="@string/help_text"
+        android:textColor="#FFFFFF"
+        android:textSize="6pt" >
+
+        <requestFocus>
+        </requestFocus>
+    </TextView>
+
+    <Button
+        android:id="@+id/feedback_btn"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/feedback_text" >
+    </Button>
+
 </LinearLayout>

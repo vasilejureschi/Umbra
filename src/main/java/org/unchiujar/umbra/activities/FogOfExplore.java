@@ -160,6 +160,7 @@ public class FogOfExplore extends MapActivity {
         private int oldCenterLat = -1;
         private int oldCenterLong = -1;
 
+        @Override
         public void run() {
             MapView mapView = (MapView) findViewById(R.id.mapview);
 
@@ -213,6 +214,7 @@ public class FogOfExplore extends MapActivity {
      * Class for interacting with the main interface of the service.
      */
     private ServiceConnection mConnection = new ServiceConnection() {
+        @Override
         public void onServiceConnected(ComponentName className, IBinder service) {
             mService = new Messenger(service);
             Log.d(TAG, "Client Attached.");
@@ -242,6 +244,7 @@ public class FogOfExplore extends MapActivity {
          * android.content.ServiceConnection#onServiceDisconnected(android.content
          * .ComponentName)
          */
+        @Override
         public void onServiceDisconnected(ComponentName className) {
             // Called when the connection with the service has been
             // unexpectedly disconnected / process crashed.
@@ -566,12 +569,14 @@ public class FogOfExplore extends MapActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage(R.string.gps_dialog).setCancelable(false)
                 .setPositiveButton(R.string.start_gps_btn, new DialogInterface.OnClickListener() {
+                    @Override
                     public void onClick(DialogInterface dialog, int id) {
                         startActivityForResult(new Intent(
                                 android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS), 0);
                     }
                 })
                 .setNegativeButton(R.string.continue_no_gps, new DialogInterface.OnClickListener() {
+                    @Override
                     public void onClick(DialogInterface dialog, int id) {
                     }
                 });

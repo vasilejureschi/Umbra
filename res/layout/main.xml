@@ -31,5 +31,8 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:clickable="true"
-    android:apiKey="0kqWshHBMLE4BI71Cfh4OKdEfdNDEkTc055gPFw"
+    android:apiKey="0kqWshHBMLE6OAt_NykJE6EltJlaY1HNN6UlcPg"
 />
+
+<!-- debug 0kqWshHBMLE7Rsf55KkwpsK8Nqmp3RX_MfBpW0A -->
+<!-- release 0kqWshHBMLE6OAt_NykJE6EltJlaY1HNN6UlcPg -->

@@ -28,8 +28,6 @@
 package org.unchiujar.umbra.services;
 
 import org.unchiujar.umbra.R;
-import org.unchiujar.umbra.R.drawable;
-import org.unchiujar.umbra.R.string;
 import org.unchiujar.umbra.activities.FogOfExplore;
 import org.unchiujar.umbra.location.LocationOrder;
 
