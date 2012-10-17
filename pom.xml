@@ -5,7 +5,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.unchiujar.umbra</groupId>
 	<artifactId>umbra</artifactId>
-	<version>0.0.11-SNAPSHOT</version>
+	<version>0.0.12-SNAPSHOT</version>
 	<packaging>apk</packaging>
 	<name>Umbra</name>
 
@@ -22,7 +22,6 @@
 		<sign.alias>android_release</sign.alias>
 		<sign.storepass></sign.storepass>
 		<sign.keypass></sign.keypass>
-		<maven.android.version>3.3.2</maven.android.version>
 	</properties>
 
 
@@ -37,7 +36,7 @@
 		<dependency>
 			<groupId>com.google.android.maps</groupId>
 			<artifactId>maps</artifactId>
-			<version>8_r1</version>
+			<version>15_r2</version>
 			<type>jar</type>
 			<scope>provided</scope>
 		</dependency>
@@ -54,13 +53,6 @@
 			<version>r7</version>
 		</dependency>
 
-
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-api</artifactId>
-			<version>1.7.1</version>
-		</dependency>
-
 		<dependency>
 			<groupId>org.roboguice</groupId>
 			<artifactId>roboguice</artifactId>
@@ -68,23 +60,10 @@
 		</dependency>
 
 		<dependency>
-			<groupId>com.github.tony19</groupId>
-			<artifactId>logback-android-core</artifactId>
-			<version>1.0.7-1</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.github.tony19</groupId>
-			<artifactId>logback-android-classic</artifactId>
-			<version>1.0.7-1</version>
-		</dependency>
-
-		<dependency>
 			<groupId>com.j256.ormlite</groupId>
 			<artifactId>ormlite-android</artifactId>
-			<version>4.41</version>
+			<version>4.42</version>
 		</dependency>
-
 
 		<dependency>
 			<groupId>com.pivotallabs</groupId>
@@ -103,7 +82,7 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.10</version>
+			<version>4.11-beta-1</version>
 			<scope>test</scope>
 		</dependency>
 
@@ -114,7 +93,7 @@
 			<plugin>
 				<groupId>com.jayway.maven.plugins.android.generation2</groupId>
 				<artifactId>android-maven-plugin</artifactId>
-				<version>${maven.android.version}</version>
+				<version>3.3.2</version>
 				<configuration>
 					<extractDuplicates>true</extractDuplicates>
 					<sdk>
@@ -150,13 +129,13 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>2.4</version>
+				<version>2.5.1</version>
 			</plugin>
 
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>buildnumber-maven-plugin</artifactId>
-				<version>1.1</version>
+				<version>1.2</version>
 				<executions>
 					<execution>
 						<phase>validate</phase>
@@ -186,14 +165,14 @@
 				<artifactId>maven-checkstyle-plugin</artifactId>
 				<version>2.9.1</version>
 				<configuration>
-					<configLocation>dev/checkstyle.xml</configLocation>
+					<configLocation>dev/android_cs.xml</configLocation>
 				</configuration>
 			</plugin>
 
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-site-plugin</artifactId>
-				<version>3.0</version>
+				<version>3.2</version>
 				<dependencies>
 					<dependency>
 						<groupId>org.apache.maven.wagon</groupId>
@@ -206,7 +185,7 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>cobertura-maven-plugin</artifactId>
-				<version>2.5.1</version>
+				<version>2.5.2</version>
 				<configuration>
 					<formats>
 						<format>xml</format>
@@ -248,7 +227,7 @@
 											android-maven-plugin
 										</artifactId>
 										<versionRange>
-											[${maven.android.version},)
+											[3.3.2,)
 										</versionRange>
 										<goals>
 											<goal>manifest-update</goal>
@@ -279,7 +258,7 @@
 				<artifactId>maven-checkstyle-plugin</artifactId>
 				<version>2.9.1</version>
 				<configuration>
-					<configLocation>dev/checkstyle.xml</configLocation>
+					<configLocation>dev/android_cs.xml</configLocation>
 				</configuration>
 			</plugin>
 
@@ -290,16 +269,16 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.12</version>
+				<version>2.12.4</version>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-project-info-reports-plugin</artifactId>
-				<version>2.4</version>
+				<version>2.5.1</version>
 			</plugin>
 			<plugin>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>2.8.1</version>
+				<version>2.9</version>
 			</plugin>
 
 			<plugin>
@@ -311,7 +290,7 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>cobertura-maven-plugin</artifactId>
-				<version>2.5.1</version>
+				<version>2.5.2</version>
 				<configuration>
 					<formats>
 						<format>html</format>
