@@ -448,6 +448,7 @@ public class FogOfExplore extends MapActivity {
                 stopService(mLocationServiceIntent);
                 mRecorder.destroy();
                 finish();
+                System.exit(0);
                 return true;
             case R.id.settings:
                 Intent settingsIntent = new Intent(this, Settings.class);

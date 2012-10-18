@@ -48,6 +48,7 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.os.SystemClock;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -353,10 +354,14 @@ public class LocationService extends Service {
         String running = getString(R.string.running);
 
         notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        // instantiate notification
         CharSequence tickerText = contentTitle + " " + running;
-        Notification notification = new Notification(R.drawable.icon, tickerText,
-                System.currentTimeMillis());
+
+        // instantiate notification
+        Notification notification = new NotificationCompat.Builder(this)
+            .setTicker(tickerText)
+            .setWhen(System.currentTimeMillis())
+            .setSmallIcon(R.drawable.icon).getNotification();
+        
         notification.flags |= Notification.FLAG_NO_CLEAR;
         notification.flags |= Notification.FLAG_ONGOING_EVENT;
 
