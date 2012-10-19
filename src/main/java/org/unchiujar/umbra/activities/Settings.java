@@ -100,7 +100,7 @@ public class Settings extends Activity implements SeekBar.OnSeekBarChangeListene
 
         mAnimate = (CheckBox) findViewById(R.id.check_animate);
         mAnimate.setChecked(mSettings.getBoolean(ANIMATE,
-                false));
+                true));
         mAnimate.setOnClickListener(mAnimateListener);
         updateCheckbox(mAnimate, R.string.animate_none, R.string.animate_move);
 

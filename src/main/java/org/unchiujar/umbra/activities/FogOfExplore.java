@@ -495,7 +495,7 @@ public class FogOfExplore extends MapActivity {
         mExplored.setExplored(mRecorder.selectVisited(upperLeft, bottomRight));
         // animate the map to the user position if the options to do so is
         // selected
-        if (getSharedPreferences(Settings.UMBRA_PREFS, 0).getBoolean(Settings.ANIMATE, false)) {
+        if (getSharedPreferences(Settings.UMBRA_PREFS, 0).getBoolean(Settings.ANIMATE, true)) {
             mMapController.animateTo(LocationUtilities
                     .coordinatesToGeoPoint(mCurrentLat, mCurrentLong));
         }
