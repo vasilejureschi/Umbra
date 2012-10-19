@@ -59,8 +59,8 @@ public class LocationOrder implements Comparator<Location>, Serializable {
      * 8                0.00000001      1.11 mm
      * </pre>
      */
-    public static final double DEGREES_RADIUS = 0.0001;
-    public static final double METERS_RADIUS = 11.1;
+    public static final double DEGREES_RADIUS = 0.0005;
+    public static final double METERS_RADIUS = 55.5;
 
     @Override
     public int compare(Location firstLocation, Location secondLocation) {
