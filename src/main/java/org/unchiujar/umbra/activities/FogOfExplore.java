@@ -73,7 +73,7 @@ import android.widget.Toast;
 import java.util.List;
 
 /**
- * Main activity for Umbra application. 
+ * Main activity for Umbra application.
  * 
  * @author Vasile Jureschi
  * @see LocationService
@@ -85,10 +85,6 @@ public class FogOfExplore extends MapActivity {
     private static final int INITIAL_ZOOM = 17;
     /** Interval between zoom checks for the zoom and pan handler. */
     public static final int ZOOM_CHECKING_DELAY = 500;
-    /** Constant used to identify the GPS starting dialog. */
-    private static final int DIALOG_START_GPS = 0;
-    /** Constant used to identify mobile data network dialog. */
-    private static final int DIALOG_START_NET = 1;
     /** Constant used for saving the accuracy value between screen rotations. */
     private static final String BUNDLE_ACCURACY = "org.unchiujar.umbra.accuracy";
     /** Constant used for saving the latitude value between screen rotations. */
@@ -269,7 +265,6 @@ public class FogOfExplore extends MapActivity {
         }
     };
 
-  
     // ==================== LIFECYCLE METHODS ====================
 
     /*
@@ -305,6 +300,9 @@ public class FogOfExplore extends MapActivity {
         mLocationServiceIntent = new Intent(SERVICE_INTENT_NAME);
         startService(mLocationServiceIntent);
         mRecorder = new VisitedAreaCache(getApplicationContext());
+        // check we still have access to GPS info
+        checkConnectivity();
+
     }
 
     /*
@@ -352,8 +350,6 @@ public class FogOfExplore extends MapActivity {
         super.onResume();
         // register zoom && pan mZoomPanHandler
         mZoomPanHandler.postDelayed(mZoomChecker, ZOOM_CHECKING_DELAY);
-        // check we still have access to GPS info
-        checkConnectivity();
         // set the visibility flag to start overlay updates
         mVisible = true;
         redrawOverlay();
@@ -515,29 +511,9 @@ public class FogOfExplore extends MapActivity {
                 .isProviderEnabled(LocationManager.GPS_PROVIDER);
 
         if (!isGPS) {
-            showDialog(DIALOG_START_GPS);
+            createGPSDialog().show();
         }
         displayConnectivityWarning();
-    }
-
-    // FIXME deprecated, replace with DialogFragment
-    /*
-     * (non-Javadoc)
-     * @see android.app.Activity#onCreateDialog(int)
-     */
-    @Override
-    protected Dialog onCreateDialog(int id) {
-        Log.d(TAG, "Showing mloadProgress with id " + id);
-        switch (id) {
-            case DIALOG_START_GPS:
-                return createGPSDialog();
-            case DIALOG_START_NET:
-                // TODO internet starting dialog
-                break;
-            default:
-                break;
-        }
-        return null;
     }
 
     /**
@@ -568,20 +544,28 @@ public class FogOfExplore extends MapActivity {
      */
     private Dialog createGPSDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage(R.string.gps_dialog).setCancelable(false)
-                .setPositiveButton(R.string.start_gps_btn, new DialogInterface.OnClickListener() {
+        builder.setMessage(R.string.gps_dialog).setCancelable(false);
+
+        final AlertDialog alert = builder.create();
+
+        alert.setButton(DialogInterface.BUTTON_POSITIVE, getString(R.string.start_gps_btn),
+                new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int id) {
-                        startActivityForResult(new Intent(
-                                android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS), 0);
-                    }
-                })
-                .setNegativeButton(R.string.continue_no_gps, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
+                        alert.dismiss();
+                        startActivity(new Intent(
+                                android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
                     }
                 });
-        return builder.create();
+
+        alert.setButton(DialogInterface.BUTTON_NEGATIVE, getString(R.string.continue_no_gps),
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int id) {
+                        alert.dismiss();
+                    }
+                });
+        return alert;
     }
 
     /*
