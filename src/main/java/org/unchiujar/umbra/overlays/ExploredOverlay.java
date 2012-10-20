@@ -55,6 +55,7 @@ import android.util.Log;
 import java.util.List;
 
 public class ExploredOverlay extends Overlay {
+    private static final int SHADING_PASSES = 15;
     private static final String TAG = ExploredOverlay.class.getName();
     private List<ApproximateLocation> mLocations;
     private Context mContext;
@@ -78,6 +79,7 @@ public class ExploredOverlay extends Overlay {
 
     private Rect mScreenCover;
     private double mCurrentAccuracy;
+    private Paint mShadePaint;
 
     public ExploredOverlay(Context context) {
         this.mContext = context;
@@ -122,6 +124,13 @@ public class ExploredOverlay extends Overlay {
         mAlertPaint.setFakeBoldText(true);
         mAlertPaint.setColor(Color.RED);
 
+        mShadePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        mShadePaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_IN));
+
+        mShadePaint.setColor(Color.BLACK);
+        mShadePaint.setStyle(Style.FILL);
+        mShadePaint.setAlpha(220);
+
     }
 
     @Override
@@ -156,7 +165,7 @@ public class ExploredOverlay extends Overlay {
                 + radius + " pixel per meter is " + pixelsMeter);
         if (!mBitmapCreated) {
             mCover = Bitmap.createBitmap(mapView.getMeasuredWidth(), mapView.getMeasuredHeight(),
-                    Bitmap.Config.ALPHA_8);
+                    Bitmap.Config.ARGB_8888);
             mCoverCanvas = new Canvas(mCover);
             // TODO check is width, height is always the same - rotation may be
             // a problem
@@ -179,10 +188,31 @@ public class ExploredOverlay extends Overlay {
             // for display use only visible points
             if (mTempPoint.x >= 0 && mTempPoint.x <= mapView.getWidth() && mTempPoint.y >= 0
                     && mTempPoint.y <= mapView.getHeight()) {
-                mCoverCanvas.drawCircle(mTempPoint.x, mTempPoint.y, radius, mCirclePaint);
+
+                for (int i = 0; i < SHADING_PASSES; i++) {
+                    mCoverCanvas.drawCircle(mTempPoint.x, mTempPoint.y, (SHADING_PASSES - i) * radius / SHADING_PASSES *0.8f + radius * 0.2f,
+                            mShadePaint);
+                }
+
             }
 
         }
+
+//        for (ApproximateLocation location : mLocations) {
+//            // XXX BUG - do not use
+//            // point = mapView.getProjection().toPixels(geoPoint, null);
+//            // returns an incorrect value in point
+//            // you'll cry debugger tears if you do
+//            projection.toPixels(locationToGeoPoint(location), mTempPoint);
+//            // Log.v(TAG, "GeoPoint to screen point: " + mTempPoint);
+//            // for display use only visible points
+//            if (mTempPoint.x >= 0 && mTempPoint.x <= mapView.getWidth() && mTempPoint.y >= 0
+//                    && mTempPoint.y <= mapView.getHeight()) {
+//                mCoverCanvas.drawCircle(mTempPoint.x, mTempPoint.y, radius * 0.4f, mCirclePaint);
+//            }
+//
+//        }
+
         // draw blue location circle
         projection.toPixels(new GeoPoint((int) (mCurrentLat * 1e6), (int) (mCurrentLong * 1e6)),
                 mTempPoint);
