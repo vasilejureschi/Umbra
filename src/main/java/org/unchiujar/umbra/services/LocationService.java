@@ -37,7 +37,6 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -47,7 +46,6 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.os.SystemClock;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
@@ -92,7 +90,6 @@ public class LocationService extends Service {
     public static final int MSG_WALK = 6;
     public static final int MSG_DRIVE = 7;
 
-    
     public static final int MSG_LOCATION_CHANGED = 9000;
 
     /**
@@ -102,21 +99,27 @@ public class LocationService extends Service {
      */
     public static final int MSG_SET_VALUE = 3;
 
-    /** Update frequency for average walking speed is 1.3 m/s . */
+    /**
+     * Walk update frequency for average walking speed. Average distance covered
+     * by humans while walking is 1.3 m/s .
+     */
     private static final long WALK_UPDATE_INTERVAL = (int)
             (LocationOrder.METERS_RADIUS * 2 / (1.3) * 1000);
+
+    /** Walk update distance for off screen state. */
+    private static final float WALK_UPDATE_DISTANCE = (float) (LocationOrder.METERS_RADIUS * 2.2);
 
     /** Update frequency for driving at 50 km/h . */
     private static final long DRIVE_UPDATE_INTERVAL = (int)
             (LocationOrder.METERS_RADIUS * 2 / (13) * 1000);
 
-    /** Fast update frequency for initial location fix. */
-    private static final long FAST_UPDATE_INTERVAL = 500;
+    /** Walk update distance for off screen state. */
+    private static final float DRIVE_UPDATE_DISTANCE = (float) (LocationOrder.METERS_RADIUS * 2.2);
 
-    /** Slow network update frequency after initial location fix. */
-    private static final long SLOW_UPDATE_INTERVAL = 6 * 10 * 1000;
-    /** Slow update distance after initial location fix. */
-    private static final long SLOW_UPDATE_DISTANCE = 500;
+    /** Fast update frequency for screen on state. */
+    private static final long SCREEN_ON_UPDATE_INTERVAL = 1000;
+    /** Update distance for screen on state. */
+    private static final long SCREEN_ON_UPDATE_DISTANCE = 5;
 
     private boolean mWalking = true;
 
@@ -125,53 +128,7 @@ public class LocationService extends Service {
     /** Holds last value set by a client. */
     private int mValue = 0;
 
-    /**
-     * Flag signaling we have a fix and the location taken through the GPS is
-     * updated at a slow rate.
-     */
-    private boolean mGPSSlowMode;
-    /**
-     * Flag signaling we have a GPS fix. If we don't have a GPS fix (is false)
-     * and the GPS slow mode is active than we have lost the GPS signal and need
-     * to get the location through the network until a GPS fix is reestablished.
-     */
-    private boolean mHasGPSFix;
     private LocationManager mLocationManager;
-    private long mLastLocationMillis;
-    private Location mLastLocation;
-
-    private LocationListener mCoarse = new LocationListener() {
-
-        @Override
-        public void onLocationChanged(Location location) {
-            Log.d(TAG, "Sending mCoarse location :" + location);
-            sendLocation(location);
-            // make the updates slower as we already have a fix
-            mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
-                    SLOW_UPDATE_INTERVAL,
-                    SLOW_UPDATE_DISTANCE,
-                    mCoarse);
-
-        }
-
-        @Override
-        public void onProviderDisabled(String provider) {
-            // NO-OP
-        }
-
-        @Override
-        public void onProviderEnabled(String provider) {
-            // NO-OP
-
-        }
-
-        @Override
-        public void onStatusChanged(String provider, int status, Bundle extras) {
-            // NO-OP
-
-        }
-
-    };
 
     private LocationListener mFine = new LocationListener() {
 
@@ -180,15 +137,6 @@ public class LocationService extends Service {
             Log.d(TAG, "Sending fine fast location :" + location);
             // send the location before doing any other work
             sendLocation(location);
-            // unregister the mCoarse listener as we have a better fix
-            mLocationManager.removeUpdates(mCoarse);
-            mLocationManager.removeUpdates(mFine);
-            // we already have a fix so
-            // set a slower time and longer distance for location updates
-            // in order to conserve battery
-            // set walking or driving depending user selection
-            setUpdateMode(mWalking);
-            mGPSSlowMode = true;
         }
 
         @Override
@@ -207,60 +155,6 @@ public class LocationService extends Service {
         public void onStatusChanged(String provider, int status, Bundle extras) {
         }
 
-    };
-
-    private LocationListener mGPSSlow = new LocationListener() {
-
-        @Override
-        public void onLocationChanged(Location location) {
-            if (location == null) {
-                return;
-            }
-            mLastLocationMillis = SystemClock.elapsedRealtime();
-
-            Log.d(TAG, "Sending regular  location :" + location);
-            // send the location to update the interface
-            sendLocation(location);
-            mLastLocation = location;
-        }
-
-        @Override
-        public void onProviderDisabled(String provider) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void onProviderEnabled(String provider) {
-            // TODO Auto-generated method stub
-        }
-
-        @Override
-        public void onStatusChanged(String provider, int status, Bundle extras) {
-        }
-
-    };
-
-    private GpsStatus.Listener mGPSListener = new GpsStatus.Listener() {
-
-        @Override
-        public void onGpsStatusChanged(int event) {
-            Log.v(TAG, "Checking sattelite state " + event);
-            switch (event) {
-                case GpsStatus.GPS_EVENT_SATELLITE_STATUS:
-                    if (mLastLocation != null) {
-                        mHasGPSFix = (SystemClock.elapsedRealtime() - mLastLocationMillis) < 5 * 1000;
-                    }
-                    if (!mHasGPSFix && mGPSSlowMode) {
-                        Log.d(TAG, "Retrying fast location fix as GPS fix is lost.");
-                        doFastLocationFix();
-                    }
-                    break;
-                case GpsStatus.GPS_EVENT_FIRST_FIX:
-                    mHasGPSFix = true;
-                    break;
-            }
-        }
     };
 
     private void sendLocation(Location location) {
@@ -299,7 +193,11 @@ public class LocationService extends Service {
         super.onCreate();
         displayRunningNotification();
         Log.d(TAG, "Location manager set up.");
-        doFastLocationFix();
+
+        mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+        setOnScreeState();
+
     }
 
     @Override
@@ -311,9 +209,7 @@ public class LocationService extends Service {
     public void onDestroy() {
         super.onDestroy();
 
-        mLocationManager.removeUpdates(mCoarse);
         mLocationManager.removeUpdates(mFine);
-        mLocationManager.removeUpdates(mGPSSlow);
 
         notificationManager.cancel(APPLICATION_ID);
         Log.d(TAG, "Service on destroy called.");
@@ -327,28 +223,6 @@ public class LocationService extends Service {
 
     // =================END LIFECYCLE METHODS ====================
 
-    private void sendLocationOnRegistration() {
-
-        Location network = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-        Location gps = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        Location toSend = (gps != null) ? gps : (network != null) ? network : null;
-        if (toSend != null) {
-            sendLocation(toSend);
-        }
-    }
-
-    private void doFastLocationFix() {
-        mGPSSlowMode = false;
-        mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        mLocationManager.addGpsStatusListener(mGPSListener);
-        // register a mCoarse listener for fast location update
-        mLocationManager
-                .requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 500,
-                        SLOW_UPDATE_DISTANCE, mCoarse);
-        // register a mFine listener with fast location update for a fast fix
-        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 500, 1, mFine);
-    }
-
     private void displayRunningNotification() {
         String contentTitle = getString(R.string.app_name);
         String running = getString(R.string.running);
@@ -358,10 +232,10 @@ public class LocationService extends Service {
 
         // instantiate notification
         Notification notification = new NotificationCompat.Builder(this)
-            .setTicker(tickerText)
-            .setWhen(System.currentTimeMillis())
-            .setSmallIcon(R.drawable.icon).getNotification();
-        
+                .setTicker(tickerText)
+                .setWhen(System.currentTimeMillis())
+                .setSmallIcon(R.drawable.icon).getNotification();
+
         notification.flags |= Notification.FLAG_NO_CLEAR;
         notification.flags |= Notification.FLAG_ONGOING_EVENT;
 
@@ -396,15 +270,13 @@ public class LocationService extends Service {
                     // remove client
                     mClients.remove(msg.replyTo);
                     Log.d(TAG, "Setting the service to off screen state.");
-                    moveToOffScreenState();
+                    setOffScreenState();
                     break;
 
                 case MSG_REGISTER_INTERFACE:
                     Log.d(TAG, "Setting the service to on screen state.");
                     // register client
-                    sendLocationOnRegistration();
-                    // get a fast location to display to the user
-                    doFastLocationFix();
+                    setOnScreeState();
                     break;
                 case MSG_REGISTER_CLIENT:
                     Log.d(TAG, "Registering new client.");
@@ -426,21 +298,42 @@ public class LocationService extends Service {
             }
         }
 
-        private void moveToOffScreenState() {
-            // stop the gps status listener as it is
-            // used to always have an update to date location to
-            // be displayed to the user
-            mLocationManager.removeGpsStatusListener(mGPSListener);
-            // stop network and fast GPS updates
-            // as they are only useful for informing the user
-            mLocationManager.removeUpdates(mCoarse);
-            mLocationManager.removeUpdates(mFine);
-            mLocationManager.removeUpdates(mGPSSlow);
-            mGPSSlowMode = true;
+    }
 
-            setUpdateMode(mWalking);
+    /**
+     * Turns off fast GPS updates when the application is not in foreground.
+     */
+    private void setOffScreenState() {
+        // stop network and fast GPS updates
+        // as they are only useful for informing the user
+        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                mWalking ? WALK_UPDATE_INTERVAL : DRIVE_UPDATE_INTERVAL,
+                mWalking ? WALK_UPDATE_DISTANCE : DRIVE_UPDATE_DISTANCE, mFine);
+    }
 
+    /**
+     * Turns on fast GPS updates when the application is in foreground and tries
+     * to display the last known location.
+     */
+    private void setOnScreeState() {
+
+        Location network = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        Location gps = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        // Location passive =
+        // mLocationManager.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
+
+        // Location toSend = (gps != null) ? gps : (network != null) ? network
+        // : (passive != null) ? passive : null;
+        Location toSend = (gps != null) ? gps : (network != null) ? network : null;
+
+        if (toSend != null) {
+            sendLocation(toSend);
         }
+
+        // register fast location listener
+        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                SCREEN_ON_UPDATE_INTERVAL, SCREEN_ON_UPDATE_DISTANCE, mFine);
+
     }
 
     /**
@@ -455,23 +348,6 @@ public class LocationService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return mMessenger.getBinder();
-    }
-
-    private void setUpdateMode(boolean driving) {
-        if (driving) {
-            Log.d(TAG, "Setting slow update frequency for walk mode.");
-            setUpdateInterval(DRIVE_UPDATE_INTERVAL);
-        } else {
-            Log.d(TAG, "Setting fast update frequency for drive mode.");
-            setUpdateInterval(DRIVE_UPDATE_INTERVAL);
-        }
-
-    }
-
-    private void setUpdateInterval(long interval) {
-        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                interval,
-                (float) LocationOrder.METERS_RADIUS * 2, mGPSSlow);
     }
 
 }
