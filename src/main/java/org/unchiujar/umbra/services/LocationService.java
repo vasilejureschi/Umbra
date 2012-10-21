@@ -72,7 +72,7 @@ public class LocationService extends Service {
     public static final int MSG_REGISTER_CLIENT = 1;
 
     /**
-     * Command to the service to unregister a client, or stop receiving
+     * Command to the service to un`register a client, or stop receiving
      * callbacks from the service. The Message's replyTo field must be a
      * Messenger of the client as previously given with MSG_REGISTER_CLIENT.
      */
@@ -101,17 +101,20 @@ public class LocationService extends Service {
 
     /**
      * Walk update frequency for average walking speed. Average distance covered
-     * by humans while walking is 1.3 m/s .
+     * by humans while walking is 1.3 m/s. Using double update time for safety.
      */
-    private static final long WALK_UPDATE_INTERVAL = (int)
-            (LocationOrder.METERS_RADIUS * 2 / (1.3) * 1000);
+    private static final long WALK_UPDATE_INTERVAL = (long)
+            (LocationOrder.METERS_RADIUS * 2 / 1.3 * 1000) / 2;
 
     /** Walk update distance for off screen state. */
     private static final float WALK_UPDATE_DISTANCE = (float) (LocationOrder.METERS_RADIUS * 2.2);
 
-    /** Update frequency for driving at 50 km/h . */
-    private static final long DRIVE_UPDATE_INTERVAL = (int)
-            (LocationOrder.METERS_RADIUS * 2 / (13) * 1000);
+    /**
+     * Update frequency for driving at 50 km/h. Using double update time for
+     * safety.
+     */
+    private static final long DRIVE_UPDATE_INTERVAL = (long)
+            (LocationOrder.METERS_RADIUS * 2 / 13 * 1000) / 2;
 
     /** Walk update distance for off screen state. */
     private static final float DRIVE_UPDATE_DISTANCE = (float) (LocationOrder.METERS_RADIUS * 2.2);
@@ -120,6 +123,16 @@ public class LocationService extends Service {
     private static final long SCREEN_ON_UPDATE_INTERVAL = 1000;
     /** Update distance for screen on state. */
     private static final long SCREEN_ON_UPDATE_DISTANCE = 5;
+
+    /**
+     * Initial backoff interval is double the
+     * {@link LocationService#WALK_UPDATE_INTERVAL}.
+     */
+    private static final long INITIAL_BACKOFF_INTERVAL = WALK_UPDATE_INTERVAL * 2;
+    /** Location search duration. */
+    private static final long LOCATION_SEARCH_DURATON = 30 * 1000;
+    /** The maximum duration the location listeners should be put to sleep. */
+    protected static final long MAX_BACKOFF_INTERVAL = 10 * 60 * 1000;
 
     private boolean mWalking = true;
 
@@ -137,6 +150,7 @@ public class LocationService extends Service {
             Log.d(TAG, "Sending fine fast location :" + location);
             // send the location before doing any other work
             sendLocation(location);
+            restartBackoff();
         }
 
         @Override
@@ -156,6 +170,7 @@ public class LocationService extends Service {
         }
 
     };
+    private boolean mOffScreen;
 
     private void sendLocation(Location location) {
         Log.d(TAG, "Location changed: " + location);
@@ -304,6 +319,8 @@ public class LocationService extends Service {
      * Turns off fast GPS updates when the application is not in foreground.
      */
     private void setOffScreenState() {
+        mOffScreen = true;
+
         // stop network and fast GPS updates
         // as they are only useful for informing the user
         mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
@@ -316,7 +333,7 @@ public class LocationService extends Service {
      * to display the last known location.
      */
     private void setOnScreeState() {
-
+        mOffScreen = false;
         Location network = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
         Location gps = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
         // Location passive =
@@ -335,6 +352,88 @@ public class LocationService extends Service {
                 SCREEN_ON_UPDATE_INTERVAL, SCREEN_ON_UPDATE_DISTANCE, mFine);
 
     }
+
+    // *----------- Exponential backoff code ---------------
+    /**
+     * Handler to post start and stop location updates runnables.
+     */
+    private Handler mBackoffHandler = new Handler();
+
+    /**
+     * The shortest duration of backoff time. The initial value is twice the
+     * frequency of {@link #WALK_UPDATE_INTERVAL} since it doesn't make sense to
+     * request locations faster when we have GPS fix problems than we there is a
+     * normal location update.
+     */
+    private long mBackoffTime = INITIAL_BACKOFF_INTERVAL;
+
+    /**
+     * Stops the location updates and posts a request to start them in after
+     * {@link #mBackoffTime} interval .
+     */
+    private Runnable stopLocationRequest = new Runnable() {
+
+        @Override
+        public void run() {
+            mLocationManager.removeUpdates(mFine);
+            // start location requests after we have waited the backoff time
+            mBackoffHandler.postDelayed(startLocationRequests, mBackoffTime);
+            // if the backoff interval has not increased to the max value
+            // double the interval
+            // need in order not to grow the backoff interval indefinitely
+            Log.d(TAG, "Location requests stopped and will be started in " + mBackoffTime
+                    + " milliseconds.");
+
+            if (mBackoffTime < MAX_BACKOFF_INTERVAL) {
+                mBackoffTime *= 2;
+            }
+
+        }
+    };
+
+    /**
+     * Starts the location updates and post a request to stop them using
+     * {@link #stopLocationRequest} after {@link #LOCATION_SEARCH_DURATON}
+     * interval.
+     */
+    private Runnable startLocationRequests = new Runnable() {
+
+        @Override
+        public void run() {
+            if (mOffScreen) {
+                setOffScreenState();
+            } else {
+                setOnScreeState();
+            }
+            Log.d(TAG, "Location requests started and will be stopped in "
+                    + LOCATION_SEARCH_DURATON + " milliseconds.");
+
+            // stop location requests after we waited for the location search
+            // duration
+            mBackoffHandler.postDelayed(stopLocationRequest, LOCATION_SEARCH_DURATON);
+        }
+    };
+
+    /**
+     * Restarts the entire backoff algorithm. Called everytime we have a
+     * location fix.
+     */
+    private void restartBackoff() {
+        Log.d(TAG, "Restarting backoff handler, last backoff time was " + mBackoffTime);
+        mBackoffTime = INITIAL_BACKOFF_INTERVAL;
+        // remove any runnables from backoff handler
+        mBackoffHandler.removeCallbacks(startLocationRequests);
+        mBackoffHandler.removeCallbacks(stopLocationRequest);
+
+        // post a request to stop the location updates but give a chance to the
+        // location listeners to get a location and restart the backoff
+        // algorithm again
+        Log.d(TAG, "Initial backoff stop listener request. The updates will be stopped in "
+                + WALK_UPDATE_INTERVAL * 2 + " milliseconds.");
+        mBackoffHandler.postDelayed(stopLocationRequest, WALK_UPDATE_INTERVAL * 2);
+    }
+
+    // *----------- Exponential backoff code end ---------------
 
     /**
      * Target we publish for clients to send messages to IncomingHandler.
