@@ -417,6 +417,11 @@ public class FogOfExplore extends MapActivity {
         boolean result = super.onCreateOptionsMenu(menu);
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.layout.menu, menu);
+        menu.findItem(R.id.where_am_i).setIcon(android.R.drawable.ic_menu_mylocation);
+        menu.findItem(R.id.settings).setIcon(android.R.drawable.ic_menu_preferences);
+        menu.findItem(R.id.help).setIcon(android.R.drawable.ic_menu_help);
+        menu.findItem(R.id.exit).setIcon(android.R.drawable.ic_menu_close_clear_cancel);
+
         return result;
     }
 
