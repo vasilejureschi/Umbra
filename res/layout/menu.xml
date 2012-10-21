@@ -25,10 +25,30 @@
       Contributors:
          Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
 -->
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
-	<item android:menuCategory="container" android:title="@string/where_am_i" android:id="@+id/where_am_i" android:visible="true"/>
-	<item android:visible="true" android:menuCategory="container" android:id="@+id/settings" android:title="@string/settings"/>
-	<item android:visible="true" android:menuCategory="container" android:id="@+id/help" android:title="@string/help"/>
-	<item android:visible="true" android:menuCategory="container" android:id="@+id/exit" android:title="@string/exit"/>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <item
+        android:id="@+id/where_am_i"
+        android:menuCategory="container"
+        android:title="@string/where_am_i"
+        android:visible="true"/>
+
+    <item
+        android:id="@+id/settings"
+        android:menuCategory="container"
+        android:title="@string/settings"
+        android:visible="true"/>
+
+    <item
+        android:id="@+id/help"
+        android:menuCategory="container"
+        android:title="@string/help"
+        android:visible="true"/>
+
+    <item
+        android:id="@+id/exit"
+        android:menuCategory="container"
+        android:title="@string/exit"
+        android:visible="true"/>
 
 </menu>
