@@ -91,6 +91,9 @@ public class FogOfExplore extends MapActivity {
     private static final String BUNDLE_LATITUDE = "org.unchiujar.umbra.latitude";
     /** Constant used for saving the longitude value between screen rotations. */
     private static final String BUNDLE_LONGITUDE = "org.unchiujar.umbra.longitude";
+    /** Constant used for saving the zoom level between screen rotations. */
+    private static final String BUNDLE_ZOOM = "org.unchiujar.umbra.zoom";
+
     /**
      * Intent named used for starting the location service
      * 
@@ -125,13 +128,13 @@ public class FogOfExplore extends MapActivity {
     private double mCurrentAccuracy;
 
     /**
-     * Flag signaling if the application is visible. Used to stop overlay
-     * updates if the map is currently not visible.
+     * Flag signaling if the application is visible. Used to stop overlay updates if the map is
+     * currently not visible.
      */
     private boolean mVisible = true;
     /**
-     * Flag signaling if the user is walking or driving. It is passed to the
-     * location service in order to change location update frequency.
+     * Flag signaling if the user is walking or driving. It is passed to the location service in
+     * order to change location update frequency.
      * 
      * @see LocationService
      */
@@ -183,25 +186,24 @@ public class FogOfExplore extends MapActivity {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case LocationService.MSG_SET_VALUE:
-                    Log.d(TAG, "Received from service: " + msg.arg1);
-                    break;
-                case LocationService.MSG_LOCATION_CHANGED:
-                    if (msg.obj != null) {
-                        Log.d(TAG, ((Location) msg.obj).toString());
+            case LocationService.MSG_SET_VALUE:
+                Log.d(TAG, "Received from service: " + msg.arg1);
+                break;
+            case LocationService.MSG_LOCATION_CHANGED:
+                if (msg.obj != null) {
+                    Log.d(TAG, ((Location) msg.obj).toString());
 
-                        mCurrentLat = ((Location) msg.obj).getLatitude();
-                        mCurrentLong = ((Location) msg.obj).getLongitude();
-                        mCurrentAccuracy = ((Location) msg.obj).getAccuracy();
-                        redrawOverlay();
+                    mCurrentLat = ((Location) msg.obj).getLatitude();
+                    mCurrentLong = ((Location) msg.obj).getLongitude();
+                    mCurrentAccuracy = ((Location) msg.obj).getAccuracy();
+                    redrawOverlay();
 
-                    } else
-                    {
-                        Log.d(TAG, "Null object received");
-                    }
-                    break;
-                default:
-                    super.handleMessage(msg);
+                } else {
+                    Log.d(TAG, "Null object received");
+                }
+                break;
+            default:
+                super.handleMessage(msg);
             }
         }
     }
@@ -236,8 +238,7 @@ public class FogOfExplore extends MapActivity {
 
         /*
          * (non-Javadoc)
-         * @see
-         * android.content.ServiceConnection#onServiceDisconnected(android.content
+         * @see android.content.ServiceConnection#onServiceDisconnected(android.content
          * .ComponentName)
          */
         @Override
@@ -250,10 +251,9 @@ public class FogOfExplore extends MapActivity {
     };
 
     /**
-     * Drive or walk preference listener. A listener is necessary for this
-     * option as the location service needs to be notified of the change in
-     * order to change location update frequency. The preference is sent when
-     * the activity comes into view and rebinds to the location service.
+     * Drive or walk preference listener. A listener is necessary for this option as the location
+     * service needs to be notified of the change in order to change location update frequency. The
+     * preference is sent when the activity comes into view and rebinds to the location service.
      */
     private SharedPreferences.OnSharedPreferenceChangeListener mPrefListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
 
@@ -315,6 +315,7 @@ public class FogOfExplore extends MapActivity {
         mCurrentAccuracy = savedInstanceState.getDouble(BUNDLE_ACCURACY);
         mCurrentLat = savedInstanceState.getDouble(BUNDLE_LATITUDE);
         mCurrentLong = savedInstanceState.getDouble(BUNDLE_LONGITUDE);
+        mMapController.setZoom(savedInstanceState.getInt(BUNDLE_ZOOM));
         super.onRestoreInstanceState(savedInstanceState);
     }
 
@@ -328,6 +329,8 @@ public class FogOfExplore extends MapActivity {
         outState.putDouble(BUNDLE_ACCURACY, mCurrentAccuracy);
         outState.putDouble(BUNDLE_LATITUDE, mCurrentLat);
         outState.putDouble(BUNDLE_LONGITUDE, mCurrentLong);
+        MapView mapView = (MapView) findViewById(R.id.mapview);
+        outState.putInt(BUNDLE_ZOOM, mapView.getZoomLevel());
         super.onSaveInstanceState(outState);
     }
 
@@ -433,30 +436,30 @@ public class FogOfExplore extends MapActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle item selection
         switch (item.getItemId()) {
-            case R.id.where_am_i:
-                Log.d(TAG, "Moving to current location...");
-                mMapController.setCenter(coordinatesToGeoPoint(mCurrentLat, mCurrentLong));
-                redrawOverlay();
-                return true;
-            case R.id.help:
-                Log.d(TAG, "Showing help...");
-                Intent helpIntent = new Intent(this, Help.class);
-                startActivity(helpIntent);
-                return true;
-            case R.id.exit:
-                Log.d(TAG, "Exit requested...");
-                // cleanup
-                stopService(mLocationServiceIntent);
-                mRecorder.destroy();
-                finish();
-                System.exit(0);
-                return true;
-            case R.id.settings:
-                Intent settingsIntent = new Intent(this, Settings.class);
-                startActivity(settingsIntent);
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
+        case R.id.where_am_i:
+            Log.d(TAG, "Moving to current location...");
+            mMapController.setCenter(coordinatesToGeoPoint(mCurrentLat, mCurrentLong));
+            redrawOverlay();
+            return true;
+        case R.id.help:
+            Log.d(TAG, "Showing help...");
+            Intent helpIntent = new Intent(this, Help.class);
+            startActivity(helpIntent);
+            return true;
+        case R.id.exit:
+            Log.d(TAG, "Exit requested...");
+            // cleanup
+            stopService(mLocationServiceIntent);
+            mRecorder.destroy();
+            finish();
+            System.exit(0);
+            return true;
+        case R.id.settings:
+            Intent settingsIntent = new Intent(this, Settings.class);
+            startActivity(settingsIntent);
+            return true;
+        default:
+            return super.onOptionsItemSelected(item);
         }
     }
 
@@ -478,11 +481,9 @@ public class FogOfExplore extends MapActivity {
         final int mapCenterLong = mapView.getMapCenter().getLongitudeE6();
 
         final ApproximateLocation upperLeft = coordinatesToLocation(mapCenterLat + halfLatSpan,
-                mapCenterLong
-                        - halfLongSpan);
+                mapCenterLong - halfLongSpan);
         final ApproximateLocation bottomRight = coordinatesToLocation(mapCenterLat - halfLatSpan,
-                mapCenterLong
-                        + halfLongSpan);
+                mapCenterLong + halfLongSpan);
         // TODO - optimization get points for rectangle only if a zoomout
         // or a pan action occured - ie new points come into view
 
@@ -497,8 +498,8 @@ public class FogOfExplore extends MapActivity {
         // animate the map to the user position if the options to do so is
         // selected
         if (getSharedPreferences(Settings.UMBRA_PREFS, 0).getBoolean(Settings.ANIMATE, true)) {
-            mMapController.animateTo(LocationUtilities
-                    .coordinatesToGeoPoint(mCurrentLat, mCurrentLong));
+            mMapController.animateTo(LocationUtilities.coordinatesToGeoPoint(mCurrentLat,
+                    mCurrentLong));
         }
         // call overlay redraw
         mapView.postInvalidate();
@@ -506,9 +507,8 @@ public class FogOfExplore extends MapActivity {
     }
 
     /**
-     * Checks GPS and network connectivity. Displays a dialog asking the user to
-     * start the GPS if not started and also displays a toast warning it no
-     * network connectivity is available.
+     * Checks GPS and network connectivity. Displays a dialog asking the user to start the GPS if
+     * not started and also displays a toast warning it no network connectivity is available.
      */
     private void checkConnectivity() {
 
@@ -586,15 +586,13 @@ public class FogOfExplore extends MapActivity {
      * Binds to the location service. Called when the activity becomes visible.
      */
     private void doBindService() {
-        bindService(mLocationServiceIntent, mConnection,
-                Context.BIND_AUTO_CREATE);
+        bindService(mLocationServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
         mIsBound = true;
         Log.d(TAG, "Binding to location service");
     }
 
     /**
-     * Unbinds from the location service. Called when the activity is stopped or
-     * closed.
+     * Unbinds from the location service. Called when the activity is stopped or closed.
      */
     private void doUnbindService() {
         if (mIsBound) {
