@@ -27,6 +27,8 @@
 
 package org.unchiujar.umbra.services;
 
+import java.util.ArrayList;
+
 import org.unchiujar.umbra.R;
 import org.unchiujar.umbra.activities.FogOfExplore;
 import org.unchiujar.umbra.location.LocationOrder;
@@ -49,8 +51,6 @@ import android.os.RemoteException;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
-import java.util.ArrayList;
-
 public class LocationService extends Service {
     private static final int APPLICATION_ID = 1241241;
     private NotificationManager notificationManager;
@@ -65,16 +65,15 @@ public class LocationService extends Service {
     public static final String ACCURACY = "org.unchiujar.umbra.LocationService.ACCURACY";
 
     /**
-     * Command to the service to register a client, receiving callbacks from the
-     * service. The Message's replyTo field must be a Messenger of the client
-     * where callbacks should be sent.
+     * Command to the service to register a client, receiving callbacks from the service. The
+     * Message's replyTo field must be a Messenger of the client where callbacks should be sent.
      */
     public static final int MSG_REGISTER_CLIENT = 1;
 
     /**
-     * Command to the service to un`register a client, or stop receiving
-     * callbacks from the service. The Message's replyTo field must be a
-     * Messenger of the client as previously given with MSG_REGISTER_CLIENT.
+     * Command to the service to un`register a client, or stop receiving callbacks from the service.
+     * The Message's replyTo field must be a Messenger of the client as previously given with
+     * MSG_REGISTER_CLIENT.
      */
     public static final int MSG_UNREGISTER_CLIENT = 2; // This is called when
                                                        // the connection with
@@ -93,40 +92,29 @@ public class LocationService extends Service {
     public static final int MSG_LOCATION_CHANGED = 9000;
 
     /**
-     * Command to service to set a new value. This can be sent to the service to
-     * supply a new value, and will be sent by the service to any registered
-     * clients with the new value.
+     * Command to service to set a new value. This can be sent to the service to supply a new value,
+     * and will be sent by the service to any registered clients with the new value.
      */
     public static final int MSG_SET_VALUE = 3;
 
     /**
-     * Walk update frequency for average walking speed. Average distance covered
-     * by humans while walking is 1.3 m/s. Using double update time for safety.
+     * Walk update frequency for average walking speed. Average distance covered by humans while
+     * walking is 1.3 m/s. Using double update time for safety.
      */
-    private static final long WALK_UPDATE_INTERVAL = (long)
-            (LocationOrder.METERS_RADIUS * 2 / 1.3 * 1000) / 2;
-
-    /** Walk update distance for off screen state. */
-    private static final float WALK_UPDATE_DISTANCE = (float) (LocationOrder.METERS_RADIUS * 2.2);
+    private static final long WALK_UPDATE_INTERVAL = (long) (LocationOrder.METERS_RADIUS * 2 / 1.3 * 1000) / 2;
 
     /**
-     * Update frequency for driving at 50 km/h. Using double update time for
-     * safety.
+     * Update frequency for driving at 50 km/h. Using double update time for safety.
      */
-    private static final long DRIVE_UPDATE_INTERVAL = (long)
-            (LocationOrder.METERS_RADIUS * 2 / 13 * 1000) / 2;
-
-    /** Walk update distance for off screen state. */
-    private static final float DRIVE_UPDATE_DISTANCE = (float) (LocationOrder.METERS_RADIUS * 2.2);
+    private static final long DRIVE_UPDATE_INTERVAL = (long) (LocationOrder.METERS_RADIUS * 2 / 13 * 1000) / 2;
 
     /** Fast update frequency for screen on state. */
     private static final long SCREEN_ON_UPDATE_INTERVAL = 1000;
     /** Update distance for screen on state. */
-    private static final long SCREEN_ON_UPDATE_DISTANCE = 5;
+    private static final long SCREEN_ON_UPDATE_DISTANCE = 1;
 
     /**
-     * Initial backoff interval is double the
-     * {@link LocationService#WALK_UPDATE_INTERVAL}.
+     * Initial backoff interval is double the {@link LocationService#WALK_UPDATE_INTERVAL}.
      */
     private static final long INITIAL_BACKOFF_INTERVAL = WALK_UPDATE_INTERVAL * 2;
     /** Location search duration. */
@@ -142,6 +130,7 @@ public class LocationService extends Service {
     private int mValue = 0;
 
     private LocationManager mLocationManager;
+    private volatile boolean mOnScreen;
 
     private LocationListener mFine = new LocationListener() {
 
@@ -150,27 +139,28 @@ public class LocationService extends Service {
             Log.d(TAG, "Sending fine fast location :" + location);
             // send the location before doing any other work
             sendLocation(location);
-            restartBackoff();
+            // only start the algorithm if the app is running in the background
+            if (!mOnScreen) {
+                restartBackoff();
+            }
         }
 
         @Override
         public void onProviderDisabled(String provider) {
-            // TODO Auto-generated method stub
-
+            // NO-OP
         }
 
         @Override
         public void onProviderEnabled(String provider) {
-            // TODO Auto-generated method stub
-
+            // NO-OP
         }
 
         @Override
         public void onStatusChanged(String provider, int status, Bundle extras) {
+            // NO-OP
         }
 
     };
-    private boolean mOffScreen;
 
     private void sendLocation(Location location) {
         Log.d(TAG, "Location changed: " + location);
@@ -194,8 +184,7 @@ public class LocationService extends Service {
         try {
             mMessenger.send(message);
         } catch (RemoteException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            Log.e(TAG, "Error sending location", e);
         }
 
     }
@@ -246,10 +235,9 @@ public class LocationService extends Service {
         CharSequence tickerText = contentTitle + " " + running;
 
         // instantiate notification
-        Notification notification = new NotificationCompat.Builder(this)
-                .setTicker(tickerText)
-                .setWhen(System.currentTimeMillis())
-                .setSmallIcon(R.drawable.icon).getNotification();
+        Notification notification = new NotificationCompat.Builder(this).setTicker(tickerText)
+                .setWhen(System.currentTimeMillis()).setSmallIcon(R.drawable.icon)
+                .getNotification();
 
         notification.flags |= Notification.FLAG_NO_CLEAR;
         notification.flags |= Notification.FLAG_ONGOING_EVENT;
@@ -272,44 +260,44 @@ public class LocationService extends Service {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case MSG_WALK:
-                    mWalking = true;
-                    break;
-                case MSG_DRIVE:
-                    mWalking = false;
-                    break;
-                case MSG_UNREGISTER_CLIENT:
-                    mClients.remove(msg.replyTo);
-                    break;
-                case MSG_UNREGISTER_INTERFACE:
-                    // remove client
-                    mClients.remove(msg.replyTo);
-                    Log.d(TAG, "Setting the service to off screen state.");
-                    setOffScreenState();
-                    break;
+            case MSG_WALK:
+                mWalking = true;
+                break;
+            case MSG_DRIVE:
+                mWalking = false;
+                break;
+            case MSG_UNREGISTER_CLIENT:
+                mClients.remove(msg.replyTo);
+                break;
+            case MSG_UNREGISTER_INTERFACE:
+                // remove client
+                mClients.remove(msg.replyTo);
+                Log.d(TAG, "Setting the service to off screen state.");
+                setOffScreenState();
+                break;
 
-                case MSG_REGISTER_INTERFACE:
-                    Log.d(TAG, "Setting the service to on screen state.");
-                    // register client
-                    setOnScreeState();
-                    break;
-                case MSG_REGISTER_CLIENT:
-                    Log.d(TAG, "Registering new client.");
-                    mValue = msg.arg1;
-                    mClients.add(msg.replyTo);
-                    for (int i = mClients.size() - 1; i >= 0; i--) {
-                        try {
-                            mClients.get(i).send(Message.obtain(null, MSG_SET_VALUE, mValue, 0));
-                        } catch (RemoteException e) {
-                            // The client is dead. Remove it from the list;
-                            // we are going through the list from back to front
-                            // so this is safe to do inside the loop.
-                            mClients.remove(i);
-                        }
+            case MSG_REGISTER_INTERFACE:
+                Log.d(TAG, "Setting the service to on screen state.");
+                // register client
+                setOnScreeState();
+                break;
+            case MSG_REGISTER_CLIENT:
+                Log.d(TAG, "Registering new client.");
+                mValue = msg.arg1;
+                mClients.add(msg.replyTo);
+                for (int i = mClients.size() - 1; i >= 0; i--) {
+                    try {
+                        mClients.get(i).send(Message.obtain(null, MSG_SET_VALUE, mValue, 0));
+                    } catch (RemoteException e) {
+                        // The client is dead. Remove it from the list;
+                        // we are going through the list from back to front
+                        // so this is safe to do inside the loop.
+                        mClients.remove(i);
                     }
-                    break;
-                default:
-                    super.handleMessage(msg);
+                }
+                break;
+            default:
+                super.handleMessage(msg);
             }
         }
 
@@ -319,21 +307,19 @@ public class LocationService extends Service {
      * Turns off fast GPS updates when the application is not in foreground.
      */
     private void setOffScreenState() {
-        mOffScreen = true;
-
-        // stop network and fast GPS updates
-        // as they are only useful for informing the user
+        mOnScreen = false;
+        // move from screen on updates to regular speed updates
         mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                mWalking ? WALK_UPDATE_INTERVAL : DRIVE_UPDATE_INTERVAL,
-                mWalking ? WALK_UPDATE_DISTANCE : DRIVE_UPDATE_DISTANCE, mFine);
+                mWalking ? WALK_UPDATE_INTERVAL : DRIVE_UPDATE_INTERVAL, 0, mFine);
     }
 
     /**
-     * Turns on fast GPS updates when the application is in foreground and tries
-     * to display the last known location.
+     * Turns on fast GPS updates when the application is in foreground and tries to display the last
+     * known location.
      */
     private void setOnScreeState() {
-        mOffScreen = false;
+        mOnScreen = true;
+        stopBackoff();
         Location network = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
         Location gps = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
         // Location passive =
@@ -360,24 +346,28 @@ public class LocationService extends Service {
     private Handler mBackoffHandler = new Handler();
 
     /**
-     * The shortest duration of backoff time. The initial value is twice the
-     * frequency of {@link #WALK_UPDATE_INTERVAL} since it doesn't make sense to
-     * request locations faster when we have GPS fix problems than we there is a
-     * normal location update.
+     * The shortest duration of backoff time. The initial value is twice the frequency of
+     * {@link #WALK_UPDATE_INTERVAL} since it doesn't make sense to request locations faster when we
+     * have GPS fix problems than we there is a normal location update.
      */
     private long mBackoffTime = INITIAL_BACKOFF_INTERVAL;
 
     /**
-     * Stops the location updates and posts a request to start them in after
-     * {@link #mBackoffTime} interval .
+     * Stops the location updates and posts a request to start them in after {@link #mBackoffTime}
+     * interval .
      */
     private Runnable stopLocationRequest = new Runnable() {
 
         @Override
         public void run() {
             mLocationManager.removeUpdates(mFine);
-            // start location requests after we have waited the backoff time
-            mBackoffHandler.postDelayed(startLocationRequests, mBackoffTime);
+            // only start if the backoff algorithm is enabled
+            // necessary as the stopBackoff method may try to remove the runnables while the
+            // runnables are running with the efect that the algorithm doesn't stop
+            if (mBackoffStarted) {
+                // start location requests after we have waited the backoff time
+                mBackoffHandler.postDelayed(startLocationRequests, mBackoffTime);
+            }
             // if the backoff interval has not increased to the max value
             // double the interval
             // need in order not to grow the backoff interval indefinitely
@@ -393,18 +383,13 @@ public class LocationService extends Service {
 
     /**
      * Starts the location updates and post a request to stop them using
-     * {@link #stopLocationRequest} after {@link #LOCATION_SEARCH_DURATON}
-     * interval.
+     * {@link #stopLocationRequest} after {@link #LOCATION_SEARCH_DURATON} interval.
      */
     private Runnable startLocationRequests = new Runnable() {
 
         @Override
         public void run() {
-            if (mOffScreen) {
-                setOffScreenState();
-            } else {
-                setOnScreeState();
-            }
+            setOffScreenState();
             Log.d(TAG, "Location requests started and will be stopped in "
                     + LOCATION_SEARCH_DURATON + " milliseconds.");
 
@@ -413,17 +398,15 @@ public class LocationService extends Service {
             mBackoffHandler.postDelayed(stopLocationRequest, LOCATION_SEARCH_DURATON);
         }
     };
+    private volatile boolean mBackoffStarted;
 
     /**
-     * Restarts the entire backoff algorithm. Called everytime we have a
-     * location fix.
+     * Restarts the entire backoff algorithm. Called everytime we have a location fix.
      */
     private void restartBackoff() {
         Log.d(TAG, "Restarting backoff handler, last backoff time was " + mBackoffTime);
-        mBackoffTime = INITIAL_BACKOFF_INTERVAL;
-        // remove any runnables from backoff handler
-        mBackoffHandler.removeCallbacks(startLocationRequests);
-        mBackoffHandler.removeCallbacks(stopLocationRequest);
+        stopBackoff();
+        mBackoffStarted = true;
 
         // post a request to stop the location updates but give a chance to the
         // location listeners to get a location and restart the backoff
@@ -431,6 +414,19 @@ public class LocationService extends Service {
         Log.d(TAG, "Initial backoff stop listener request. The updates will be stopped in "
                 + WALK_UPDATE_INTERVAL * 2 + " milliseconds.");
         mBackoffHandler.postDelayed(stopLocationRequest, WALK_UPDATE_INTERVAL * 2);
+    }
+
+    /**
+     * Stop the exponential backoff algorithm.
+     */
+    private void stopBackoff() {
+        Log.d(TAG, "Stopping backoff last backoff time was " + mBackoffTime);
+        mBackoffTime = INITIAL_BACKOFF_INTERVAL;
+        mBackoffStarted = false;
+        // remove any runnables from backoff handler
+        mBackoffHandler.removeCallbacks(startLocationRequests);
+        mBackoffHandler.removeCallbacks(stopLocationRequest);
+
     }
 
     // *----------- Exponential backoff code end ---------------
@@ -441,8 +437,8 @@ public class LocationService extends Service {
     private final Messenger mMessenger = new Messenger(new IncomingHandler());
 
     /**
-     * When binding to the service, we return an interface to our messenger for
-     * sending messages to the service.
+     * When binding to the service, we return an interface to our messenger for sending messages to
+     * the service.
      */
     @Override
     public IBinder onBind(Intent intent) {
