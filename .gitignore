@@ -3,4 +3,6 @@ gen/**/*
 target/
 .checkstyle
 local.properties
-
+.project
+.settings
+.classpath
