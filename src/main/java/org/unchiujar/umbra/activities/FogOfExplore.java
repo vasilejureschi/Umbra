@@ -31,10 +31,7 @@ import static org.unchiujar.umbra.utils.LocationUtilities.coordinatesToGeoPoint;
 import static org.unchiujar.umbra.utils.LocationUtilities.coordinatesToLocation;
 import static org.unchiujar.umbra.utils.LogUtilities.numberLogList;
 
-import com.google.android.maps.MapActivity;
-import com.google.android.maps.MapController;
-import com.google.android.maps.MapView;
-import com.google.android.maps.Overlay;
+import java.util.List;
 
 import org.unchiujar.umbra.R;
 import org.unchiujar.umbra.backend.ExploredProvider;
@@ -68,9 +65,13 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.WindowManager.LayoutParams;
 import android.widget.Toast;
 
-import java.util.List;
+import com.google.android.maps.MapActivity;
+import com.google.android.maps.MapController;
+import com.google.android.maps.MapView;
+import com.google.android.maps.Overlay;
 
 /**
  * Main activity for Umbra application.
@@ -274,6 +275,7 @@ public class FogOfExplore extends MapActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().addFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
         mloadProgress = ProgressDialog.show(this, "", "Loading. Please wait...", true);
         getSharedPreferences(Settings.UMBRA_PREFS, 0).registerOnSharedPreferenceChangeListener(
                 mPrefListener);
