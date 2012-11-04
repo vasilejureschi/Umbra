@@ -230,8 +230,9 @@ public class FogOfExplore extends MapActivity {
 						LocationService.MSG_REGISTER_INTERFACE);
 				mService.send(msg);
 				// send walk or drive mode
-				msg = (mDrive) ? Message.obtain(null, LocationService.MSG_DRIVE)
-						: Message.obtain(null, LocationService.MSG_WALK);
+				msg = (mDrive) ? Message
+						.obtain(null, LocationService.MSG_DRIVE) : Message
+						.obtain(null, LocationService.MSG_WALK);
 				mService.send(msg);
 			} catch (RemoteException e) {
 				// NO-OP

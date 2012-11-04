@@ -408,8 +408,9 @@ public class LocationService extends Service {
 		public void run() {
 			Log.d(TAG, "Location requests started and will be stopped in "
 					+ LOCATION_SEARCH_DURATON + " milliseconds.");
-			
-			mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+
+			mLocationManager.requestLocationUpdates(
+					LocationManager.GPS_PROVIDER,
 					mWalking ? WALK_UPDATE_INTERVAL : DRIVE_UPDATE_INTERVAL, 0,
 					mFine);
 			// stop location requests after we waited for the location search
@@ -432,7 +433,7 @@ public class LocationService extends Service {
 
 		// post a request to stop the location updates but give a chance to the
 		// location listeners to get a location and restart the backoff
-		// algorithm again 
+		// algorithm again
 		Log.d(TAG,
 				"Initial backoff stop listener request. The updates will be stopped in "
 						+ mBackoffTime * 2 + " milliseconds.");
