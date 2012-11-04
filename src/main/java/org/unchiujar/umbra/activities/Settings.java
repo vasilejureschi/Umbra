@@ -43,7 +43,7 @@ public class Settings extends Activity implements SeekBar.OnSeekBarChangeListene
     public static final String TRANSPARENCY = "org.unchiujar.umbra.settings.transparency";
     public static final String MEASUREMENT_SYSTEM = "org.unchiujar.umbra.settings.measurement";
     public static final String ANIMATE = "org.unchiujar.umbra.settings.animate";
-    public static final String UPDATE_MODE = "org.unchiujar.umbra.settings.update_mode";
+    public static final String DRIVE_MODE = "org.unchiujar.umbra.settings.update_mode";
 
     private static final String TAG = Settings.class.getName();
     private SeekBar mSetTransparency;
@@ -81,7 +81,7 @@ public class Settings extends Activity implements SeekBar.OnSeekBarChangeListene
         public void onClick(View v) {
             Log.d(TAG, "Checkbox clicked");
             SharedPreferences.Editor editor = mSettings.edit();
-            editor.putBoolean(UPDATE_MODE, mUpdate.isChecked());
+            editor.putBoolean(DRIVE_MODE, mUpdate.isChecked());
             editor.commit();
             updateCheckbox(mUpdate, R.string.updates_walk, R.string.updates_car);
         }
@@ -111,7 +111,7 @@ public class Settings extends Activity implements SeekBar.OnSeekBarChangeListene
         updateCheckbox(mImperial, R.string.measurement_metric, R.string.measurement_imperial);
 
         mUpdate = (CheckBox) findViewById(R.id.check_updates);
-        mUpdate.setChecked(mSettings.getBoolean(UPDATE_MODE,
+        mUpdate.setChecked(mSettings.getBoolean(DRIVE_MODE,
                 false));
         mUpdate.setOnClickListener(mUpdateListener);
         updateCheckbox(mUpdate, R.string.updates_walk, R.string.updates_car);
