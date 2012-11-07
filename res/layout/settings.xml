@@ -80,4 +80,25 @@
         android:text="@string/updates_walk" >
     </CheckBox>
 
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" >
+
+        <AutoCompleteTextView
+            android:id="@+id/txtSelectGpxFolder"
+            android:layout_width="203dp"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:hint="@string/select_gpx_folder" >
+
+            <requestFocus />
+        </AutoCompleteTextView>
+
+        <Button
+            android:id="@+id/btnLoadGpx"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/load" />
+    </LinearLayout>
+
 </LinearLayout>

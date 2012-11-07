@@ -64,5 +64,7 @@
      <string name="remote_service_started">Location service started</string>
      <string name="remote_service_connected">Connected to location service</string>
      <string name="remote_service_disconnected">Disconnected from location service</string>
+     <string name="load">Load</string>
+     <string name="select_gpx_folder">Select GPX Folder</string>
 
 </resources>
