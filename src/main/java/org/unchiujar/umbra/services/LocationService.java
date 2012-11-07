@@ -205,7 +205,7 @@ public class LocationService extends Service {
 
 		mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
-		setOnScreeState();
+		setOffScreenState();
 
 	}
 
