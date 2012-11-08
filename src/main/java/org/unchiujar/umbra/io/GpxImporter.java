@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+
 package org.unchiujar.umbra.io;
 
 import java.io.IOException;
@@ -23,7 +24,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.unchiujar.umbra.backend.VisitedAreaCache;
+import org.unchiujar.umbra.backend.ExploredProvider;
 import org.unchiujar.umbra.location.ApproximateLocation;
 import org.xml.sax.Attributes;
 import org.xml.sax.Locator;
@@ -44,350 +45,351 @@ import com.google.android.maps.GeoPoint;
  * @author Rodrigo Damazio
  */
 public class GpxImporter extends DefaultHandler {
-	private static final String TAG = GpxImporter.class.getName();
-  // GPX tag names and attributes
-  private static final String TAG_ALTITUDE = "ele";
-  private static final String TAG_DESCRIPTION = "desc";
-  private static final String TAG_NAME = "name";
-  private static final String TAG_TIME = "time";
-  private static final String TAG_TRACK = "trk";
-  private static final String TAG_TRACK_POINT = "trkpt";
-  private static final Object TAG_TRACK_SEGMENT = "trkseg";
+    private static final String TAG = GpxImporter.class.getName();
+    // GPX tag names and attributes
+    private static final String TAG_ALTITUDE = "ele";
+    private static final String TAG_DESCRIPTION = "desc";
+    private static final String TAG_NAME = "name";
+    private static final String TAG_TIME = "time";
+    private static final String TAG_TRACK = "trk";
+    private static final String TAG_TRACK_POINT = "trkpt";
+    private static final Object TAG_TRACK_SEGMENT = "trkseg";
 
-  private static final String ATT_LAT = "lat";
-  private static final String ATT_LON = "lon";
+    private static final String ATT_LAT = "lat";
+    private static final String ATT_LON = "lon";
 
-  // The SAX locator to get the current line information
-  private Locator locator;
+    // The SAX locator to get the current line information
+    private Locator locator;
 
-  // The current element content
-  private String content;
+    // The current element content
+    private String content;
 
-  // True if if we're inside a track's xml element
-  private boolean isInTrackElement = false;
+    // True if if we're inside a track's xml element
+    private boolean isInTrackElement = false;
 
-  // The current child depth for the current track
-  private int trackChildDepth = 0;
-  
-  // The current location
-  private Location location;
+    // The current child depth for the current track
+    private int trackChildDepth = 0;
 
-  // The last location in the current segment
-  private Location lastLocationInSegment;
+    // The current location
+    private Location location;
 
+    // The last location in the current segment
+    private Location lastLocationInSegment;
 
-private VisitedAreaCache mAreaCache;
+    private ExploredProvider mAreaCache;
 
-  /**
-   * Reads GPS tracks from a GPX file and writes tracks and their coordinates to
-   * the database.
-   * 
-   * @param inputStream the input stream for the GPX file
-   * @param areaCache the cache the points are loaded into
-   */
-  public static void importGPXFile(InputStream inputStream, VisitedAreaCache areaCache)
-      throws ParserConfigurationException, SAXException, IOException {
-    SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
-    SAXParser saxParser = saxParserFactory.newSAXParser();
-    GpxImporter gpxImporter = new GpxImporter(areaCache);
+    /**
+     * Reads GPS tracks from a GPX file and writes tracks and their coordinates
+     * to the database.
+     * 
+     * @param inputStream the input stream for the GPX file
+     * @param areaCache the cache the points are loaded into
+     */
+    public static void importGPXFile(InputStream inputStream, ExploredProvider areaCache)
+            throws ParserConfigurationException, SAXException, IOException {
+        SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
+        SAXParser saxParser = saxParserFactory.newSAXParser();
+        GpxImporter gpxImporter = new GpxImporter(areaCache);
 
-    try {
-      long start = System.currentTimeMillis();
+        try {
+            long start = System.currentTimeMillis();
 
-      saxParser.parse(inputStream, gpxImporter);
+            saxParser.parse(inputStream, gpxImporter);
 
-      long end = System.currentTimeMillis();
-      Log.d(TAG, "Total import time: " + (end - start) + "ms");
+            long end = System.currentTimeMillis();
+            Log.d(TAG, "Total import time: " + (end - start) + "ms");
 
-    } finally {
-      // Delete the current track if not finished
-      gpxImporter.rollbackUnfinishedTracks();
-    }
-  }
-
-  public GpxImporter(VisitedAreaCache areaCache) {
-    mAreaCache = areaCache;
-  }
-
-  @Override
-  public void characters(char[] ch, int start, int length) throws SAXException {
-    String newContent = new String(ch, start, length);
-    if (content == null) {
-      content = newContent;
-    } else {
-      /*
-       * In 99% of the cases, a single call to this method will be made for each
-       * sequence of characters we're interested in, so we'll rarely be
-       * concatenating strings, thus not justifying the use of a StringBuilder.
-       */
-      content += newContent;
-    }
-  }
-
-  @Override
-  public void startElement(String uri, String localName, String name, Attributes attributes)
-      throws SAXException {
-    if (isInTrackElement) {
-      trackChildDepth++;
-      if (localName.equals(TAG_TRACK)) {
-        throw new SAXException(createErrorMessage("Invalid GPX. Already inside a track."));
-      } else if (localName.equals(TAG_TRACK_SEGMENT)) {
-        onTrackSegmentElementStart();
-      } else if (localName.equals(TAG_TRACK_POINT)) {
-        onTrackPointElementStart(attributes);
-      } 
-    } else if (localName.equals(TAG_TRACK)) {
-      isInTrackElement = true;
-      trackChildDepth = 0;
-      onTrackElementStart();
-    }
-  }
-
-  @Override
-  public void endElement(String uri, String localName, String name) throws SAXException {
-    if (!isInTrackElement) {
-      content = null;
-      return;
+        } finally {
+            // Delete the current track if not finished
+            gpxImporter.rollbackUnfinishedTracks();
+        }
     }
 
-    if (localName.equals(TAG_TRACK)) {
-      onTrackElementEnd();
-      isInTrackElement = false;
-      trackChildDepth = 0;
-    } else if (localName.equals(TAG_NAME)) {
-      // we are only interested in the first level name element
-      if (trackChildDepth == 1) {
-        onNameElementEnd();
-      }
-    } else if (localName.equals(TAG_DESCRIPTION)) {
-      // we are only interested in the first level description element
-      if (trackChildDepth == 1) {
-        onDescriptionElementEnd();
-      }
-    } else if (localName.equals(TAG_TRACK_SEGMENT)) {
-      onTrackSegmentElementEnd();
-    } else if (localName.equals(TAG_TRACK_POINT)) {
-      onTrackPointElementEnd();
-    } else if (localName.equals(TAG_ALTITUDE)) {
-      onAltitudeElementEnd();
-    } else if (localName.equals(TAG_TIME)) {
-      onTimeElementEnd();
-    }
-    trackChildDepth--;
-
-    // reset element content
-    content = null;
-  }
-
-  @Override
-  public void setDocumentLocator(Locator locator) {
-    this.locator = locator;
-  }
-
-  /**
-   * Rolls back last track if possible.
-   */
-  public void rollbackUnfinishedTracks() {
-      //TODO delete track/file?
-  }
-
-  /**
-   * On track element start.
-   */
-  private void onTrackElementStart() {
-  }
-
-  /**
-   * On track element end.
-   */
-  private void onTrackElementEnd() {
-  }
-
-  /**
-   * On name element end.
-   */
-  private void onNameElementEnd() {
-	  //NO-OP
-  }
-
-  /**
-   * On description element end.
-   */
-  private void onDescriptionElementEnd() {
-	  //NO-OP
-  }
-
-  /**
-   * On track segment start.
-   */
-  private void onTrackSegmentElementStart() {
-    location = null;
-    lastLocationInSegment = null;
-  }
-
-  /**
-   * On track segment element end.
-   */
-  private void onTrackSegmentElementEnd() {
-    // Nothing needs to be done
-  }
-
-  /**
-   * On track point element start.
-   * 
-   * @param attributes the attributes
-   */
-  private void onTrackPointElementStart(Attributes attributes) throws SAXException {
-    if (location != null) {
-      throw new SAXException(createErrorMessage("Found a track point inside another one."));
-    }
-    String latitude = attributes.getValue(ATT_LAT);
-    String longitude = attributes.getValue(ATT_LON);
-
-    if (latitude == null || longitude == null) {
-      throw new SAXException(createErrorMessage("Point with no longitude or latitude."));
-    }
-    double latitudeValue;
-    double longitudeValue;
-    try {
-      latitudeValue = Double.parseDouble(latitude);
-      longitudeValue = Double.parseDouble(longitude);
-    } catch (NumberFormatException e) {
-      throw new SAXException(
-          createErrorMessage("Unable to parse latitude/longitude: " + latitude + "/" + longitude),
-          e);
-    }
-    
-    location = createNewLocation(latitudeValue, longitudeValue, -1L);
-  }
-
-  /**
-   * On track point element end.
-   */
-  private void onTrackPointElementEnd() throws SAXException {
-    if (!isValidLocation(location)) {
-      throw new SAXException(createErrorMessage("Invalid location detected: " + location));
+    public GpxImporter(ExploredProvider areaCache) {
+        mAreaCache = areaCache;
     }
 
-    //insert into cache 
-    mAreaCache.insert(new ApproximateLocation(location));
-
-    lastLocationInSegment = location;
-    location = null;
-  }
-
-  /**
-   * On altitude element end.
-   */
-  private void onAltitudeElementEnd() throws SAXException {
-    if (location == null || content == null) {
-      return;
+    @Override
+    public void characters(char[] ch, int start, int length) throws SAXException {
+        String newContent = new String(ch, start, length);
+        if (content == null) {
+            content = newContent;
+        } else {
+            /*
+             * In 99% of the cases, a single call to this method will be made
+             * for each sequence of characters we're interested in, so we'll
+             * rarely be concatenating strings, thus not justifying the use of a
+             * StringBuilder.
+             */
+            content += newContent;
+        }
     }
 
-    try {
-      location.setAltitude(Double.parseDouble(content));
-    } catch (NumberFormatException e) {
-      throw new SAXException(createErrorMessage("Unable to parse altitude: " + content), e);
+    @Override
+    public void startElement(String uri, String localName, String name, Attributes attributes)
+            throws SAXException {
+        if (isInTrackElement) {
+            trackChildDepth++;
+            if (localName.equals(TAG_TRACK)) {
+                throw new SAXException(createErrorMessage("Invalid GPX. Already inside a track."));
+            } else if (localName.equals(TAG_TRACK_SEGMENT)) {
+                onTrackSegmentElementStart();
+            } else if (localName.equals(TAG_TRACK_POINT)) {
+                onTrackPointElementStart(attributes);
+            }
+        } else if (localName.equals(TAG_TRACK)) {
+            isInTrackElement = true;
+            trackChildDepth = 0;
+            onTrackElementStart();
+        }
     }
-  }
 
-  /**
-   * On time element end. Sets location time and doing additional calculations
-   * as this is the last value required for the location. Also sets the start
-   * time for the trip statistics builder as there is no start time in the track
-   * root element.
-   */
-  private void onTimeElementEnd() throws SAXException {
-    if (location == null || content == null) {
-      return;
+    @Override
+    public void endElement(String uri, String localName, String name) throws SAXException {
+        if (!isInTrackElement) {
+            content = null;
+            return;
+        }
+
+        if (localName.equals(TAG_TRACK)) {
+            onTrackElementEnd();
+            isInTrackElement = false;
+            trackChildDepth = 0;
+        } else if (localName.equals(TAG_NAME)) {
+            // we are only interested in the first level name element
+            if (trackChildDepth == 1) {
+                onNameElementEnd();
+            }
+        } else if (localName.equals(TAG_DESCRIPTION)) {
+            // we are only interested in the first level description element
+            if (trackChildDepth == 1) {
+                onDescriptionElementEnd();
+            }
+        } else if (localName.equals(TAG_TRACK_SEGMENT)) {
+            onTrackSegmentElementEnd();
+        } else if (localName.equals(TAG_TRACK_POINT)) {
+            onTrackPointElementEnd();
+        } else if (localName.equals(TAG_ALTITUDE)) {
+            onAltitudeElementEnd();
+        } else if (localName.equals(TAG_TIME)) {
+            onTimeElementEnd();
+        }
+        trackChildDepth--;
+
+        // reset element content
+        content = null;
     }
 
-    // Parse the time
-    long time;
-    try {
-      time = StringUtils.getTime(content.trim());
-    } catch (IllegalArgumentException e) {
-      throw new SAXException(createErrorMessage("Unable to parse time: " + content), e);
+    @Override
+    public void setDocumentLocator(Locator locator) {
+        this.locator = locator;
     }
-    location.setTime(time);
 
-    // Calculate derived attributes from previous point
-    if (lastLocationInSegment != null && lastLocationInSegment.getTime() != 0) {
-      long timeDifference = time - lastLocationInSegment.getTime();
-
-      // check for negative time change
-      if (timeDifference <= 0) {
-        Log.w(TAG, "Time difference not postive.");
-      } else {
-
-        /*
-         * We don't have a speed and bearing in GPX, make something up from the
-         * last two points. GPS points tend to have some inherent imprecision,
-         * speed and bearing will likely be off, so the statistics for things
-         * like max speed will also be off.
-         */
-        float speed = lastLocationInSegment.distanceTo(location) * 1000.0f / timeDifference;
-        location.setSpeed(speed);
-      }
-      location.setBearing(lastLocationInSegment.bearingTo(location));
+    /**
+     * Rolls back last track if possible.
+     */
+    public void rollbackUnfinishedTracks() {
+        // TODO delete track/file?
     }
-  }
 
-  /**
-   * Creates a new location
-   * @param latitude location latitude
-   * @param longitude location longitude
-   * @param time location time
-   */
-  private Location createNewLocation(double latitude, double longitude, long time) {
-    Location loc = new Location(LocationManager.GPS_PROVIDER);
-    loc.setLatitude(latitude);
-    loc.setLongitude(longitude);
-    loc.setAltitude(0.0f);
-    loc.setTime(time);
-    loc.removeAccuracy();
-    loc.removeBearing();
-    loc.removeSpeed();
-    return loc;
-  }
+    /**
+     * On track element start.
+     */
+    private void onTrackElementStart() {
+    }
 
-  /**
-   * Creates an error message.
-   * 
-   * @param message the message
-   */
-  private String createErrorMessage(String message) {
-    return String.format(Locale.US, "Parsing error at line: %d column: %d. %s",
-        locator.getLineNumber(), locator.getColumnNumber(), message);
-  }
-  
-  //=================== utils
-  
-  
-  /**
-   * Test if a given GeoPoint is valid, i.e. within physical bounds.
-   *
-   * @param geoPoint the point to be tested
-   * @return true, if it is a physical location on earth.
-   */
-  public static boolean isValidGeoPoint(GeoPoint geoPoint) {
-    return Math.abs(geoPoint.getLatitudeE6()) < 90E6
-        && Math.abs(geoPoint.getLongitudeE6()) <= 180E6;
-  }
+    /**
+     * On track element end.
+     */
+    private void onTrackElementEnd() {
+    }
 
-  /**
-   * Checks if a given location is a valid (i.e. physically possible) location
-   * on Earth. Note: The special separator locations (which have latitude =
-   * 100) will not qualify as valid. Neither will locations with lat=0 and lng=0
-   * as these are most likely "bad" measurements which often cause trouble.
-   *
-   * @param location the location to test
-   * @return true if the location is a valid location.
-   */
-  public static boolean isValidLocation(Location location) {
-    return location != null && Math.abs(location.getLatitude()) <= 90
-        && Math.abs(location.getLongitude()) <= 180;
-  }
-  
+    /**
+     * On name element end.
+     */
+    private void onNameElementEnd() {
+        // NO-OP
+    }
+
+    /**
+     * On description element end.
+     */
+    private void onDescriptionElementEnd() {
+        // NO-OP
+    }
+
+    /**
+     * On track segment start.
+     */
+    private void onTrackSegmentElementStart() {
+        location = null;
+        lastLocationInSegment = null;
+    }
+
+    /**
+     * On track segment element end.
+     */
+    private void onTrackSegmentElementEnd() {
+        // Nothing needs to be done
+    }
+
+    /**
+     * On track point element start.
+     * 
+     * @param attributes the attributes
+     */
+    private void onTrackPointElementStart(Attributes attributes) throws SAXException {
+        if (location != null) {
+            throw new SAXException(createErrorMessage("Found a track point inside another one."));
+        }
+        String latitude = attributes.getValue(ATT_LAT);
+        String longitude = attributes.getValue(ATT_LON);
+
+        if (latitude == null || longitude == null) {
+            throw new SAXException(createErrorMessage("Point with no longitude or latitude."));
+        }
+        double latitudeValue;
+        double longitudeValue;
+        try {
+            latitudeValue = Double.parseDouble(latitude);
+            longitudeValue = Double.parseDouble(longitude);
+        } catch (NumberFormatException e) {
+            throw new SAXException(
+                    createErrorMessage("Unable to parse latitude/longitude: " + latitude + "/"
+                            + longitude),
+                    e);
+        }
+
+        location = createNewLocation(latitudeValue, longitudeValue, -1L);
+    }
+
+    /**
+     * On track point element end.
+     */
+    private void onTrackPointElementEnd() throws SAXException {
+        if (!isValidLocation(location)) {
+            throw new SAXException(createErrorMessage("Invalid location detected: " + location));
+        }
+
+        // insert into cache
+        mAreaCache.insert(new ApproximateLocation(location));
+
+        lastLocationInSegment = location;
+        location = null;
+    }
+
+    /**
+     * On altitude element end.
+     */
+    private void onAltitudeElementEnd() throws SAXException {
+        if (location == null || content == null) {
+            return;
+        }
+
+        try {
+            location.setAltitude(Double.parseDouble(content));
+        } catch (NumberFormatException e) {
+            throw new SAXException(createErrorMessage("Unable to parse altitude: " + content), e);
+        }
+    }
+
+    /**
+     * On time element end. Sets location time and doing additional calculations
+     * as this is the last value required for the location. Also sets the start
+     * time for the trip statistics builder as there is no start time in the
+     * track root element.
+     */
+    private void onTimeElementEnd() throws SAXException {
+        if (location == null || content == null) {
+            return;
+        }
+
+        // Parse the time
+        long time;
+        try {
+            time = StringUtils.getTime(content.trim());
+        } catch (IllegalArgumentException e) {
+            throw new SAXException(createErrorMessage("Unable to parse time: " + content), e);
+        }
+        location.setTime(time);
+
+        // Calculate derived attributes from previous point
+        if (lastLocationInSegment != null && lastLocationInSegment.getTime() != 0) {
+            long timeDifference = time - lastLocationInSegment.getTime();
+
+            // check for negative time change
+            if (timeDifference <= 0) {
+                Log.w(TAG, "Time difference not postive.");
+            } else {
+
+                /*
+                 * We don't have a speed and bearing in GPX, make something up
+                 * from the last two points. GPS points tend to have some
+                 * inherent imprecision, speed and bearing will likely be off,
+                 * so the statistics for things like max speed will also be off.
+                 */
+                float speed = lastLocationInSegment.distanceTo(location) * 1000.0f / timeDifference;
+                location.setSpeed(speed);
+            }
+            location.setBearing(lastLocationInSegment.bearingTo(location));
+        }
+    }
+
+    /**
+     * Creates a new location
+     * 
+     * @param latitude location latitude
+     * @param longitude location longitude
+     * @param time location time
+     */
+    private Location createNewLocation(double latitude, double longitude, long time) {
+        Location loc = new Location(LocationManager.GPS_PROVIDER);
+        loc.setLatitude(latitude);
+        loc.setLongitude(longitude);
+        loc.setAltitude(0.0f);
+        loc.setTime(time);
+        loc.removeAccuracy();
+        loc.removeBearing();
+        loc.removeSpeed();
+        return loc;
+    }
+
+    /**
+     * Creates an error message.
+     * 
+     * @param message the message
+     */
+    private String createErrorMessage(String message) {
+        return String.format(Locale.US, "Parsing error at line: %d column: %d. %s",
+                locator.getLineNumber(), locator.getColumnNumber(), message);
+    }
+
+    // =================== utils
+
+    /**
+     * Test if a given GeoPoint is valid, i.e. within physical bounds.
+     * 
+     * @param geoPoint the point to be tested
+     * @return true, if it is a physical location on earth.
+     */
+    public static boolean isValidGeoPoint(GeoPoint geoPoint) {
+        return Math.abs(geoPoint.getLatitudeE6()) < 90E6
+                && Math.abs(geoPoint.getLongitudeE6()) <= 180E6;
+    }
+
+    /**
+     * Checks if a given location is a valid (i.e. physically possible) location
+     * on Earth. Note: The special separator locations (which have latitude =
+     * 100) will not qualify as valid. Neither will locations with lat=0 and
+     * lng=0 as these are most likely "bad" measurements which often cause
+     * trouble.
+     * 
+     * @param location the location to test
+     * @return true if the location is a valid location.
+     */
+    public static boolean isValidLocation(Location location) {
+        return location != null && Math.abs(location.getLatitude()) <= 90
+                && Math.abs(location.getLongitude()) <= 180;
+    }
 
 }

@@ -311,7 +311,7 @@ public class FogOfExplore extends MapActivity {
 		Log.d(TAG, "onCreate completed: Activity created");
 		mLocationServiceIntent = new Intent(SERVICE_INTENT_NAME);
 		startService(mLocationServiceIntent);
-		mRecorder = new VisitedAreaCache(getApplicationContext());
+		mRecorder = ((UmbraApplication)getApplication()).getCache(); 
 		// check we still have access to GPS info
 		checkConnectivity();
 

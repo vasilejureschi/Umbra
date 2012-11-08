@@ -27,6 +27,12 @@
 
 package org.unchiujar.umbra.backend;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.TreeSet;
+
 import org.unchiujar.umbra.location.ApproximateLocation;
 import org.unchiujar.umbra.location.LocationOrder;
 import org.unchiujar.umbra.services.LocationService;
@@ -42,12 +48,6 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.TreeSet;
 
 public class VisitedAreaCache implements ExploredProvider {
     private static final String TAG = VisitedAreaCache.class.getName();

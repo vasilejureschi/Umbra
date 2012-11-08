@@ -31,16 +31,18 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.unchiujar.umbra.R;
-import org.unchiujar.umbra.backend.VisitedAreaCache;
+import org.unchiujar.umbra.backend.ExploredProvider;
 import org.unchiujar.umbra.io.GpxImporter;
 import org.xml.sax.SAXException;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
@@ -143,27 +145,56 @@ public class Settings extends Activity implements SeekBar.OnSeekBarChangeListene
             public void onClick(View v) {
                 // get list of gpx files from the folders
                 File path = new File(mTxtGpxFolder.getText().toString());
+                final ArrayList<InputStream> gpxs = new ArrayList<InputStream>();
                 File[] files = path.listFiles();
                 for (File file : files) {
                     if (file.toString().toLowerCase().endsWith(".gpx")) {
                         Log.d(TAG, "Found gpx file: " + file.toString());
                         try {
+                            gpxs.add(new FileInputStream(file));
                             // try to load gpx data
-
-                            GpxImporter.importGPXFile(new FileInputStream(file), new VisitedAreaCache(getApplicationContext()));
                         } catch (FileNotFoundException e) {
-                            Log.d(TAG, "File not found" , e);
-                        } catch (ParserConfigurationException e) {
-                            Log.d(TAG, "Malformed file" , e);
-                        } catch (SAXException e) {
-                            Log.d(TAG, "Malformed file" , e);
-                        } catch (IOException e) {
-                            Log.d(TAG, "Error reading file" , e);
+                            Log.e(TAG, "File not found", e);
                         }
-                        Log.d(TAG, "Imported GPX data.");
-                        
                     }
                 }
+
+                final ProgressDialog progress = new ProgressDialog(Settings.this);
+
+                progress.setCancelable(false);
+                progress.setMax(gpxs.size());
+                progress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+                progress.setMessage(getString(R.string.importing_locations));
+
+                progress.show();
+                
+                Runnable importer = new Runnable() {
+
+                    @Override
+                    public void run() {
+                        ExploredProvider cache = ((UmbraApplication) getApplication()).getCache();
+
+                        for (InputStream stream : gpxs) {
+                            try {
+                                GpxImporter.importGPXFile(stream,
+                                        cache);
+                                progress.incrementProgressBy(1);
+                            } catch (ParserConfigurationException e) {
+                                Log.e(TAG, "Error parsing file", e);
+                            } catch (SAXException e) {
+                                Log.e(TAG, "Error parsing file", e);
+                            } catch (IOException e) {
+                                Log.e(TAG, "Error reading file", e);
+                            }
+
+                        }
+                        progress.dismiss();
+
+                    }
+                };
+                new Thread(importer).start();
+
+                Log.d(TAG, "Imported GPX data.");
             }
         });
 
