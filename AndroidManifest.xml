@@ -27,8 +27,8 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.unchiujar.umbra"
-    android:versionCode="16"
-    android:versionName="0.0.16" >
+    android:versionCode="18"
+    android:versionName="0.0.18" >
 
     <uses-sdk
         android:minSdkVersion="7"
