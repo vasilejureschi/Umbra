@@ -29,12 +29,9 @@ package org.unchiujar.umbra.overlays;
 
 import static org.unchiujar.umbra.utils.LocationUtilities.locationToGeoPoint;
 
-import com.google.android.maps.GeoPoint;
-import com.google.android.maps.MapView;
-import com.google.android.maps.Overlay;
-import com.google.android.maps.Projection;
+import java.util.List;
 
-import org.unchiujar.umbra.activities.Settings;
+import org.unchiujar.umbra.activities.Preferences;
 import org.unchiujar.umbra.location.ApproximateLocation;
 import org.unchiujar.umbra.location.LocationOrder;
 import org.unchiujar.umbra.utils.LocationUtilities;
@@ -50,9 +47,13 @@ import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
-import java.util.List;
+import com.google.android.maps.GeoPoint;
+import com.google.android.maps.MapView;
+import com.google.android.maps.Overlay;
+import com.google.android.maps.Projection;
 
 public class ExploredOverlay extends Overlay {
     private static final int SHADING_PASSES = 15;
@@ -80,6 +81,7 @@ public class ExploredOverlay extends Overlay {
     private Rect mScreenCover;
     private double mCurrentAccuracy;
     private Paint mShadePaint;
+    private SharedPreferences mSettings;
 
     public ExploredOverlay(Context context) {
         this.mContext = context;
@@ -130,7 +132,7 @@ public class ExploredOverlay extends Overlay {
         mShadePaint.setColor(Color.BLACK);
         mShadePaint.setStyle(Style.FILL);
         mShadePaint.setAlpha(220);
-
+        mSettings = PreferenceManager.getDefaultSharedPreferences(mContext);
     }
 
     @Override
@@ -190,7 +192,8 @@ public class ExploredOverlay extends Overlay {
                     && mTempPoint.y <= mapView.getHeight()) {
 
                 for (int i = 0; i < SHADING_PASSES; i++) {
-                    mCoverCanvas.drawCircle(mTempPoint.x, mTempPoint.y, (SHADING_PASSES - i) * radius / SHADING_PASSES *0.8f + radius * 0.2f,
+                    mCoverCanvas.drawCircle(mTempPoint.x, mTempPoint.y, (SHADING_PASSES - i)
+                            * radius / SHADING_PASSES * 0.8f + radius * 0.2f,
                             mShadePaint);
                 }
 
@@ -198,20 +201,22 @@ public class ExploredOverlay extends Overlay {
 
         }
 
-//        for (ApproximateLocation location : mLocations) {
-//            // XXX BUG - do not use
-//            // point = mapView.getProjection().toPixels(geoPoint, null);
-//            // returns an incorrect value in point
-//            // you'll cry debugger tears if you do
-//            projection.toPixels(locationToGeoPoint(location), mTempPoint);
-//            // Log.v(TAG, "GeoPoint to screen point: " + mTempPoint);
-//            // for display use only visible points
-//            if (mTempPoint.x >= 0 && mTempPoint.x <= mapView.getWidth() && mTempPoint.y >= 0
-//                    && mTempPoint.y <= mapView.getHeight()) {
-//                mCoverCanvas.drawCircle(mTempPoint.x, mTempPoint.y, radius * 0.4f, mCirclePaint);
-//            }
-//
-//        }
+        // for (ApproximateLocation location : mLocations) {
+        // // XXX BUG - do not use
+        // // point = mapView.getProjection().toPixels(geoPoint, null);
+        // // returns an incorrect value in point
+        // // you'll cry debugger tears if you do
+        // projection.toPixels(locationToGeoPoint(location), mTempPoint);
+        // // Log.v(TAG, "GeoPoint to screen point: " + mTempPoint);
+        // // for display use only visible points
+        // if (mTempPoint.x >= 0 && mTempPoint.x <= mapView.getWidth() &&
+        // mTempPoint.y >= 0
+        // && mTempPoint.y <= mapView.getHeight()) {
+        // mCoverCanvas.drawCircle(mTempPoint.x, mTempPoint.y, radius * 0.4f,
+        // mCirclePaint);
+        // }
+        //
+        // }
 
         // draw blue location circle
         projection.toPixels(new GeoPoint((int) (mCurrentLat * 1e6), (int) (mCurrentLong * 1e6)),
@@ -219,14 +224,13 @@ public class ExploredOverlay extends Overlay {
         mCoverCanvas.drawCircle(mTempPoint.x, mTempPoint.y, radius, mCurrentPaint);
         mCoverCanvas.drawCircle(mTempPoint.x, mTempPoint.y, accuracy, mAccuracyPaint);
 
-        SharedPreferences settings = mContext.getSharedPreferences(Settings.UMBRA_PREFS, 0);
-        mRectPaint.setAlpha(settings.getInt(Settings.TRANSPARENCY, 120));
+        mRectPaint.setAlpha(255 - mSettings.getInt(Preferences.TRANSPARENCY, 120));
 
         canvas.drawBitmap(mCover, 0, 0, mRectPaint);
         canvas.drawRect(mTopBar, mTopBarPaint);
 
         String accuracyText = LocationUtilities.getFormattedDistance(mCurrentAccuracy,
-                settings.getBoolean(Settings.MEASUREMENT_SYSTEM, false));
+                mSettings.getBoolean(Preferences.MEASUREMENT_SYSTEM, false));
 
         if (mCurrentAccuracy < LocationOrder.METERS_RADIUS * 2) {
             canvas.drawText(" Accuracy: " + accuracyText, 17, 19,

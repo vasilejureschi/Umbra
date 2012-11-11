@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  This file is part of Umbra.
+  
+      Umbra is free software: you can redistribute it and/or modify
+      it under the terms of the GNU General Public License as published by
+      the Free Software Foundation, either version 3 of the License, or
+      (at your option) any later version.
+  
+      Umbra is distributed in the hope that it will be useful,
+      but WITHOUT ANY WARRANTY; without even the implied warranty of
+      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+      GNU General Public License for more details.
+  
+      You should have received a copy of the GNU General Public License
+      along with Umbra.  If not, see <http://www.gnu.org/licenses/>.
+  
+      Copyright (c) 2011 vasile.
+      All rights reserved. This program and the accompanying materials
+      are made available under the terms of the GNU Public License v3.0
+      which accompanies this distribution, and is available at
+      
+     http://www.gnu.org/licenses/gpl-3.0.html
+  
+      Contributors:
+         Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
+-->
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <CheckBoxPreference
+        android:id="@+id/check_animate"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:checked="false"
+        android:key="org.unchiujar.umbra.settings.animate"
+        android:summaryOff="@string/animate_move"
+        android:summaryOn="@string/animate_none"
+        android:title="@string/map_movement" />
+    <CheckBoxPreference
+        android:id="@+id/check_updates"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:checked="false"
+        android:key="org.unchiujar.umbra.settings.update_mode"
+        android:summaryOff="@string/updates_car"
+        android:summaryOn="@string/updates_walk"
+        android:title="@string/location_updates_frequency" />
+    <CheckBoxPreference
+        android:id="@+id/check_metric"
+        android:layout_width="fill_parent"
+        android:layout_height="0dip"
+        android:layout_margin="10dp"
+        android:key="org.unchiujar.umbra.settings.measurement"
+        android:summaryOff="@string/measurement_imperial"
+        android:summaryOn="@string/measurement_metric"
+        android:title="@string/measurement_system" />
+    <org.unchiujar.umbra.preferences.SeekBarPreference
+        xmlns:unchiujar="http://unchiujar.org"
+        android:defaultValue="80"
+        android:key="org.unchiujar.umbra.settings.transparency"
+        android:max="255"
+        android:summary="Drag to adjust fog transparency" />
+
+    <org.unchiujar.umbra.preferences.FolderSelectPreference
+        android:defaultValue="80"
+        android:key="org.unchiujar.umbra.settings.import_folder"
+        android:summary="Select folder containing GPX tracks." />
+
+</PreferenceScreen>

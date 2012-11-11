@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   This file is part of Umbra.
   
@@ -25,72 +25,39 @@
       Contributors:
          Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/widget_frame"
     android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:orientation="vertical" >
+    android:layout_height="wrap_content"
+    android:paddingBottom="5dp"
+    android:paddingLeft="15dp"
+    android:paddingRight="10dp"
+    android:paddingTop="5dp" >
 
     <TextView
-        android:id="@+id/transparency_label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="10dp"
-        android:text="@string/transparency_label"
-        android:textAppearance="?android:attr/textAppearanceMedium" >
-    </TextView>
-
-    <SeekBar
-        android:id="@+id/transparency_seek"
+        android:id="@android:id/title"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="10dp"
-        android:max="255" >
-    </SeekBar>
-
-    <ImageView
-        android:id="@+id/transparency_image"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginBottom="1dip" />
+    <TextView
+        android:id="@android:id/summary"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:src="@drawable/transparency" >
-    </ImageView>
-
-    <CheckBox
-        android:id="@+id/check_metric"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="10dp"
-        android:text="@string/measurement_metric" >
-    </CheckBox>
-
-    <CheckBox
-        android:id="@+id/check_animate"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="10dp"
-        android:checked="false"
-        android:text="@string/animate_none" >
-    </CheckBox>
-
-    <CheckBox
-        android:id="@+id/check_updates"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="10dp"
-        android:checked="false"
-        android:text="@string/updates_walk" >
-    </CheckBox>
+        android:layout_alignParentLeft="true"
+        android:layout_below="@android:id/title" />
 
     <LinearLayout
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content" >
-
+        android:layout_height="wrap_content"
+        android:layout_below="@android:id/summary" >
         <AutoCompleteTextView
             android:id="@+id/txtSelectGpxFolder"
             android:layout_width="203dp"
             android:layout_height="wrap_content"
             android:ems="10"
             android:hint="@string/select_gpx_folder" >
-
             <requestFocus />
         </AutoCompleteTextView>
 
@@ -98,7 +65,7 @@
             android:id="@+id/btnLoadGpx"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:text="@string/load" />
+            android:text="@string/import_gpx" />
     </LinearLayout>
 
-</LinearLayout>
+</RelativeLayout>
