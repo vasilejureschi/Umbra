@@ -6,3 +6,6 @@ local.properties
 .project
 .settings
 .classpath
+.settings/org.eclipse.jdt.core.prefs
+.settings/org.eclipse.jdt.ui.prefs
+
