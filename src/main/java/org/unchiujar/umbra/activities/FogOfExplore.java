@@ -31,14 +31,10 @@ import static org.unchiujar.umbra.utils.LocationUtilities.coordinatesToGeoPoint;
 import static org.unchiujar.umbra.utils.LocationUtilities.coordinatesToLocation;
 import static org.unchiujar.umbra.utils.LogUtilities.numberLogList;
 
-import com.google.android.maps.MapActivity;
-import com.google.android.maps.MapController;
-import com.google.android.maps.MapView;
-import com.google.android.maps.Overlay;
+import java.util.List;
 
 import org.unchiujar.umbra.R;
 import org.unchiujar.umbra.backend.ExploredProvider;
-import org.unchiujar.umbra.backend.VisitedAreaCache;
 import org.unchiujar.umbra.location.ApproximateLocation;
 import org.unchiujar.umbra.overlays.ExploredOverlay;
 import org.unchiujar.umbra.services.LocationService;
@@ -64,13 +60,18 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.WindowManager.LayoutParams;
 import android.widget.Toast;
 
-import java.util.List;
+import com.google.android.maps.MapActivity;
+import com.google.android.maps.MapController;
+import com.google.android.maps.MapView;
+import com.google.android.maps.Overlay;
 
 /**
  * Main activity for Umbra application.
@@ -91,6 +92,9 @@ public class FogOfExplore extends MapActivity {
     private static final String BUNDLE_LATITUDE = "org.unchiujar.umbra.latitude";
     /** Constant used for saving the longitude value between screen rotations. */
     private static final String BUNDLE_LONGITUDE = "org.unchiujar.umbra.longitude";
+    /** Constant used for saving the zoom level between screen rotations. */
+    private static final String BUNDLE_ZOOM = "org.unchiujar.umbra.zoom";
+
     /**
      * Intent named used for starting the location service
      * 
@@ -135,7 +139,7 @@ public class FogOfExplore extends MapActivity {
      * 
      * @see LocationService
      */
-    private boolean mWalk;
+    private boolean mDrive;
 
     /** Handler used to update the overlay if a pan or zoom action occurs. */
     private Handler mZoomPanHandler = new Handler();
@@ -147,6 +151,8 @@ public class FogOfExplore extends MapActivity {
 
     /** Target we publish for clients to send messages to IncomingHandler. */
     private final Messenger mMessenger = new Messenger(new IncomingHandler());
+
+    private SharedPreferences mSettings;
 
     /**
      * Runnable to be executed by the pan and zoom handler.
@@ -163,7 +169,8 @@ public class FogOfExplore extends MapActivity {
             int mapCenterLat = mapView.getMapCenter().getLatitudeE6();
             int mapCenterLong = mapView.getMapCenter().getLongitudeE6();
             // check if the zoom or pan has changed and update accordingly
-            if (mapView.getZoomLevel() != oldZoom || oldCenterLat != mapCenterLat
+            if (mapView.getZoomLevel() != oldZoom
+                    || oldCenterLat != mapCenterLat
                     || oldCenterLong != mapCenterLong) {
                 redrawOverlay();
                 oldZoom = mapView.getZoomLevel();
@@ -195,8 +202,7 @@ public class FogOfExplore extends MapActivity {
                         mCurrentAccuracy = ((Location) msg.obj).getAccuracy();
                         redrawOverlay();
 
-                    } else
-                    {
+                    } else {
                         Log.d(TAG, "Null object received");
                     }
                     break;
@@ -213,19 +219,22 @@ public class FogOfExplore extends MapActivity {
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {
             mService = new Messenger(service);
-            Log.d(TAG, "Client Attached.");
+            Log.d(TAG, "Location service attached.");
 
             try {
-                Message msg = Message.obtain(null, LocationService.MSG_REGISTER_CLIENT);
+                Message msg = Message.obtain(null,
+                        LocationService.MSG_REGISTER_CLIENT);
                 msg.replyTo = mMessenger;
 
                 mService.send(msg);
 
-                msg = Message.obtain(null, LocationService.MSG_REGISTER_INTERFACE);
+                msg = Message.obtain(null,
+                        LocationService.MSG_REGISTER_INTERFACE);
                 mService.send(msg);
                 // send walk or drive mode
-                msg = (mWalk) ? Message.obtain(null, LocationService.MSG_WALK) : Message.obtain(
-                        null, LocationService.MSG_DRIVE);
+                msg = (mDrive) ? Message
+                        .obtain(null, LocationService.MSG_DRIVE) : Message
+                        .obtain(null, LocationService.MSG_WALK);
                 mService.send(msg);
             } catch (RemoteException e) {
                 // NO-OP
@@ -258,10 +267,10 @@ public class FogOfExplore extends MapActivity {
     private SharedPreferences.OnSharedPreferenceChangeListener mPrefListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
 
         @Override
-        public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        public void onSharedPreferenceChanged(
+                SharedPreferences sharedPreferences, String key) {
             Log.d(TAG, "Settings changed :" + sharedPreferences + " " + key);
-            mWalk = sharedPreferences.getBoolean(
-                    org.unchiujar.umbra.activities.Settings.UPDATE_MODE, false);
+            mDrive = mSettings.getBoolean(Preferences.DRIVE_MODE, false);
         }
     };
 
@@ -274,9 +283,11 @@ public class FogOfExplore extends MapActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mloadProgress = ProgressDialog.show(this, "", "Loading. Please wait...", true);
-        getSharedPreferences(Settings.UMBRA_PREFS, 0).registerOnSharedPreferenceChangeListener(
-                mPrefListener);
+        mSettings = PreferenceManager.getDefaultSharedPreferences(this);
+        getWindow().addFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
+        mloadProgress = ProgressDialog.show(this, "",
+                "Loading. Please wait...", true);
+        mSettings.registerOnSharedPreferenceChangeListener(mPrefListener);
         setContentView(R.layout.main);
         MapView mapView = (MapView) findViewById(R.id.mapview);
         mapView.setBuiltInZoomControls(true);
@@ -299,7 +310,7 @@ public class FogOfExplore extends MapActivity {
         Log.d(TAG, "onCreate completed: Activity created");
         mLocationServiceIntent = new Intent(SERVICE_INTENT_NAME);
         startService(mLocationServiceIntent);
-        mRecorder = new VisitedAreaCache(getApplicationContext());
+        mRecorder = ((UmbraApplication) getApplication()).getCache();
         // check we still have access to GPS info
         checkConnectivity();
 
@@ -315,6 +326,7 @@ public class FogOfExplore extends MapActivity {
         mCurrentAccuracy = savedInstanceState.getDouble(BUNDLE_ACCURACY);
         mCurrentLat = savedInstanceState.getDouble(BUNDLE_LATITUDE);
         mCurrentLong = savedInstanceState.getDouble(BUNDLE_LONGITUDE);
+        mMapController.setZoom(savedInstanceState.getInt(BUNDLE_ZOOM));
         super.onRestoreInstanceState(savedInstanceState);
     }
 
@@ -328,6 +340,8 @@ public class FogOfExplore extends MapActivity {
         outState.putDouble(BUNDLE_ACCURACY, mCurrentAccuracy);
         outState.putDouble(BUNDLE_LATITUDE, mCurrentLat);
         outState.putDouble(BUNDLE_LONGITUDE, mCurrentLong);
+        MapView mapView = (MapView) findViewById(R.id.mapview);
+        outState.putInt(BUNDLE_ZOOM, mapView.getZoomLevel());
         super.onSaveInstanceState(outState);
     }
 
@@ -417,10 +431,13 @@ public class FogOfExplore extends MapActivity {
         boolean result = super.onCreateOptionsMenu(menu);
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.layout.menu, menu);
-        menu.findItem(R.id.where_am_i).setIcon(android.R.drawable.ic_menu_mylocation);
-        menu.findItem(R.id.settings).setIcon(android.R.drawable.ic_menu_preferences);
+        menu.findItem(R.id.where_am_i).setIcon(
+                android.R.drawable.ic_menu_mylocation);
+        menu.findItem(R.id.settings).setIcon(
+                android.R.drawable.ic_menu_preferences);
         menu.findItem(R.id.help).setIcon(android.R.drawable.ic_menu_help);
-        menu.findItem(R.id.exit).setIcon(android.R.drawable.ic_menu_close_clear_cancel);
+        menu.findItem(R.id.exit).setIcon(
+                android.R.drawable.ic_menu_close_clear_cancel);
 
         return result;
     }
@@ -435,7 +452,8 @@ public class FogOfExplore extends MapActivity {
         switch (item.getItemId()) {
             case R.id.where_am_i:
                 Log.d(TAG, "Moving to current location...");
-                mMapController.setCenter(coordinatesToGeoPoint(mCurrentLat, mCurrentLong));
+                mMapController.setCenter(coordinatesToGeoPoint(mCurrentLat,
+                        mCurrentLong));
                 redrawOverlay();
                 return true;
             case R.id.help:
@@ -452,7 +470,7 @@ public class FogOfExplore extends MapActivity {
                 System.exit(0);
                 return true;
             case R.id.settings:
-                Intent settingsIntent = new Intent(this, Settings.class);
+                Intent settingsIntent = new Intent(this, Preferences.class);
                 startActivity(settingsIntent);
                 return true;
             default:
@@ -477,28 +495,28 @@ public class FogOfExplore extends MapActivity {
         final int mapCenterLat = mapView.getMapCenter().getLatitudeE6();
         final int mapCenterLong = mapView.getMapCenter().getLongitudeE6();
 
-        final ApproximateLocation upperLeft = coordinatesToLocation(mapCenterLat + halfLatSpan,
-                mapCenterLong
-                        - halfLongSpan);
-        final ApproximateLocation bottomRight = coordinatesToLocation(mapCenterLat - halfLatSpan,
-                mapCenterLong
-                        + halfLongSpan);
+        final ApproximateLocation upperLeft = coordinatesToLocation(
+                mapCenterLat + halfLatSpan, mapCenterLong - halfLongSpan);
+        final ApproximateLocation bottomRight = coordinatesToLocation(
+                mapCenterLat - halfLatSpan, mapCenterLong + halfLongSpan);
         // TODO - optimization get points for rectangle only if a zoomout
         // or a pan action occured - ie new points come into view
 
         Log.d(TAG,
                 "Getting points for rectangle:  "
-                        + numberLogList(upperLeft.getLatitude(), upperLeft.getLongitude())
-                        + numberLogList(bottomRight.getLatitude(), bottomRight.getLongitude()));
+                        + numberLogList(upperLeft.getLatitude(),
+                                upperLeft.getLongitude())
+                        + numberLogList(bottomRight.getLatitude(),
+                                bottomRight.getLongitude()));
         // update the current location for the overlay
         mExplored.setCurrent(mCurrentLat, mCurrentLong, mCurrentAccuracy);
         // update the overlay with the currently visible explored area
         mExplored.setExplored(mRecorder.selectVisited(upperLeft, bottomRight));
         // animate the map to the user position if the options to do so is
         // selected
-        if (getSharedPreferences(Settings.UMBRA_PREFS, 0).getBoolean(Settings.ANIMATE, true)) {
-            mMapController.animateTo(LocationUtilities
-                    .coordinatesToGeoPoint(mCurrentLat, mCurrentLong));
+        if (mSettings.getBoolean(Preferences.ANIMATE, true)) {
+            mMapController.animateTo(LocationUtilities.coordinatesToGeoPoint(
+                    mCurrentLat, mCurrentLong));
         }
         // call overlay redraw
         mapView.postInvalidate();
@@ -536,8 +554,8 @@ public class FogOfExplore extends MapActivity {
         }
 
         if (!connected) {
-            Toast.makeText(getApplicationContext(), R.string.connectivity_warning,
-                    Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(),
+                    R.string.connectivity_warning, Toast.LENGTH_LONG).show();
 
         }
     }
@@ -553,7 +571,8 @@ public class FogOfExplore extends MapActivity {
 
         final AlertDialog alert = builder.create();
 
-        alert.setButton(DialogInterface.BUTTON_POSITIVE, getString(R.string.start_gps_btn),
+        alert.setButton(DialogInterface.BUTTON_POSITIVE,
+                getString(R.string.start_gps_btn),
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int id) {
@@ -563,7 +582,8 @@ public class FogOfExplore extends MapActivity {
                     }
                 });
 
-        alert.setButton(DialogInterface.BUTTON_NEGATIVE, getString(R.string.continue_no_gps),
+        alert.setButton(DialogInterface.BUTTON_NEGATIVE,
+                getString(R.string.continue_no_gps),
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int id) {
@@ -601,7 +621,8 @@ public class FogOfExplore extends MapActivity {
             // test if we have a valid service registration
             if (mService != null) {
                 try {
-                    Message msg = Message.obtain(null, LocationService.MSG_UNREGISTER_INTERFACE);
+                    Message msg = Message.obtain(null,
+                            LocationService.MSG_UNREGISTER_INTERFACE);
                     msg.replyTo = mMessenger;
                     mService.send(msg);
                 } catch (RemoteException e) {
