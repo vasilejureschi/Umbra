@@ -76,13 +76,7 @@ public class LocationService extends Service {
 	 * callbacks from the service. The Message's replyTo field must be a
 	 * Messenger of the client as previously given with MSG_REGISTER_CLIENT.
 	 */
-	public static final int MSG_UNREGISTER_CLIENT = 2; // This is called when
-														// the connection with
-														// the service has been
-	// established, giving us the service object we can use to
-	// interact with the service. We are communicating with our
-	// service through an IDL interface, so get a client-side
-	// representation of that from the raw service object.
+	public static final int MSG_UNREGISTER_CLIENT = 2;
 
 	public static final int MSG_UNREGISTER_INTERFACE = 4;
 	public static final int MSG_REGISTER_INTERFACE = 5;
@@ -91,13 +85,6 @@ public class LocationService extends Service {
 	public static final int MSG_DRIVE = 7;
 
 	public static final int MSG_LOCATION_CHANGED = 9000;
-
-	/**
-	 * Command to service to set a new value. This can be sent to the service to
-	 * supply a new value, and will be sent by the service to any registered
-	 * clients with the new value.
-	 */
-	public static final int MSG_SET_VALUE = 3;
 
 	/**
 	 * Walk update frequency for average walking speed. Average distance covered
@@ -130,8 +117,6 @@ public class LocationService extends Service {
 
 	/** Keeps track of all current registered clients. */
 	private ArrayList<Messenger> mClients = new ArrayList<Messenger>();
-	/** Holds last value set by a client. */
-	private int mValue = 0;
 
 	private LocationManager mLocationManager;
 	private volatile boolean mOnScreen;
@@ -198,7 +183,7 @@ public class LocationService extends Service {
 
 	@Override
 	public void onCreate() {
-
+		Log.d(TAG, "On create");
 		super.onCreate();
 		displayRunningNotification();
 		Log.d(TAG, "Location manager set up.");
@@ -216,6 +201,7 @@ public class LocationService extends Service {
 
 	@Override
 	public void onDestroy() {
+		Log.d(TAG, "On destroy");
 		super.onDestroy();
 
 		mLocationManager.removeUpdates(mFine);
@@ -265,11 +251,14 @@ public class LocationService extends Service {
 
 		@Override
 		public void handleMessage(Message msg) {
+			Log.d(TAG, "Message received:" + msg.what);
 			switch (msg.what) {
 			case MSG_WALK:
+				Log.d(TAG, "Walk message received.");
 				mWalking = true;
 				break;
 			case MSG_DRIVE:
+				Log.d(TAG, "Drive message received.");
 				mWalking = false;
 				break;
 			case MSG_UNREGISTER_CLIENT:
@@ -289,19 +278,7 @@ public class LocationService extends Service {
 				break;
 			case MSG_REGISTER_CLIENT:
 				Log.d(TAG, "Registering new client.");
-				mValue = msg.arg1;
 				mClients.add(msg.replyTo);
-				for (int i = mClients.size() - 1; i >= 0; i--) {
-					try {
-						mClients.get(i).send(
-								Message.obtain(null, MSG_SET_VALUE, mValue, 0));
-					} catch (RemoteException e) {
-						// The client is dead. Remove it from the list;
-						// we are going through the list from back to front
-						// so this is safe to do inside the loop.
-						mClients.remove(i);
-					}
-				}
 				break;
 			default:
 				super.handleMessage(msg);

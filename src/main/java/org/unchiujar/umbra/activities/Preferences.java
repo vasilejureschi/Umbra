@@ -30,7 +30,9 @@ package org.unchiujar.umbra.activities;
 import org.unchiujar.umbra.R;
 
 import android.os.Bundle;
+import android.preference.CheckBoxPreference;
 import android.preference.PreferenceActivity;
+import android.util.Log;
 
 public class Preferences extends PreferenceActivity {
 
