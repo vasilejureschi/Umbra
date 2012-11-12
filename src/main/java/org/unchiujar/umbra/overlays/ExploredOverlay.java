@@ -56,7 +56,7 @@ import com.google.android.maps.Overlay;
 import com.google.android.maps.Projection;
 
 public class ExploredOverlay extends Overlay {
-    private static final int SHADING_PASSES = 15;
+    private static final int SHADING_PASSES = 10;
     private static final String TAG = ExploredOverlay.class.getName();
     private List<ApproximateLocation> mLocations;
     private Context mContext;
