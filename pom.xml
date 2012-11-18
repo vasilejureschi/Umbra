@@ -42,7 +42,7 @@
 		<dependency>
 			<groupId>com.google.android</groupId>
 			<artifactId>android</artifactId>
-			<version>2.1.2</version>
+			<version>2.2.1</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -81,7 +81,7 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.11-beta-1</version>
+			<version>4.8.1</version>
 			<scope>test</scope>
 		</dependency>
 
@@ -96,7 +96,7 @@
 				<configuration>
 					<extractDuplicates>true</extractDuplicates>
 					<sdk>
-						<platform>7</platform>
+						<platform>8</platform>
 					</sdk>
 					<deleteConflictingFiles>true</deleteConflictingFiles>
 					<undeployBeforeDeploy>true</undeployBeforeDeploy>
