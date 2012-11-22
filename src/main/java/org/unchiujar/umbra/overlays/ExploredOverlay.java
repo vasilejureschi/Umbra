@@ -56,7 +56,7 @@ import com.google.android.maps.Overlay;
 import com.google.android.maps.Projection;
 
 public class ExploredOverlay extends Overlay {
-	private static final int SHADING_PASSES = 10;
+	private static final int SHADING_PASSES = 18;
 	private static final String TAG = ExploredOverlay.class.getName();
 	private List<ApproximateLocation> mLocations;
 	private Context mContext;
@@ -66,7 +66,7 @@ public class ExploredOverlay extends Overlay {
 
 	private Paint mTopBarPaint;
 	private Paint mCurrentPaint;
-	private Paint mCirclePaint;
+	private Paint mClearPaint;
 	private Paint mAccuracyPaint;
 
 	private Point mTempPoint = new Point();
@@ -104,7 +104,7 @@ public class ExploredOverlay extends Overlay {
 		mCurrentPaint.setColor(Color.BLUE);
 		mCurrentPaint.setStyle(Style.STROKE);
 
-		mCirclePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+		mClearPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 		// set PorterDuff mode in order to create transparent holes in
 		// the canvas
 		// see
@@ -112,10 +112,10 @@ public class ExploredOverlay extends Overlay {
 		// see http://en.wikipedia.org/wiki/Alpha_compositing
 		// see
 		// http://groups.google.com/group/android-developers/browse_thread/thread/5b0a498664b17aa0/de4aab6fb7e97e38?lnk=gst&q=erase+transparent&pli=1
-		mCirclePaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-		mCirclePaint.setAlpha(255);
-		mCirclePaint.setColor(Color.BLACK);
-		mCirclePaint.setStyle(Style.FILL_AND_STROKE);
+		mClearPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+		mClearPaint.setAlpha(255);
+		mClearPaint.setColor(Color.BLACK);
+		mClearPaint.setStyle(Style.FILL_AND_STROKE);
 
 		mTextPaint.setAntiAlias(true);
 		mTextPaint.setTextSize(15);
@@ -136,7 +136,7 @@ public class ExploredOverlay extends Overlay {
 	}
 
 	private int drawSkip = 1;
-	
+
 	@Override
 	public void draw(Canvas canvas, MapView mapView, boolean shadow) {
 
@@ -145,7 +145,7 @@ public class ExploredOverlay extends Overlay {
 			drawSkip++;
 			return;
 		}
-		
+
 		drawSkip = 1;
 
 		assert !shadow : "The overlay does not need a shadow as it only covers the explored areas.";
@@ -168,7 +168,7 @@ public class ExploredOverlay extends Overlay {
 		final double pixelsMeter = 4d / Math
 				.pow(2, 19 - mapView.getZoomLevel());
 		int radius = (int) ((double) LocationOrder.METERS_RADIUS * pixelsMeter);
-		radius = (radius <= 1) ? 1 : radius;
+		radius = (radius <= 3) ? 3 : radius;
 
 		int accuracy = (int) ((double) mCurrentAccuracy * pixelsMeter);
 		accuracy = (accuracy <= 1) ? 1 : accuracy;
@@ -203,10 +203,27 @@ public class ExploredOverlay extends Overlay {
 			if (mTempPoint.x >= 0 && mTempPoint.x <= mapView.getWidth()
 					&& mTempPoint.y >= 0 && mTempPoint.y <= mapView.getHeight()) {
 
-				for (int i = 0; i < SHADING_PASSES; i++) {
-					mCoverCanvas.drawCircle(mTempPoint.x, mTempPoint.y,
-							(SHADING_PASSES - i) * radius / SHADING_PASSES
-									* 0.8f + radius * 0.2f, mShadePaint);
+				// calculate shading passes from zoom level
+				// if the map is zoom out do not try to shade so much
+				// shading passes are equivalent to zoom level minus a constant
+				// after a certain zoom level only clear the area instead of
+				// shading
+				int passes = mapView.getZoomLevel() < 14 ? 1 : mapView
+						.getZoomLevel() - 8;
+				Log.v(TAG, "Shading passes " + passes + " zoom level "
+						+ mapView.getZoomLevel());
+
+				// if the passes are only one do not shade, just clear
+				if (passes != 1) {
+					for (int i = 0; i < passes; i++) {
+						mCoverCanvas.drawCircle(mTempPoint.x, mTempPoint.y,
+								(SHADING_PASSES - i) * radius / SHADING_PASSES
+										* 0.8f + radius * 0.2f, mShadePaint);
+					}
+				} else {
+					mCoverCanvas.drawCircle(mTempPoint.x, mTempPoint.y, radius,
+							mClearPaint);
+
 				}
 
 			}
