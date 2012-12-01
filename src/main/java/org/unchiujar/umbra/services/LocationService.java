@@ -37,8 +37,10 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -47,6 +49,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
+import android.os.PowerManager;
 import android.os.RemoteException;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
@@ -109,8 +112,10 @@ public class LocationService extends Service {
     private static final long LOCATION_SEARCH_DURATON = 30 * 1000;
     /** The maximum duration the location listeners should be put to sleep. */
     protected static final long MAX_BACKOFF_INTERVAL = 10 * 60 * 1000;
+    public static final String POWER_EVENT = "org.unchiujar.services.LocationService.POWER_EVENT";
 
     private boolean mWalking = true;
+    protected boolean mPowerConnected;
 
     /** Keeps track of all current registered clients. */
     private ArrayList<Messenger> mClients = new ArrayList<Messenger>();
@@ -188,6 +193,7 @@ public class LocationService extends Service {
         mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
         setOffScreenState();
+        registerPowerReceiver();
 
     }
 
@@ -200,9 +206,10 @@ public class LocationService extends Service {
     public void onDestroy() {
         Log.d(TAG, "On destroy");
         super.onDestroy();
+        // stop listening for power events
+        unregisterReceiver(receiver);
 
         mLocationManager.removeUpdates(mFine);
-
         notificationManager.cancel(APPLICATION_ID);
         Log.d(TAG, "Service on destroy called.");
     }
@@ -265,12 +272,22 @@ public class LocationService extends Service {
                     // remove client
                     mClients.remove(msg.replyTo);
                     Log.d(TAG, "Setting the service to off screen state.");
+                    // if the power is connected do not change the
+                    // the location update frequency
+                    if (mPowerConnected) {
+                        Log.d(TAG, "Power is connected, not changing location update frequency");
+                        break;
+                    }
                     setOffScreenState();
                     break;
-
                 case MSG_REGISTER_INTERFACE:
                     Log.d(TAG, "Setting the service to on screen state.");
-                    // register client
+                    // if the power is connected do not change the
+                    // the location update frequency
+                    if (mPowerConnected) {
+                        Log.d(TAG, "Power is connected, not changing location update frequency");
+                        break;
+                    }
                     setOnScreeState();
                     break;
                 case MSG_REGISTER_CLIENT:
@@ -441,5 +458,40 @@ public class LocationService extends Service {
     public IBinder onBind(Intent intent) {
         return mMessenger.getBinder();
     }
+
+    // ------------ Power connected broadcast receiver ------------
+    private void registerPowerReceiver() {
+        IntentFilter filter = new IntentFilter();
+        filter.addAction("android.intent.action.ACTION_POWER_CONNECTED");
+        filter.addAction("android.intent.action.ACTION_POWER_DISCONNECTED");
+        registerReceiver(receiver, filter);
+    }
+
+    private final BroadcastReceiver receiver = new BroadcastReceiver() {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            String action = intent.getAction();
+
+            if (action.equals(Intent.ACTION_POWER_CONNECTED)) {
+                Log.d(TAG,
+                        "Power connected, increasing location frequency update.");
+                setOnScreeState();
+                mPowerConnected = true;
+            }
+            else if (action.equals(Intent.ACTION_POWER_DISCONNECTED)) {
+                Log.d(TAG,
+                        "Power disconnected, restoring location frequency update.");
+                mPowerConnected = false;
+                PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+                // if we received a power disconnected event and the screen is off then
+                // set the location update frequency to off screen
+                if (!pm.isScreenOn()) {
+                    setOffScreenState();
+                }
+            }
+        }
+    };
 
 }
