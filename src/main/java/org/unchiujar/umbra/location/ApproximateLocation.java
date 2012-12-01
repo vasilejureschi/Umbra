@@ -68,7 +68,7 @@ public class ApproximateLocation extends Location {
             return false;
         }
         // check if it is outside the preset radius
-        return  this.distanceTo((ApproximateLocation) location) <= LocationOrder.METERS_RADIUS;
+        return this.distanceTo((ApproximateLocation) location) <= LocationOrder.METERS_RADIUS;
 
     }
 

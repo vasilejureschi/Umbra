@@ -60,8 +60,10 @@ public class Help extends Activity {
                 getString(R.string.email_subject));
         emailIntent.setType("plain/text");
 
-        emailIntent.putExtra(android.content.Intent.EXTRA_TEXT, getString(R.string.email_body));
-        startActivity(Intent.createChooser(emailIntent, getString(R.string.email_chooser)));
+        emailIntent.putExtra(android.content.Intent.EXTRA_TEXT,
+                getString(R.string.email_body));
+        startActivity(Intent.createChooser(emailIntent,
+                getString(R.string.email_chooser)));
     }
 
 }

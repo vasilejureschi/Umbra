@@ -77,32 +77,28 @@ public class GpxImporter extends DefaultHandler {
     private Location lastLocationInSegment;
 
     private ExploredProvider mAreaCache;
+    private int elementsLoaded;
 
     /**
-     * Reads GPS tracks from a GPX file and writes tracks and their coordinates
-     * to the database.
+     * Reads GPS tracks from a GPX file and writes tracks and their coordinates to the database.
      * 
      * @param inputStream the input stream for the GPX file
      * @param areaCache the cache the points are loaded into
      */
-    public static void importGPXFile(InputStream inputStream, ExploredProvider areaCache)
-            throws ParserConfigurationException, SAXException, IOException {
+    public static void importGPXFile(InputStream inputStream,
+            ExploredProvider areaCache) throws ParserConfigurationException,
+            SAXException, IOException {
         SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
         SAXParser saxParser = saxParserFactory.newSAXParser();
         GpxImporter gpxImporter = new GpxImporter(areaCache);
 
-        try {
-            long start = System.currentTimeMillis();
+        long start = System.currentTimeMillis();
 
-            saxParser.parse(inputStream, gpxImporter);
+        saxParser.parse(inputStream, gpxImporter);
 
-            long end = System.currentTimeMillis();
-            Log.d(TAG, "Total import time: " + (end - start) + "ms");
+        long end = System.currentTimeMillis();
+        Log.d(TAG, "Total import time: " + (end - start) + "ms");
 
-        } finally {
-            // Delete the current track if not finished
-            gpxImporter.rollbackUnfinishedTracks();
-        }
     }
 
     public GpxImporter(ExploredProvider areaCache) {
@@ -110,28 +106,29 @@ public class GpxImporter extends DefaultHandler {
     }
 
     @Override
-    public void characters(char[] ch, int start, int length) throws SAXException {
+    public void characters(char[] ch, int start, int length)
+            throws SAXException {
         String newContent = new String(ch, start, length);
         if (content == null) {
             content = newContent;
         } else {
             /*
-             * In 99% of the cases, a single call to this method will be made
-             * for each sequence of characters we're interested in, so we'll
-             * rarely be concatenating strings, thus not justifying the use of a
-             * StringBuilder.
+             * In 99% of the cases, a single call to this method will be made for each sequence of
+             * characters we're interested in, so we'll rarely be concatenating strings, thus not
+             * justifying the use of a StringBuilder.
              */
             content += newContent;
         }
     }
 
     @Override
-    public void startElement(String uri, String localName, String name, Attributes attributes)
-            throws SAXException {
+    public void startElement(String uri, String localName, String name,
+            Attributes attributes) throws SAXException {
         if (isInTrackElement) {
             trackChildDepth++;
             if (localName.equals(TAG_TRACK)) {
-                throw new SAXException(createErrorMessage("Invalid GPX. Already inside a track."));
+                throw new SAXException(
+                        createErrorMessage("Invalid GPX. Already inside a track."));
             } else if (localName.equals(TAG_TRACK_SEGMENT)) {
                 onTrackSegmentElementStart();
             } else if (localName.equals(TAG_TRACK_POINT)) {
@@ -145,7 +142,8 @@ public class GpxImporter extends DefaultHandler {
     }
 
     @Override
-    public void endElement(String uri, String localName, String name) throws SAXException {
+    public void endElement(String uri, String localName, String name)
+            throws SAXException {
         if (!isInTrackElement) {
             content = null;
             return;
@@ -183,13 +181,6 @@ public class GpxImporter extends DefaultHandler {
     @Override
     public void setDocumentLocator(Locator locator) {
         this.locator = locator;
-    }
-
-    /**
-     * Rolls back last track if possible.
-     */
-    public void rollbackUnfinishedTracks() {
-        // TODO delete track/file?
     }
 
     /**
@@ -238,15 +229,20 @@ public class GpxImporter extends DefaultHandler {
      * 
      * @param attributes the attributes
      */
-    private void onTrackPointElementStart(Attributes attributes) throws SAXException {
+    private void onTrackPointElementStart(Attributes attributes)
+            throws SAXException {
+        Log.d(TAG, "Loaded elements " + elementsLoaded);
+        elementsLoaded = 0;
         if (location != null) {
-            throw new SAXException(createErrorMessage("Found a track point inside another one."));
+            throw new SAXException(
+                    createErrorMessage("Found a track point inside another one."));
         }
         String latitude = attributes.getValue(ATT_LAT);
         String longitude = attributes.getValue(ATT_LON);
 
         if (latitude == null || longitude == null) {
-            throw new SAXException(createErrorMessage("Point with no longitude or latitude."));
+            throw new SAXException(
+                    createErrorMessage("Point with no longitude or latitude."));
         }
         double latitudeValue;
         double longitudeValue;
@@ -255,9 +251,8 @@ public class GpxImporter extends DefaultHandler {
             longitudeValue = Double.parseDouble(longitude);
         } catch (NumberFormatException e) {
             throw new SAXException(
-                    createErrorMessage("Unable to parse latitude/longitude: " + latitude + "/"
-                            + longitude),
-                    e);
+                    createErrorMessage("Unable to parse latitude/longitude: "
+                            + latitude + "/" + longitude), e);
         }
 
         location = createNewLocation(latitudeValue, longitudeValue, -1L);
@@ -268,12 +263,13 @@ public class GpxImporter extends DefaultHandler {
      */
     private void onTrackPointElementEnd() throws SAXException {
         if (!isValidLocation(location)) {
-            throw new SAXException(createErrorMessage("Invalid location detected: " + location));
+            throw new SAXException(
+                    createErrorMessage("Invalid location detected: " + location));
         }
 
         // insert into cache
         mAreaCache.insert(new ApproximateLocation(location));
-
+        elementsLoaded++;
         lastLocationInSegment = location;
         location = null;
     }
@@ -289,15 +285,16 @@ public class GpxImporter extends DefaultHandler {
         try {
             location.setAltitude(Double.parseDouble(content));
         } catch (NumberFormatException e) {
-            throw new SAXException(createErrorMessage("Unable to parse altitude: " + content), e);
+            throw new SAXException(
+                    createErrorMessage("Unable to parse altitude: " + content),
+                    e);
         }
     }
 
     /**
-     * On time element end. Sets location time and doing additional calculations
-     * as this is the last value required for the location. Also sets the start
-     * time for the trip statistics builder as there is no start time in the
-     * track root element.
+     * On time element end. Sets location time and doing additional calculations as this is the last
+     * value required for the location. Also sets the start time for the trip statistics builder as
+     * there is no start time in the track root element.
      */
     private void onTimeElementEnd() throws SAXException {
         if (location == null || content == null) {
@@ -309,12 +306,14 @@ public class GpxImporter extends DefaultHandler {
         try {
             time = StringUtils.getTime(content.trim());
         } catch (IllegalArgumentException e) {
-            throw new SAXException(createErrorMessage("Unable to parse time: " + content), e);
+            throw new SAXException(createErrorMessage("Unable to parse time: "
+                    + content), e);
         }
         location.setTime(time);
 
         // Calculate derived attributes from previous point
-        if (lastLocationInSegment != null && lastLocationInSegment.getTime() != 0) {
+        if (lastLocationInSegment != null
+                && lastLocationInSegment.getTime() != 0) {
             long timeDifference = time - lastLocationInSegment.getTime();
 
             // check for negative time change
@@ -323,12 +322,12 @@ public class GpxImporter extends DefaultHandler {
             } else {
 
                 /*
-                 * We don't have a speed and bearing in GPX, make something up
-                 * from the last two points. GPS points tend to have some
-                 * inherent imprecision, speed and bearing will likely be off,
-                 * so the statistics for things like max speed will also be off.
+                 * We don't have a speed and bearing in GPX, make something up from the last two
+                 * points. GPS points tend to have some inherent imprecision, speed and bearing will
+                 * likely be off, so the statistics for things like max speed will also be off.
                  */
-                float speed = lastLocationInSegment.distanceTo(location) * 1000.0f / timeDifference;
+                float speed = lastLocationInSegment.distanceTo(location)
+                        * 1000.0f / timeDifference;
                 location.setSpeed(speed);
             }
             location.setBearing(lastLocationInSegment.bearingTo(location));
@@ -342,7 +341,8 @@ public class GpxImporter extends DefaultHandler {
      * @param longitude location longitude
      * @param time location time
      */
-    private Location createNewLocation(double latitude, double longitude, long time) {
+    private Location createNewLocation(double latitude, double longitude,
+            long time) {
         Location loc = new Location(LocationManager.GPS_PROVIDER);
         loc.setLatitude(latitude);
         loc.setLongitude(longitude);
@@ -360,7 +360,8 @@ public class GpxImporter extends DefaultHandler {
      * @param message the message
      */
     private String createErrorMessage(String message) {
-        return String.format(Locale.US, "Parsing error at line: %d column: %d. %s",
+        return String.format(Locale.US,
+                "Parsing error at line: %d column: %d. %s",
                 locator.getLineNumber(), locator.getColumnNumber(), message);
     }
 
@@ -378,11 +379,10 @@ public class GpxImporter extends DefaultHandler {
     }
 
     /**
-     * Checks if a given location is a valid (i.e. physically possible) location
-     * on Earth. Note: The special separator locations (which have latitude =
-     * 100) will not qualify as valid. Neither will locations with lat=0 and
-     * lng=0 as these are most likely "bad" measurements which often cause
-     * trouble.
+     * Checks if a given location is a valid (i.e. physically possible) location on Earth. Note: The
+     * special separator locations (which have latitude = 100) will not qualify as valid. Neither
+     * will locations with lat=0 and lng=0 as these are most likely "bad" measurements which often
+     * cause trouble.
      * 
      * @param location the location to test
      * @return true if the location is a valid location.

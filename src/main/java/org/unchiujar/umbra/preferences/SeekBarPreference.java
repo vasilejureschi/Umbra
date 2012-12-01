@@ -82,11 +82,11 @@ public class SeekBarPreference extends Preference implements
     @Override
     protected View onCreateView(ViewGroup parent) {
 
-        LayoutInflater mInflater = (LayoutInflater) getContext().getSystemService(
-                Context.LAYOUT_INFLATER_SERVICE);
+        LayoutInflater mInflater = (LayoutInflater) getContext()
+                .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
-        return (RelativeLayout) mInflater
-                .inflate(R.xml.seek_transparency, parent, false);
+        return (RelativeLayout) mInflater.inflate(R.xml.seek_transparency,
+                parent, false);
 
     }
 
@@ -96,7 +96,8 @@ public class SeekBarPreference extends Preference implements
         Log.d(TAG, "Binding view...");
         // move our seekbar to the new view we've been given
         ViewParent oldContainer = mSeekBar.getParent();
-        ViewGroup newContainer = (ViewGroup) view.findViewById(R.id.seekBarPrefBarContainer);
+        ViewGroup newContainer = (ViewGroup) view
+                .findViewById(R.id.seekBarPrefBarContainer);
 
         if (oldContainer != newContainer) {
             // remove the seekbar from the old view
@@ -129,7 +130,8 @@ public class SeekBarPreference extends Preference implements
     }
 
     @Override
-    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+    public void onProgressChanged(SeekBar seekBar, int progress,
+            boolean fromUser) {
         Log.d(TAG, "Progress changed...");
         // change accepted, store it
         mCurrentValue = progress;
@@ -156,8 +158,7 @@ public class SeekBarPreference extends Preference implements
 
         if (restoreValue) {
             mCurrentValue = getPersistedInt(DEFAULT_VALUE);
-        }
-        else {
+        } else {
             mCurrentValue = (Integer) defaultValue;
             persistInt(mCurrentValue);
         }

@@ -27,10 +27,10 @@
 
 package org.unchiujar.umbra.backend;
 
-import org.unchiujar.umbra.location.ApproximateLocation;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.unchiujar.umbra.location.ApproximateLocation;
 
 public class LocationVolatileRecorder implements ExploredProvider {
 
@@ -43,7 +43,8 @@ public class LocationVolatileRecorder implements ExploredProvider {
     }
 
     public static LocationVolatileRecorder getInstance() {
-        return (mInstance == null) ? mInstance = new LocationVolatileRecorder() : mInstance;
+        return (mInstance == null) ? mInstance = new LocationVolatileRecorder()
+                : mInstance;
     }
 
     @Override
@@ -64,14 +65,14 @@ public class LocationVolatileRecorder implements ExploredProvider {
     }
 
     @Override
-    public List<ApproximateLocation> selectVisited(ApproximateLocation upperLeft,
-            ApproximateLocation bottomRight) {
+    public List<ApproximateLocation> selectVisited(
+            ApproximateLocation upperLeft, ApproximateLocation bottomRight) {
         ArrayList<ApproximateLocation> visited = new ArrayList<ApproximateLocation>();
         for (ApproximateLocation location : mLocations) {
-            if (location.getLatitude() >= upperLeft.getLatitude() &&
-                    location.getLatitude() <= bottomRight.getLatitude() &&
-                    location.getLongitude() >= upperLeft.getLongitude() &&
-                    location.getLongitude() <= bottomRight.getLongitude()) {
+            if (location.getLatitude() >= upperLeft.getLatitude()
+                    && location.getLatitude() <= bottomRight.getLatitude()
+                    && location.getLongitude() >= upperLeft.getLongitude()
+                    && location.getLongitude() <= bottomRight.getLongitude()) {
                 visited.add(location);
             }
         }
@@ -81,7 +82,7 @@ public class LocationVolatileRecorder implements ExploredProvider {
     @Override
     public void destroy() {
         // TODO Auto-generated method stub
-        
+
     }
 
 }

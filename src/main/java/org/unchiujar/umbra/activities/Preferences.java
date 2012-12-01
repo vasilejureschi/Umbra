@@ -35,8 +35,9 @@ import android.preference.PreferenceActivity;
 public class Preferences extends PreferenceActivity {
 
     private static final String TAG = Preferences.class.getName();
-    //if these values are changed also change in the necessary preferences xml files
-    public static final String TRANSPARENCY="org.unchiujar.umbra.settings.transparency";
+    // if these values are changed also change in the necessary preferences xml
+    // files
+    public static final String TRANSPARENCY = "org.unchiujar.umbra.settings.transparency";
     public static final String UMBRA_PREFS = "org.unchiujar.umbra.settings";
     public static final String MEASUREMENT_SYSTEM = "org.unchiujar.umbra.settings.measurement";
     public static final String ANIMATE = "org.unchiujar.umbra.settings.animate";
@@ -47,6 +48,5 @@ public class Preferences extends PreferenceActivity {
         super.onCreate(savedInstanceState);
         addPreferencesFromResource(R.xml.preferences);
     }
-
 
 }

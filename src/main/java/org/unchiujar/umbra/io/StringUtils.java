@@ -68,8 +68,7 @@ public class StringUtils {
     }
 
     /**
-     * Formats the relative date and time based on user's phone date/time
-     * preferences.
+     * Formats the relative date and time based on user's phone date/time preferences.
      * 
      * @param context the context
      * @param time the time in milliseconds
@@ -86,8 +85,8 @@ public class StringUtils {
     }
 
     /**
-     * Formats the time using the ISO 8601 date time format with fractional
-     * seconds in UTC time zone.
+     * Formats the time using the ISO 8601 date time format with fractional seconds in UTC time
+     * zone.
      * 
      * @param time the time in milliseconds
      */
@@ -115,9 +114,8 @@ public class StringUtils {
     }
 
     /**
-     * Formats the given text as a XML CDATA element. This includes adding the
-     * starting and ending CDATA tags. Please notice that this may result in
-     * multiple consecutive CDATA tags.
+     * Formats the given text as a XML CDATA element. This includes adding the starting and ending
+     * CDATA tags. Please notice that this may result in multiple consecutive CDATA tags.
      * 
      * @param text the given text
      */
@@ -126,8 +124,8 @@ public class StringUtils {
     }
 
     /**
-     * Gets the time, in milliseconds, from an XML date time string as defined
-     * at http://www.w3.org/TR/xmlschema-2/#dateTime
+     * Gets the time, in milliseconds, from an XML date time string as defined at
+     * http://www.w3.org/TR/xmlschema-2/#dateTime
      * 
      * @param xmlDateTime the XML date time string
      */
@@ -192,9 +190,8 @@ public class StringUtils {
     }
 
     /**
-     * Gets the time as an array of three integers. Index 0 contains the number
-     * of seconds, index 1 contains the number of minutes, and index 2 contains
-     * the number of hours.
+     * Gets the time as an array of three integers. Index 0 contains the number of seconds, index 1
+     * contains the number of minutes, and index 2 contains the number of hours.
      * 
      * @param time the time in milliseconds
      * @return an array of 3 elements.

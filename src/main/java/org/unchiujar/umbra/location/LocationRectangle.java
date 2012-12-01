@@ -45,7 +45,8 @@ public class LocationRectangle {
      * @param mUpperLeft the upper left
      * @param mLowerRight the lower right
      */
-    public LocationRectangle(ApproximateLocation upperLeft, ApproximateLocation lowerRight) {
+    public LocationRectangle(ApproximateLocation upperLeft,
+            ApproximateLocation lowerRight) {
         super();
         this.mUpperLeft = upperLeft;
         this.mLowerRight = lowerRight;
