@@ -25,47 +25,50 @@
       Contributors:
          Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
 -->
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
     <CheckBoxPreference
-        android:id="@+id/check_animate"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="10dp"
-        android:checked="false"
-        android:key="org.unchiujar.umbra.settings.animate"
-        android:summaryOff="@string/animate_move"
-        android:summaryOn="@string/animate_none"
-        android:title="@string/map_movement" />
+            android:id="@+id/check_animate"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:checked="false"
+            android:key="org.unchiujar.umbra.settings.animate"
+            android:summaryOff="@string/animate_move"
+            android:summaryOn="@string/animate_none"
+            android:title="@string/map_movement"/>
     <CheckBoxPreference
-        android:id="@+id/check_updates"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="10dp"
-        android:checked="false"
-        android:key="org.unchiujar.umbra.settings.update_mode"
-        android:summaryOff="@string/updates_car"
-        android:summaryOn="@string/updates_walk"
-        android:title="@string/location_updates_frequency" />
+            android:id="@+id/check_updates"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:checked="false"
+            android:key="org.unchiujar.umbra.settings.update_mode"
+            android:summaryOff="@string/updates_car"
+            android:summaryOn="@string/updates_walk"
+            android:title="@string/location_updates_frequency"/>
     <CheckBoxPreference
-        android:id="@+id/check_metric"
-        android:layout_width="fill_parent"
-        android:layout_height="0dip"
-        android:layout_margin="10dp"
-        android:key="org.unchiujar.umbra.settings.measurement"
-        android:summaryOff="@string/measurement_imperial"
-        android:summaryOn="@string/measurement_metric"
-        android:title="@string/measurement_system" />
+            android:id="@+id/check_metric"
+            android:layout_width="fill_parent"
+            android:layout_height="0dip"
+            android:layout_margin="10dp"
+            android:key="org.unchiujar.umbra.settings.measurement"
+            android:summaryOff="@string/measurement_imperial"
+            android:summaryOn="@string/measurement_metric"
+            android:title="@string/measurement_system"/>
     <org.unchiujar.umbra.preferences.SeekBarPreference
-        xmlns:unchiujar="http://unchiujar.org"
-        android:defaultValue="80"
-        android:key="org.unchiujar.umbra.settings.transparency"
-        android:max="255"
-        android:summary="Drag to adjust fog transparency" />
-
+            android:defaultValue="80"
+            android:key="org.unchiujar.umbra.settings.transparency"
+            android:max="255"
+            android:summary="Drag to adjust fog transparency"/>
     <org.unchiujar.umbra.preferences.FolderSelectPreference
-        android:defaultValue="80"
-        android:key="org.unchiujar.umbra.settings.import_folder"
-        android:summary="Select folder containing GPX tracks." />
+            android:defaultValue="80"
+            android:key="org.unchiujar.umbra.settings.import_folder"
+            android:summary="Select folder containing GPX tracks."/>
+
+    <org.unchiujar.umbra.preferences.ExportDataPreference
+            android:defaultValue="80"
+            android:key="org.unchiujar.umbra.settings.export_data"
+            android:summary="Export data as a GPX track."/>
 
 </PreferenceScreen>

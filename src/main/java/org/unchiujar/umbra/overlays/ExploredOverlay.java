@@ -1,59 +1,50 @@
 /*******************************************************************************
  * This file is part of Umbra.
- * 
+ *
  *     Umbra is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     Umbra is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Umbra.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     Copyright (c) 2011 Vasile Jureschi <vasile.jureschi@gmail.com>.
  *     All rights reserved. This program and the accompanying materials
  *     are made available under the terms of the GNU Public License v3.0
  *     which accompanies this distribution, and is available at
- *     
+ *
  *    http://www.gnu.org/licenses/gpl-3.0.html
- * 
+ *
  *     Contributors:
  *        Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
  ******************************************************************************/
 
 package org.unchiujar.umbra.overlays;
 
-import static org.unchiujar.umbra.utils.LocationUtilities.locationToGeoPoint;
-
-import java.util.List;
-
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.graphics.*;
+import android.graphics.Paint.Style;
+import android.preference.PreferenceManager;
+import android.util.Log;
+import com.google.android.maps.GeoPoint;
+import com.google.android.maps.MapView;
+import com.google.android.maps.Overlay;
+import com.google.android.maps.Projection;
 import org.unchiujar.umbra.activities.Preferences;
 import org.unchiujar.umbra.location.ApproximateLocation;
 import org.unchiujar.umbra.location.LocationOrder;
 import org.unchiujar.umbra.utils.LocationUtilities;
 
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Paint.Style;
-import android.graphics.Point;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
-import android.graphics.Rect;
-import android.preference.PreferenceManager;
-import android.util.Log;
+import java.util.List;
 
-import com.google.android.maps.GeoPoint;
-import com.google.android.maps.MapView;
-import com.google.android.maps.Overlay;
-import com.google.android.maps.Projection;
+import static org.unchiujar.umbra.utils.LocationUtilities.locationToGeoPoint;
 
 public class ExploredOverlay extends Overlay {
     private static final int SHADING_PASSES = 18;
@@ -218,7 +209,8 @@ public class ExploredOverlay extends Overlay {
                     for (int i = 0; i < passes; i++) {
                         mCoverCanvas.drawCircle(mTempPoint.x, mTempPoint.y,
                                 (SHADING_PASSES - i) * radius / SHADING_PASSES
-                                        * 0.8f + radius * 0.2f, mShadePaint);
+                                        * 0.8f + radius * 0.2f, mShadePaint
+                        );
                     }
                 } else {
                     mCoverCanvas.drawCircle(mTempPoint.x, mTempPoint.y, radius,
@@ -263,7 +255,7 @@ public class ExploredOverlay extends Overlay {
     }
 
     public void setCurrent(double currentLat, double currentLong,
-            double currentAccuracy) {
+                           double currentAccuracy) {
         this.mCurrentLat = currentLat;
         this.mCurrentLong = currentLong;
         this.mCurrentAccuracy = currentAccuracy;

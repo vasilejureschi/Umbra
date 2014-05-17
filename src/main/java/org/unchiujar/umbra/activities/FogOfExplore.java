@@ -1,43 +1,54 @@
 /*******************************************************************************
  * This file is part of Umbra.
- * 
+ *
  *     Umbra is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     Umbra is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Umbra.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     Copyright (c) 2011 Vasile Jureschi <vasile.jureschi@gmail.com>.
  *     All rights reserved. This program and the accompanying materials
  *     are made available under the terms of the GNU Public License v3.0
  *     which accompanies this distribution, and is available at
- *     
+ *
  *    http://www.gnu.org/licenses/gpl-3.0.html
- * 
+ *
  *     Contributors:
  *        Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
  ******************************************************************************/
 
 package org.unchiujar.umbra.activities;
 
-import static org.unchiujar.umbra.utils.LocationUtilities.coordinatesToGeoPoint;
-import static org.unchiujar.umbra.utils.LocationUtilities.coordinatesToLocation;
-import static org.unchiujar.umbra.utils.LogUtilities.numberLogList;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.List;
-
-import javax.xml.parsers.ParserConfigurationException;
-
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.app.ProgressDialog;
+import android.content.*;
+import android.graphics.Color;
+import android.location.Location;
+import android.location.LocationManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.Uri;
+import android.os.*;
+import android.preference.PreferenceManager;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.WindowManager.LayoutParams;
+import android.widget.Toast;
+import com.google.android.maps.MapActivity;
+import com.google.android.maps.MapController;
+import com.google.android.maps.MapView;
+import com.google.android.maps.Overlay;
 import org.unchiujar.umbra.R;
 import org.unchiujar.umbra.backend.ExploredProvider;
 import org.unchiujar.umbra.io.GpxImporter;
@@ -47,75 +58,67 @@ import org.unchiujar.umbra.services.LocationService;
 import org.unchiujar.umbra.utils.LocationUtilities;
 import org.xml.sax.SAXException;
 
-import android.app.AlertDialog;
-import android.app.Dialog;
-import android.app.ProgressDialog;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.ServiceConnection;
-import android.content.SharedPreferences;
-import android.graphics.Color;
-import android.location.Location;
-import android.location.LocationManager;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
-import android.net.Uri;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.IBinder;
-import android.os.Message;
-import android.os.Messenger;
-import android.os.RemoteException;
-import android.preference.PreferenceManager;
-import android.util.Log;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
-import android.view.WindowManager.LayoutParams;
-import android.widget.Toast;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.List;
 
-import com.google.android.maps.MapActivity;
-import com.google.android.maps.MapController;
-import com.google.android.maps.MapView;
-import com.google.android.maps.Overlay;
+import static org.unchiujar.umbra.utils.LocationUtilities.coordinatesToGeoPoint;
+import static org.unchiujar.umbra.utils.LocationUtilities.coordinatesToLocation;
+import static org.unchiujar.umbra.utils.LogUtilities.numberLogList;
 
 /**
  * Main activity for Umbra application.
- * 
+ *
  * @author Vasile Jureschi
  * @see LocationService
  */
 public class FogOfExplore extends MapActivity {
-    /** Logger tag. */
+    /**
+     * Logger tag.
+     */
     private static final String TAG = FogOfExplore.class.getName();
-    /** Initial map zoom. */
+    /**
+     * Initial map zoom.
+     */
     private static final int INITIAL_ZOOM = 17;
-    /** Interval between zoom checks for the zoom and pan handler. */
+    /**
+     * Interval between zoom checks for the zoom and pan handler.
+     */
     public static final int ZOOM_CHECKING_DELAY = 500;
-    /** Constant used for saving the accuracy value between screen rotations. */
+    /**
+     * Constant used for saving the accuracy value between screen rotations.
+     */
     private static final String BUNDLE_ACCURACY = "org.unchiujar.umbra.accuracy";
-    /** Constant used for saving the latitude value between screen rotations. */
+    /**
+     * Constant used for saving the latitude value between screen rotations.
+     */
     private static final String BUNDLE_LATITUDE = "org.unchiujar.umbra.latitude";
-    /** Constant used for saving the longitude value between screen rotations. */
+    /**
+     * Constant used for saving the longitude value between screen rotations.
+     */
     private static final String BUNDLE_LONGITUDE = "org.unchiujar.umbra.longitude";
-    /** Constant used for saving the zoom level between screen rotations. */
+    /**
+     * Constant used for saving the zoom level between screen rotations.
+     */
     private static final String BUNDLE_ZOOM = "org.unchiujar.umbra.zoom";
 
     /**
      * Intent named used for starting the location service
-     * 
+     *
      * @see LocationService
      */
     private static final String SERVICE_INTENT_NAME = "org.com.unchiujar.LocationService";
 
-    /** Dialog displayed while loading the explored points at application start. */
+    /**
+     * Dialog displayed while loading the explored points at application start.
+     */
     private ProgressDialog mloadProgress;
 
     /**
      * Location service intent.
-     * 
+     *
      * @see LocationService
      */
     private Intent mLocationServiceIntent;
@@ -125,15 +128,25 @@ public class FogOfExplore extends MapActivity {
      */
     private ExploredOverlay mExplored;
 
-    /** Map controller used for centering the map to the current location. */
+    /**
+     * Map controller used for centering the map to the current location.
+     */
     private MapController mMapController;
-    /** Source for obtaining explored area information. */
+    /**
+     * Source for obtaining explored area information.
+     */
     private ExploredProvider mRecorder;
-    /** Current device latitude. Updated on every location change. */
+    /**
+     * Current device latitude. Updated on every location change.
+     */
     private double mCurrentLat;
-    /** Current device longitude. Updated on every location change. */
+    /**
+     * Current device longitude. Updated on every location change.
+     */
     private double mCurrentLong;
-    /** Current location accuracy . Updated on every location change. */
+    /**
+     * Current location accuracy . Updated on every location change.
+     */
     private double mCurrentAccuracy;
 
     /**
@@ -144,20 +157,28 @@ public class FogOfExplore extends MapActivity {
     /**
      * Flag signaling if the user is walking or driving. It is passed to the location service in
      * order to change location update frequency.
-     * 
+     *
      * @see LocationService
      */
     private boolean mDrive;
 
-    /** Handler used to update the overlay if a pan or zoom action occurs. */
+    /**
+     * Handler used to update the overlay if a pan or zoom action occurs.
+     */
     private Handler mZoomPanHandler = new Handler();
 
-    /** Messenger for communicating with service. */
+    /**
+     * Messenger for communicating with service.
+     */
     private Messenger mService = null;
-    /** Flag indicating whether we have called bind on the service. */
+    /**
+     * Flag indicating whether we have called bind on the service.
+     */
     private boolean mIsBound;
 
-    /** Target we publish for clients to send messages to IncomingHandler. */
+    /**
+     * Target we publish for clients to send messages to IncomingHandler.
+     */
     private final Messenger mMessenger = new Messenger(new IncomingHandler());
 
     private SharedPreferences mSettings;
@@ -457,7 +478,7 @@ public class FogOfExplore extends MapActivity {
         Log.d(TAG, "onDestroy completed.");
     }
 
-    // ================= END LIFECYCLE METHODS ====================
+    //    // ================= END LIFECYCLE METHODS ====================
 
     /*
      * (non-Javadoc)
@@ -467,7 +488,7 @@ public class FogOfExplore extends MapActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         boolean result = super.onCreateOptionsMenu(menu);
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.layout.menu, menu);
+        inflater.inflate(R.menu.main, menu);
         menu.findItem(R.id.where_am_i).setIcon(
                 android.R.drawable.ic_menu_mylocation);
         menu.findItem(R.id.settings).setIcon(
@@ -479,10 +500,11 @@ public class FogOfExplore extends MapActivity {
         return result;
     }
 
+
     /*
-     * (non-Javadoc)
-     * @see android.app.Activity#onOptionsItemSelected(android.view.MenuItem)
-     */
+* (non-Javadoc)
+* @see android.app.Activity#onOptionsItemSelected(android.view.MenuItem)
+*/
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle item selection
@@ -510,9 +532,8 @@ public class FogOfExplore extends MapActivity {
                 Intent settingsIntent = new Intent(this, Preferences.class);
                 startActivity(settingsIntent);
                 return true;
-            default:
-                return super.onOptionsItemSelected(item);
         }
+        return super.onOptionsItemSelected(item);
     }
 
     /**
@@ -542,9 +563,10 @@ public class FogOfExplore extends MapActivity {
         Log.d(TAG,
                 "Getting points for rectangle:  "
                         + numberLogList(upperLeft.getLatitude(),
-                                upperLeft.getLongitude())
+                        upperLeft.getLongitude())
                         + numberLogList(bottomRight.getLatitude(),
-                                bottomRight.getLongitude()));
+                        bottomRight.getLongitude())
+        );
         // update the current location for the overlay
         mExplored.setCurrent(mCurrentLat, mCurrentLong, mCurrentAccuracy);
         // update the overlay with the currently visible explored area
@@ -598,7 +620,7 @@ public class FogOfExplore extends MapActivity {
 
     /**
      * Creates the GPS dialog displayed if the GPS is not started.
-     * 
+     *
      * @return the GPS Dialog
      */
     private Dialog createGPSDialog() {
@@ -616,7 +638,8 @@ public class FogOfExplore extends MapActivity {
                         startActivity(new Intent(
                                 android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
                     }
-                });
+                }
+        );
 
         alert.setButton(DialogInterface.BUTTON_NEGATIVE,
                 getString(R.string.continue_no_gps),
@@ -625,7 +648,8 @@ public class FogOfExplore extends MapActivity {
                     public void onClick(DialogInterface dialog, int id) {
                         alert.dismiss();
                     }
-                });
+                }
+        );
         return alert;
     }
 

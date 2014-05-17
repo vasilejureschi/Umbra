@@ -60,11 +60,17 @@
     <string name="remote_service_disconnected">Disconnected from location service</string>
     <string name="load">Load</string>
     <string name="import_locations">Import locations</string>
-    <string name="import_gpx">Import</string>    
+    <string name="import_gpx">Import</string>
+    <string name="export_gpx">Export data</string>
     <string name="select_gpx_folder">Select GPX Folder</string>
     <string name="importing_locations">Importing locations, please wait…</string>
     <string name="measurement_system">Measurement system</string>
     <string name="map_movement">Map movement</string>
     <string name="location_updates_frequency">Location updates frequency</string>
+    <string name="exporting_locations">Exporting locations, please wait....</string>
+    <string name="share_data">Share Umbra data</string>
+    <string name="ok">Ok</string>
+    <string name="share_file">Share file</string>
+    <string name="no">No</string>
 
 </resources>

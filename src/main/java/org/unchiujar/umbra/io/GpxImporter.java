@@ -16,14 +16,10 @@
 
 package org.unchiujar.umbra.io;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Locale;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-
+import android.location.Location;
+import android.location.LocationManager;
+import android.util.Log;
+import com.google.android.maps.GeoPoint;
 import org.unchiujar.umbra.backend.ExploredProvider;
 import org.unchiujar.umbra.location.ApproximateLocation;
 import org.xml.sax.Attributes;
@@ -31,18 +27,20 @@ import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import android.location.Location;
-import android.location.LocationManager;
-import android.util.Log;
-
-import com.google.android.maps.GeoPoint;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Locale;
 
 /**
  * Imports GPX file.
- * 
+ *
  * @author Leif Hendrik Wilden
  * @author Steffen Horlacher
  * @author Rodrigo Damazio
+ * @author Vasile Jureschi
  */
 public class GpxImporter extends DefaultHandler {
     private static final String TAG = GpxImporter.class.getName();
@@ -81,12 +79,12 @@ public class GpxImporter extends DefaultHandler {
 
     /**
      * Reads GPS tracks from a GPX file and writes tracks and their coordinates to the database.
-     * 
+     *
      * @param inputStream the input stream for the GPX file
-     * @param areaCache the cache the points are loaded into
+     * @param areaCache   the cache the points are loaded into
      */
     public static void importGPXFile(InputStream inputStream,
-            ExploredProvider areaCache) throws ParserConfigurationException,
+                                     ExploredProvider areaCache) throws ParserConfigurationException,
             SAXException, IOException {
         SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
         SAXParser saxParser = saxParserFactory.newSAXParser();
@@ -123,7 +121,7 @@ public class GpxImporter extends DefaultHandler {
 
     @Override
     public void startElement(String uri, String localName, String name,
-            Attributes attributes) throws SAXException {
+                             Attributes attributes) throws SAXException {
         if (isInTrackElement) {
             trackChildDepth++;
             if (localName.equals(TAG_TRACK)) {
@@ -226,7 +224,7 @@ public class GpxImporter extends DefaultHandler {
 
     /**
      * On track point element start.
-     * 
+     *
      * @param attributes the attributes
      */
     private void onTrackPointElementStart(Attributes attributes)
@@ -252,7 +250,8 @@ public class GpxImporter extends DefaultHandler {
         } catch (NumberFormatException e) {
             throw new SAXException(
                     createErrorMessage("Unable to parse latitude/longitude: "
-                            + latitude + "/" + longitude), e);
+                            + latitude + "/" + longitude), e
+            );
         }
 
         location = createNewLocation(latitudeValue, longitudeValue, -1L);
@@ -336,13 +335,13 @@ public class GpxImporter extends DefaultHandler {
 
     /**
      * Creates a new location
-     * 
-     * @param latitude location latitude
+     *
+     * @param latitude  location latitude
      * @param longitude location longitude
-     * @param time location time
+     * @param time      location time
      */
     private Location createNewLocation(double latitude, double longitude,
-            long time) {
+                                       long time) {
         Location loc = new Location(LocationManager.GPS_PROVIDER);
         loc.setLatitude(latitude);
         loc.setLongitude(longitude);
@@ -356,7 +355,7 @@ public class GpxImporter extends DefaultHandler {
 
     /**
      * Creates an error message.
-     * 
+     *
      * @param message the message
      */
     private String createErrorMessage(String message) {
@@ -369,7 +368,7 @@ public class GpxImporter extends DefaultHandler {
 
     /**
      * Test if a given GeoPoint is valid, i.e. within physical bounds.
-     * 
+     *
      * @param geoPoint the point to be tested
      * @return true, if it is a physical location on earth.
      */
@@ -383,7 +382,7 @@ public class GpxImporter extends DefaultHandler {
      * special separator locations (which have latitude = 100) will not qualify as valid. Neither
      * will locations with lat=0 and lng=0 as these are most likely "bad" measurements which often
      * cause trouble.
-     * 
+     *
      * @param location the location to test
      * @return true if the location is a valid location.
      */
