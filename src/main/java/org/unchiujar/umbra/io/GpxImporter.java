@@ -19,7 +19,7 @@ package org.unchiujar.umbra.io;
 import android.location.Location;
 import android.location.LocationManager;
 import android.util.Log;
-import com.google.android.maps.GeoPoint;
+import com.google.android.gms.maps.model.LatLng;
 import org.unchiujar.umbra.backend.ExploredProvider;
 import org.unchiujar.umbra.location.ApproximateLocation;
 import org.xml.sax.Attributes;
@@ -369,12 +369,12 @@ public class GpxImporter extends DefaultHandler {
     /**
      * Test if a given GeoPoint is valid, i.e. within physical bounds.
      *
-     * @param geoPoint the point to be tested
+     * @param latLng the point to be tested
      * @return true, if it is a physical location on earth.
      */
-    public static boolean isValidGeoPoint(GeoPoint geoPoint) {
-        return Math.abs(geoPoint.getLatitudeE6()) < 90E6
-                && Math.abs(geoPoint.getLongitudeE6()) <= 180E6;
+    public static boolean isValidGeoPoint(LatLng latLng) {
+        return Math.abs(latLng.latitude) < 90
+                && Math.abs(latLng.longitude) <= 180;
     }
 
     /**

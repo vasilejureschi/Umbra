@@ -25,14 +25,9 @@
       Contributors:
          Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
 -->
-<com.google.android.maps.MapView
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/mapview"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:clickable="true"
-    android:apiKey="0kqWshHBMLE6OAt_NykJE6EltJlaY1HNN6UlcPg"
-/>
-
-<!-- debug 0kqWshHBMLE7Rsf55KkwpsK8Nqmp3RX_MfBpW0A -->
-<!-- release 0kqWshHBMLE6OAt_NykJE6EltJlaY1HNN6UlcPg -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:id="@+id/fog_of_explore">
+</LinearLayout>

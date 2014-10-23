@@ -1,37 +1,31 @@
 /*******************************************************************************
  * This file is part of Umbra.
- * 
+ *
  *     Umbra is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     Umbra is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Umbra.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     Copyright (c) 2011 Vasile Jureschi <vasile.jureschi@gmail.com>.
  *     All rights reserved. This program and the accompanying materials
  *     are made available under the terms of the GNU Public License v3.0
  *     which accompanies this distribution, and is available at
- *     
+ *
  *    http://www.gnu.org/licenses/gpl-3.0.html
- * 
+ *
  *     Contributors:
  *        Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
  ******************************************************************************/
 
 package org.unchiujar.umbra.services;
-
-import java.util.ArrayList;
-
-import org.unchiujar.umbra.R;
-import org.unchiujar.umbra.activities.FogOfExplore;
-import org.unchiujar.umbra.location.LocationOrder;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -44,15 +38,14 @@ import android.content.IntentFilter;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.IBinder;
-import android.os.Message;
-import android.os.Messenger;
-import android.os.PowerManager;
-import android.os.RemoteException;
+import android.os.*;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import org.unchiujar.umbra.R;
+import org.unchiujar.umbra.activities.FogOfExplore;
+import org.unchiujar.umbra.location.LocationOrder;
+
+import java.util.ArrayList;
 
 public class LocationService extends Service {
     private static final int APPLICATION_ID = 1241241;
@@ -99,25 +92,35 @@ public class LocationService extends Service {
      */
     private static final long DRIVE_UPDATE_INTERVAL = (long) (LocationOrder.METERS_RADIUS * 2 / 13 * 1000) / 2;
 
-    /** Fast update frequency for screen on state. */
+    /**
+     * Fast update frequency for screen on state.
+     */
     private static final long SCREEN_ON_UPDATE_INTERVAL = 1000;
-    /** Update distance for screen on state. */
+    /**
+     * Update distance for screen on state.
+     */
     private static final long SCREEN_ON_UPDATE_DISTANCE = 1;
 
     /**
      * Initial backoff interval is double the {@link LocationService#WALK_UPDATE_INTERVAL}.
      */
     private static final long INITIAL_BACKOFF_INTERVAL = WALK_UPDATE_INTERVAL * 2;
-    /** Location search duration. */
+    /**
+     * Location search duration.
+     */
     private static final long LOCATION_SEARCH_DURATON = 30 * 1000;
-    /** The maximum duration the location listeners should be put to sleep. */
+    /**
+     * The maximum duration the location listeners should be put to sleep.
+     */
     protected static final long MAX_BACKOFF_INTERVAL = 10 * 60 * 1000;
     public static final String POWER_EVENT = "org.unchiujar.services.LocationService.POWER_EVENT";
 
     private boolean mWalking = true;
     protected boolean mPowerConnected;
 
-    /** Keeps track of all current registered clients. */
+    /**
+     * Keeps track of all current registered clients.
+     */
     private ArrayList<Messenger> mClients = new ArrayList<Messenger>();
 
     private LocationManager mLocationManager;
@@ -232,7 +235,7 @@ public class LocationService extends Service {
         // instantiate notification
         Notification notification = new NotificationCompat.Builder(this)
                 .setTicker(tickerText).setWhen(System.currentTimeMillis())
-                .setSmallIcon(R.drawable.icon).getNotification();
+                .setSmallIcon(R.drawable.icon).build();
 
         notification.flags |= Notification.FLAG_NO_CLEAR;
         notification.flags |= Notification.FLAG_ONGOING_EVENT;
@@ -479,8 +482,7 @@ public class LocationService extends Service {
                         "Power connected, increasing location frequency update.");
                 setOnScreeState();
                 mPowerConnected = true;
-            }
-            else if (action.equals(Intent.ACTION_POWER_DISCONNECTED)) {
+            } else if (action.equals(Intent.ACTION_POWER_DISCONNECTED)) {
                 Log.d(TAG,
                         "Power disconnected, restoring location frequency update.");
                 mPowerConnected = false;
