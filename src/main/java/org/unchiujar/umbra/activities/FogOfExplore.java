@@ -45,7 +45,7 @@ import android.widget.Toast;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
-import com.google.android.gms.maps.MapView;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +53,7 @@ import org.unchiujar.umbra.R;
 import org.unchiujar.umbra.backend.ExploredProvider;
 import org.unchiujar.umbra.io.GpxImporter;
 import org.unchiujar.umbra.location.ApproximateLocation;
-import org.unchiujar.umbra.overlays.ExploredOverlay;
+import org.unchiujar.umbra.overlays.OverlayFactory;
 import org.unchiujar.umbra.services.LocationService;
 import org.xml.sax.SAXException;
 
@@ -63,7 +63,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 
 import static org.unchiujar.umbra.utils.LocationUtilities.coordinatesToLocation;
-import static org.unchiujar.umbra.utils.LogUtilities.numberLogList;
 
 /**
  * Main activity for Umbra application.
@@ -124,7 +123,7 @@ public class FogOfExplore extends Activity {
     /**
      * Map overlay displaying the explored area. Updated on location changed.
      */
-    private ExploredOverlay mExplored;
+    private OverlayFactory overlayFactory;
 
     /**
      * Source for obtaining explored area information.
@@ -177,34 +176,17 @@ public class FogOfExplore extends Activity {
 
     private SharedPreferences mSettings;
 
-//    /**
-//     * Runnable to be executed by the pan and zoom handler.
-//     */
-//    private Runnable mZoomChecker = new Runnable() {
-//        private int oldZoom = -1;
-//        private int oldCenterLat = -1;
-//        private int oldCenterLong = -1;
-//
-//        @Override
-//        public void run() {
-//            MapView mapView = (MapView) findViewById(R.id.mapview);
-//
-//            int mapCenterLat = mapView.getMapCenter().getLatitudeE6();
-//            int mapCenterLong = mapView.getMapCenter().getLongitudeE6();
-//            // check if the zoom or pan has changed and update accordingly
-//            if (mapView.getZoomLevel() != oldZoom
-//                    || oldCenterLat != mapCenterLat
-//                    || oldCenterLong != mapCenterLong) {
-//                redrawOverlay();
-//                oldZoom = mapView.getZoomLevel();
-//                oldCenterLat = mapCenterLat;
-//                oldCenterLong = mapCenterLong;
-//            }
-//            // start a new cycle of checks
-//            mZoomPanHandler.removeCallbacks(mZoomChecker);
-//            mZoomPanHandler.postDelayed(mZoomChecker, ZOOM_CHECKING_DELAY);
-//        }
-//    };
+    private GoogleMap map;
+
+
+    private GoogleMap.OnCameraChangeListener cameraListener = new GoogleMap.OnCameraChangeListener() {
+
+        @Override
+        public void onCameraChange(CameraPosition cameraPosition) {
+            redrawOverlay();
+        }
+    };
+
 
     /**
      * Handler of incoming messages from service.
@@ -286,7 +268,7 @@ public class FogOfExplore extends Activity {
         super.onCreate(savedInstanceState);
         mSettings = PreferenceManager.getDefaultSharedPreferences(this);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-//        mloadProgress = ProgressDialog.show(this, "", "Loading. Please wait...", true);
+        mloadProgress = ProgressDialog.show(this, "", "Loading. Please wait...", true);
         mSettings.registerOnSharedPreferenceChangeListener(mPrefListener);
         setContentView(R.layout.map);
 
@@ -295,19 +277,10 @@ public class FogOfExplore extends Activity {
         MapFragment mapFragment = (MapFragment) fragmentManager.findFragmentById(R.id.map);
 
         // Get a handle to the Map Fragment
-        GoogleMap map = mapFragment.getMap();
+        map = mapFragment.getMap();
         map.setMyLocationEnabled(true);
+        map.setOnCameraChangeListener(cameraListener);
 
-//        // add overlay to the list of overlays
-//        mExplored = new ExploredOverlay(this);
-
-//        List<Overlay> listOfOverlays = mapView.getOverlays();
-        // listOfOverlays.clear();
-        // MyLocationOverlay myLocation = new
-        // MyLocationOverlay(getApplicationContext(), mapView);
-        // listOfOverlays.add(myLocation);
-
-//        listOfOverlays.add(mExplored);
         Log.d(TAG, "onCreate completed: Activity created");
         mLocationServiceIntent = new Intent(SERVICE_INTENT_NAME);
         startService(mLocationServiceIntent);
@@ -323,15 +296,10 @@ public class FogOfExplore extends Activity {
         // check we still have access to GPS info
         checkConnectivity();
 
-//        LatLng sydney = new LatLng(-33.867, 151.206);
-//        map.moveCamera(CameraUpdateFactory.newLatLngZoom(sydney, 13));
-//        map.addMarker(new MarkerOptions()
-//                .title("Sydney")
-//                .snippet("The most populous city in Australia.")
-//                .position(sydney));
-
+        overlayFactory = OverlayFactory.getInstance(this);
 
     }
+
 
     /**
      * Loads a gpx data from a file path sent through an intent.
@@ -393,7 +361,13 @@ public class FogOfExplore extends Activity {
         mCurrentAccuracy = savedInstanceState.getDouble(BUNDLE_ACCURACY);
         mCurrentLat = savedInstanceState.getDouble(BUNDLE_LATITUDE);
         mCurrentLong = savedInstanceState.getDouble(BUNDLE_LONGITUDE);
-//        mMapController.setZoom(savedInstanceState.getInt(BUNDLE_ZOOM));
+
+        CameraPosition cameraPosition = new CameraPosition.Builder()
+                .zoom(savedInstanceState.getFloat(BUNDLE_ZOOM))
+                .build();
+
+        map.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+
         super.onRestoreInstanceState(savedInstanceState);
     }
 
@@ -403,8 +377,8 @@ public class FogOfExplore extends Activity {
         outState.putDouble(BUNDLE_ACCURACY, mCurrentAccuracy);
         outState.putDouble(BUNDLE_LATITUDE, mCurrentLat);
         outState.putDouble(BUNDLE_LONGITUDE, mCurrentLong);
-        MapView mapView = (MapView) findViewById(R.id.map);
-//        outState.putInt(BUNDLE_ZOOM, mapView.getZoomLevel());
+
+        outState.putFloat(BUNDLE_ZOOM, map.getCameraPosition().zoom);
         super.onSaveInstanceState(outState);
     }
 
@@ -417,22 +391,15 @@ public class FogOfExplore extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-//        // register zoom && pan mZoomPanHandler
-//        mZoomPanHandler.postDelayed(mZoomChecker, ZOOM_CHECKING_DELAY);
-//        // set the visibility flag to start overlay updates
-//        mVisible = true;
-//        redrawOverlay();
-//        mloadProgress.cancel();
-//        Log.d(TAG, "onResume completed.");
-//        // bind to location service
-//        doBindService();
-
+        mloadProgress.cancel();
+        Log.d(TAG, "onResume completed.");
+        // bind to location service
+        doBindService();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-//        mZoomPanHandler.removeCallbacks(mZoomChecker);
         mVisible = false;
         // unbind from service as the activity does
         // not display location info (is hidden or stopped)
@@ -455,7 +422,6 @@ public class FogOfExplore extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-//        mZoomPanHandler.removeCallbacks(mZoomChecker);
         Log.d(TAG, "onDestroy completed.");
     }
 
@@ -488,9 +454,6 @@ public class FogOfExplore extends Activity {
         switch (item.getItemId()) {
             case R.id.where_am_i:
                 Log.d(TAG, "Moving to current location...");
-//                mMapController.setCenter(coordinatesToGeoPoint(mCurrentLat,
-//                        mCurrentLong));
-                redrawOverlay();
                 return true;
             case R.id.help:
                 Log.d(TAG, "Showing help...");
@@ -524,43 +487,23 @@ public class FogOfExplore extends Activity {
         }
 
         // get the coordinates of the visible area
-        final MapView mapView = (MapView) findViewById(R.id.map);
-        final int halfLatSpan = 0;//mapView.LatitudeSpan() / 2;
-        final int halfLongSpan = 0;//mapView.getLongitudeSpan() / 2;
-        final int mapCenterLat = 0;//mapView.getMapCenter().getLatitudeE6();
-        final int mapCenterLong = 0;//mapView.getMapCenter().getLongitudeE6();
+        LatLng farLeft = map.getProjection().getVisibleRegion().farLeft;
+        LatLng nearRight = map.getProjection().getVisibleRegion().nearRight;
 
-        final ApproximateLocation upperLeft = coordinatesToLocation(
-                mapCenterLat + halfLatSpan, mapCenterLong - halfLongSpan);
-        final ApproximateLocation bottomRight = coordinatesToLocation(
-                mapCenterLat - halfLatSpan, mapCenterLong + halfLongSpan);
+
+        final ApproximateLocation upperLeft = coordinatesToLocation(farLeft);
+
+        final ApproximateLocation bottomRight = coordinatesToLocation(nearRight);
         // TODO - optimization get points for rectangle only if a zoomout
-        // or a pan action occured - ie new points come into view
-
-        Log.d(TAG,
-                "Getting points for rectangle:  "
-                        + numberLogList(upperLeft.getLatitude(),
-                        upperLeft.getLongitude())
-                        + numberLogList(bottomRight.getLatitude(),
-                        bottomRight.getLongitude())
-        );
-        // update the current location for the overlay
-//        mExplored.setCurrent(mCurrentLat, mCurrentLong, mCurrentAccuracy);
-
+        // or a pan action occurred - ie new points come into view
 
         // update the overlay with the currently visible explored area
-//        mExplored.setExplored(mRecorder.selectVisited(upperLeft, bottomRight));
+        overlayFactory.setExplored(mRecorder.selectVisited(upperLeft, bottomRight));
 
-
-        // animate the map to the user position if the options to do so is
-        // selected
-        if (mSettings.getBoolean(Preferences.ANIMATE, false)) {
-//            mMapController.animateTo(LocationUtilities.coordinatesToGeoPoint(
-//                    mCurrentLat, mCurrentLong));
-        }
-        // call overlay redraw
-        mapView.postInvalidate();
-
+        // remove everything
+        map.clear();
+        // redraw overlay ????
+        map.addGroundOverlay(overlayFactory.getCompleteOverlay(map));
     }
 
     /**
@@ -642,6 +585,7 @@ public class FogOfExplore extends Activity {
 //    protected boolean isRouteDisplayed() {
 //        return false;
 //    }
+//
 
     /**
      * Binds to the location service. Called when the activity becomes visible.

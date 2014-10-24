@@ -82,6 +82,7 @@ public class LocationUtilities {
      * @param longitudeE6 in microdegrees
      * @return a ApproximateLocation with the coordinates
      */
+    @Deprecated
     public static ApproximateLocation coordinatesToLocation(int latitudeE6,
                                                             int longitudeE6) {
         ApproximateLocation location = new ApproximateLocation("Translator");
@@ -90,6 +91,21 @@ public class LocationUtilities {
         return location;
 
     }
+
+
+    /**
+     * @param latitude  in decimal degrees
+     * @param longitude in decimal degrees
+     * @return a ApproximateLocation with the coordinates
+     */
+    public static ApproximateLocation coordinatesToLocation(LatLng latLng) {
+        ApproximateLocation location = new ApproximateLocation("Translator");
+        location.setLatitude(latLng.latitude);
+        location.setLongitude(latLng.longitude);
+        return location;
+
+    }
+
 
     /**
      * Gets the distance in the unit for the current settings. The measure value is false for metric
