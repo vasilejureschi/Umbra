@@ -25,6 +25,7 @@ import static android.graphics.Paint.Style;
 public class OverlayFactory {
 
     private static final int DOWN_SCALE_FACTOR = 8;
+
     private static final int SHADING_PASSES = 15;
     private static final String TAG = ExploredOverlay.class.getName();
     private static final Logger LOGGER = LoggerFactory.getLogger(OverlayFactory.class);
@@ -38,7 +39,6 @@ public class OverlayFactory {
 
     private Paint mClearPaint;
 
-    private boolean mBitmapCreated;
     private Bitmap mCover;
     private Canvas mCoverCanvas;
 
@@ -146,15 +146,13 @@ public class OverlayFactory {
         Log.v(TAG, "View distance is " + LocationOrder.METERS_RADIUS
                 + " meters, radius in pixels is " + radius
                 + " pixel per meter is " + pixelsMeter);
-        if (!mBitmapCreated) {
+        // create a new bitmap if we don't have one otherwise just clear the existing bitmap
+        if (mCover == null) {
             mCover = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
             mCoverCanvas = new Canvas(mCover);
-
-            // TODO check is width, height is always the same - rotation may be
-            // a problem
+            // TODO check is width, height is always the same - rotation may be a problem
             mScreenCover = new Rect(0, 0, width, height);
 
-            mBitmapCreated = true;
         } else {
             mCover.eraseColor(TRANSPARENT);
         }

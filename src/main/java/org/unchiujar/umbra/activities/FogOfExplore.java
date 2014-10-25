@@ -178,8 +178,6 @@ public class FogOfExplore extends ActionBarActivity {
             redrawOverlay();
         }
     };
-    private boolean oddOverlayUpdate;
-
 
     /**
      * Handler of incoming messages from service.
@@ -288,7 +286,11 @@ public class FogOfExplore extends ActionBarActivity {
         loadFileFromIntent();
         // check we still have access to GPS info
         checkConnectivity();
+
+        //TODO tilted overlay is not displayed correctly
         map.getUiSettings().setTiltGesturesEnabled(false);
+        // TODO rotated overlay is skewed
+        map.getUiSettings().setRotateGesturesEnabled(false);
     }
 
 
