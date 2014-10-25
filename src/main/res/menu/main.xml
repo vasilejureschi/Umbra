@@ -26,31 +26,25 @@
          Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
 -->
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto"
       xmlns:tools="http://schemas.android.com/tools"
       tools:context="org.unchiujar.umbra.activities.FogOfExplore">
-
-    <item
-            android:id="@+id/where_am_i"
-            android:title="@string/where_am_i"
-            android:orderInCategory="1"
-            android:showAsAction="never"/>
-
 
     <item
             android:id="@+id/settings"
             android:title="@string/settings"
             android:orderInCategory="1"
-            android:showAsAction="never"/>
+            app:showAsAction="ifRoom"/>
 
     <item
             android:id="@+id/help"
             android:title="@string/help"
             android:orderInCategory="2"
-            android:showAsAction="never"/>
+            app:showAsAction="ifRoom"/>
 
     <item
             android:id="@+id/exit"
             android:title="@string/exit"
             android:orderInCategory="3"
-            android:showAsAction="always"/>
+            app:showAsAction="ifRoom"/>
 </menu>

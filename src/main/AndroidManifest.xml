@@ -54,7 +54,8 @@
                 android:launchMode="singleInstance"
                 android:multiprocess="false"
                 android:name=".activities.FogOfExplore"
-                android:screenOrientation="sensor">
+                android:screenOrientation="sensor"
+                android:theme="@style/Theme.AppCompat.Light">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 

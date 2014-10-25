@@ -27,7 +27,10 @@
 
 package org.unchiujar.umbra.activities;
 
-import android.app.*;
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.app.FragmentManager;
+import android.app.ProgressDialog;
 import android.content.*;
 import android.location.Location;
 import android.location.LocationManager;
@@ -36,6 +39,7 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.*;
 import android.preference.PreferenceManager;
+import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -71,7 +75,7 @@ import static org.unchiujar.umbra.utils.LocationUtilities.coordinatesToLocation;
  * @author Vasile Jureschi
  * @see LocationService
  */
-public class FogOfExplore extends Activity {
+public class FogOfExplore extends ActionBarActivity {
     /**
      * Logger tag.
      */
@@ -420,8 +424,6 @@ public class FogOfExplore extends Activity {
         boolean result = super.onCreateOptionsMenu(menu);
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main, menu);
-        menu.findItem(R.id.where_am_i).setIcon(
-                android.R.drawable.ic_menu_mylocation);
         menu.findItem(R.id.settings).setIcon(
                 android.R.drawable.ic_menu_preferences);
         menu.findItem(R.id.help).setIcon(android.R.drawable.ic_menu_help);
@@ -440,9 +442,6 @@ public class FogOfExplore extends Activity {
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle item selection
         switch (item.getItemId()) {
-            case R.id.where_am_i:
-                Log.d(TAG, "Moving to current location...");
-                return true;
             case R.id.help:
                 Log.d(TAG, "Showing help...");
                 Intent helpIntent = new Intent(this, Help.class);
