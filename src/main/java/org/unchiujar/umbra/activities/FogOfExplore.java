@@ -46,6 +46,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.GroundOverlay;
 import com.google.android.gms.maps.model.LatLng;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,10 +81,6 @@ public class FogOfExplore extends Activity {
      */
     private static final int INITIAL_ZOOM = 17;
     /**
-     * Interval between zoom checks for the zoom and pan handler.
-     */
-    public static final int ZOOM_CHECKING_DELAY = 500;
-    /**
      * Constant used for saving the accuracy value between screen rotations.
      */
     private static final String BUNDLE_ACCURACY = "org.unchiujar.umbra.accuracy";
@@ -111,7 +108,7 @@ public class FogOfExplore extends Activity {
     /**
      * Dialog displayed while loading the explored points at application start.
      */
-    private ProgressDialog mloadProgress;
+    private ProgressDialog mLoadProgress;
 
     /**
      * Location service intent.
@@ -119,11 +116,6 @@ public class FogOfExplore extends Activity {
      * @see LocationService
      */
     private Intent mLocationServiceIntent;
-
-    /**
-     * Map overlay displaying the explored area. Updated on location changed.
-     */
-    private OverlayFactory overlayFactory;
 
     /**
      * Source for obtaining explored area information.
@@ -156,11 +148,6 @@ public class FogOfExplore extends Activity {
     private boolean mDrive;
 
     /**
-     * Handler used to update the overlay if a pan or zoom action occurs.
-     */
-    private Handler mZoomPanHandler = new Handler();
-
-    /**
      * Messenger for communicating with service.
      */
     private Messenger mService = null;
@@ -183,9 +170,11 @@ public class FogOfExplore extends Activity {
 
         @Override
         public void onCameraChange(CameraPosition cameraPosition) {
+            //if we are only zooming in then do nothing, the overlay will be scaled automatically
             redrawOverlay();
         }
     };
+    private boolean oddOverlayUpdate;
 
 
     /**
@@ -268,7 +257,7 @@ public class FogOfExplore extends Activity {
         super.onCreate(savedInstanceState);
         mSettings = PreferenceManager.getDefaultSharedPreferences(this);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        mloadProgress = ProgressDialog.show(this, "", "Loading. Please wait...", true);
+        mLoadProgress = ProgressDialog.show(this, "", "Loading. Please wait...", true);
         mSettings.registerOnSharedPreferenceChangeListener(mPrefListener);
         setContentView(R.layout.map);
 
@@ -295,9 +284,7 @@ public class FogOfExplore extends Activity {
         loadFileFromIntent();
         // check we still have access to GPS info
         checkConnectivity();
-
-        overlayFactory = OverlayFactory.getInstance(this);
-
+        map.getUiSettings().setTiltGesturesEnabled(false);
     }
 
 
@@ -391,7 +378,8 @@ public class FogOfExplore extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        mloadProgress.cancel();
+        map.setOnCameraChangeListener(cameraListener);
+        mLoadProgress.cancel();
         Log.d(TAG, "onResume completed.");
         // bind to location service
         doBindService();
@@ -476,16 +464,40 @@ public class FogOfExplore extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
+
+    private GroundOverlay overlay_1;
+    private GroundOverlay overlay_2;
+
+
     /**
      * Updates the current location and calls an overlay redraw.
      */
     private void redrawOverlay() {
+
         // FIXME hack
         // don't do anything if the activity is not visible
         if (!mVisible) {
             return;
         }
 
+        if (overlay_1 == null) {
+            initializeOverlay();
+        }
+        updateExplored();
+
+
+        // remove the odd overlay
+        overlay_1.remove();
+        //update the odd overlay
+        overlay_1 = map.addGroundOverlay(OverlayFactory.getInstance(this).getCompleteOverlay(map));
+        // remove the even overlay
+        overlay_2.remove();
+        //update the even overlay
+        overlay_2 = map.addGroundOverlay(OverlayFactory.getInstance(this).getCompleteOverlay(map));
+
+    }
+
+    private void updateExplored() {
         // get the coordinates of the visible area
         LatLng farLeft = map.getProjection().getVisibleRegion().farLeft;
         LatLng nearRight = map.getProjection().getVisibleRegion().nearRight;
@@ -494,16 +506,19 @@ public class FogOfExplore extends Activity {
         final ApproximateLocation upperLeft = coordinatesToLocation(farLeft);
 
         final ApproximateLocation bottomRight = coordinatesToLocation(nearRight);
-        // TODO - optimization get points for rectangle only if a zoomout
+        // TODO - optimization get points for rectangle only if a zoom out
         // or a pan action occurred - ie new points come into view
 
         // update the overlay with the currently visible explored area
-        overlayFactory.setExplored(mRecorder.selectVisited(upperLeft, bottomRight));
+        OverlayFactory.getInstance(this).setExplored(mRecorder.selectVisited(upperLeft, bottomRight));
+    }
 
-        // remove everything
-        map.clear();
+
+    private void initializeOverlay() {
+        updateExplored();
         // redraw overlay ????
-        map.addGroundOverlay(overlayFactory.getCompleteOverlay(map));
+        overlay_1 = map.addGroundOverlay(OverlayFactory.getInstance(this).getCompleteOverlay(map));
+        overlay_2 = map.addGroundOverlay(OverlayFactory.getInstance(this).getCompleteOverlay(map));
     }
 
     /**
