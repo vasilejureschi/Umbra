@@ -49,16 +49,14 @@ import android.widget.Toast;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
-import com.google.android.gms.maps.model.CameraPosition;
-import com.google.android.gms.maps.model.GroundOverlay;
-import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.unchiujar.umbra.R;
 import org.unchiujar.umbra.backend.ExploredProvider;
 import org.unchiujar.umbra.io.GpxImporter;
 import org.unchiujar.umbra.location.ApproximateLocation;
-import org.unchiujar.umbra.overlays.OverlayFactory;
+import org.unchiujar.umbra.overlays.ExploredTileProvider;
 import org.unchiujar.umbra.services.LocationService;
 import org.xml.sax.SAXException;
 
@@ -288,11 +286,28 @@ public class FogOfExplore extends ActionBarActivity {
         checkConnectivity();
 
         //TODO tilted overlay is not displayed correctly
-        map.getUiSettings().setTiltGesturesEnabled(false);
+//        map.getUiSettings().setTiltGesturesEnabled(false);
         // TODO rotated overlay is skewed
-        map.getUiSettings().setRotateGesturesEnabled(false);
+//        map.getUiSettings().setRotateGesturesEnabled(false);
+
+        // Create new TileOverlayOptions instance.
+        TileOverlayOptions opts = new TileOverlayOptions();
+
+// Set the tile provider to your custom implementation.
+        provider = new ExploredTileProvider(this, map);
+
+        opts.fadeIn(false).tileProvider(provider);
+
+// Optional. Useful if you have multiple, layered tile providers.
+        opts.zIndex(50000);
+
+// Add the tile overlay to the map.
+        overlay = map.addTileOverlay(opts);
+
     }
 
+    ExploredTileProvider provider;
+    TileOverlay overlay;
 
     /**
      * Loads a gpx data from a file path sent through an intent.
@@ -474,27 +489,31 @@ public class FogOfExplore extends ActionBarActivity {
      * Updates the current location and calls an overlay redraw.
      */
     private void redrawOverlay() {
-
-        // FIXME hack
-        // don't do anything if the activity is not visible
-        if (!mVisible) {
-            return;
-        }
-
-        if (overlay_1 == null) {
-            initializeOverlay();
-        }
         updateExplored();
+        overlay.clearTileCache();
+        return;
 
 
-        // remove the odd overlay
-        overlay_1.remove();
-        //update the odd overlay
-        overlay_1 = map.addGroundOverlay(OverlayFactory.getInstance(this).getCompleteOverlay(map));
-        // remove the even overlay
-        overlay_2.remove();
-        //update the even overlay
-        overlay_2 = map.addGroundOverlay(OverlayFactory.getInstance(this).getCompleteOverlay(map));
+//        // FIXME hack
+//        // don't do anything if the activity is not visible
+//        if (!mVisible) {
+//            return;
+//        }
+//
+//        if (overlay_1 == null) {
+//            initializeOverlay();
+//        }
+//        updateExplored();
+//
+//
+//        // remove the odd overlay
+//        overlay_1.remove();
+//        //update the odd overlay
+//        overlay_1 = map.addGroundOverlay(OverlayFactory.getInstance(this).getCompleteOverlay(map));
+//        // remove the even overlay
+//        overlay_2.remove();
+//        //update the even overlay
+//        overlay_2 = map.addGroundOverlay(OverlayFactory.getInstance(this).getCompleteOverlay(map));
 
     }
 
@@ -511,15 +530,16 @@ public class FogOfExplore extends ActionBarActivity {
         // or a pan action occurred - ie new points come into view
 
         // update the overlay with the currently visible explored area
-        OverlayFactory.getInstance(this).setExplored(mRecorder.selectVisited(upperLeft, bottomRight));
+//        OverlayFactory.getInstance(this).setExplored(mRecorder.selectVisited(upperLeft, bottomRight));
+        provider.setExplored(mRecorder.selectVisited(upperLeft, bottomRight));
     }
 
 
     private void initializeOverlay() {
         updateExplored();
         // redraw overlay ????
-        overlay_1 = map.addGroundOverlay(OverlayFactory.getInstance(this).getCompleteOverlay(map));
-        overlay_2 = map.addGroundOverlay(OverlayFactory.getInstance(this).getCompleteOverlay(map));
+//        overlay_1 = map.addGroundOverlay(OverlayFactory.getInstance(this).getCompleteOverlay(map));
+//        overlay_2 = map.addGroundOverlay(OverlayFactory.getInstance(this).getCompleteOverlay(map));
     }
 
     /**

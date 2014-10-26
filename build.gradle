@@ -16,7 +16,7 @@ android {
     defaultConfig {
         versionCode 100
         versionName "0.1.00-SNAPSHOT"
-        minSdkVersion 9
+        minSdkVersion 11
         targetSdkVersion 21
     }
 }
