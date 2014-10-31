@@ -83,14 +83,14 @@ public class LocationService extends Service {
 
     /**
      * Walk update frequency for average walking speed. Average distance covered by humans while
-     * walking is 1.3 m/s. Using double update time for safety.
+     * walking is 1.3 m/s. Using quadruple update time for safety.
      */
-    private static final long WALK_UPDATE_INTERVAL = (long) (LocationOrder.METERS_RADIUS * 2 / 1.3 * 1000) / 2;
+    private static final long WALK_UPDATE_INTERVAL = (long) (LocationOrder.METERS_RADIUS * 4 / 1.3 * 1000) / 2;
 
     /**
-     * Update frequency for driving at 50 km/h. Using double update time for safety.
+     * Update frequency for driving at 50 km/h. Using quadruple update time for safety.
      */
-    private static final long DRIVE_UPDATE_INTERVAL = (long) (LocationOrder.METERS_RADIUS * 2 / 13 * 1000) / 2;
+    private static final long DRIVE_UPDATE_INTERVAL = (long) (LocationOrder.METERS_RADIUS * 4 / 13 * 1000) / 2;
 
     /**
      * Fast update frequency for screen on state.
@@ -370,7 +370,7 @@ public class LocationService extends Service {
             // only start if the backoff algorithm is enabled
             // necessary as the stopBackoff method may try to remove the
             // runnables while the
-            // runnables are running with the efect that the algorithm doesn't
+            // runnables are running with the effect that the algorithm doesn't
             // stop
             if (mBackoffStarted) {
                 // start location requests after we have waited the backoff time

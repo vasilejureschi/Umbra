@@ -49,7 +49,10 @@ import android.widget.Toast;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
-import com.google.android.gms.maps.model.*;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.TileOverlay;
+import com.google.android.gms.maps.model.TileOverlayOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.unchiujar.umbra.R;
@@ -64,6 +67,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Timer;
 
 import static org.unchiujar.umbra.utils.LocationUtilities.coordinatesToLocation;
 
@@ -137,11 +141,6 @@ public class FogOfExplore extends ActionBarActivity {
     private double mCurrentAccuracy;
 
     /**
-     * Flag signaling if the application is visible. Used to stop overlay updates if the map is
-     * currently not visible.
-     */
-    private boolean mVisible = true;
-    /**
      * Flag signaling if the user is walking or driving. It is passed to the location service in
      * order to change location update frequency.
      *
@@ -172,8 +171,8 @@ public class FogOfExplore extends ActionBarActivity {
 
         @Override
         public void onCameraChange(CameraPosition cameraPosition) {
-            //if we are only zooming in then do nothing, the overlay will be scaled automatically
-            redrawOverlay();
+            //if we are only zooming in then do nothing, the topOverlay will be scaled automatically
+//            redrawOverlay();
         }
     };
 
@@ -286,28 +285,69 @@ public class FogOfExplore extends ActionBarActivity {
         checkConnectivity();
 
         //TODO tilted overlay is not displayed correctly
-//        map.getUiSettings().setTiltGesturesEnabled(false);
+        // map.getUiSettings().setTiltGesturesEnabled(false);
         // TODO rotated overlay is skewed
-//        map.getUiSettings().setRotateGesturesEnabled(false);
+        // map.getUiSettings().setRotateGesturesEnabled(false);
 
         // Create new TileOverlayOptions instance.
         TileOverlayOptions opts = new TileOverlayOptions();
 
-// Set the tile provider to your custom implementation.
-        provider = new ExploredTileProvider(this, map);
+        // Set the tile provider to your custom implementation.
+        provider = new ExploredTileProvider(this);
 
         opts.fadeIn(false).tileProvider(provider);
 
-// Optional. Useful if you have multiple, layered tile providers.
+        // Optional. Useful if you have multiple, layered tile providers.
         opts.zIndex(50000);
 
-// Add the tile overlay to the map.
-        overlay = map.addTileOverlay(opts);
+        // Add the tile overlay to the map.
+        topOverlay = map.addTileOverlay(opts);
+//        bottomOverlay = map.addTileOverlay(opts);
+
+//
+//        //schedule overlay refresh
+//        Thread timer = new Thread() {
+//            public void run() {
+//                for (; ; ) {
+//                    try {
+//                        Thread.sleep(2000);
+//                    } catch (InterruptedException e) {
+//                        LOGGER.warn("Thread interrupted", e);
+//                    }
+//                    topRefresh.sendEmptyMessage(0);
+//                    try {
+//                        Thread.sleep(2000);
+//                    } catch (InterruptedException e) {
+//                        LOGGER.warn("Thread interrupted", e);
+//                    }
+//                    bottomRefresh.sendEmptyMessage(0);
+//
+//                }
+//            }
+//        };
+//
+//        timer.start();
 
     }
 
-    ExploredTileProvider provider;
-    TileOverlay overlay;
+
+    private Handler topRefresh = new Handler() {
+        public void handleMessage(Message msg) {
+            topOverlay.clearTileCache();
+        }
+    };
+
+
+    private Handler bottomRefresh = new Handler() {
+        public void handleMessage(Message msg) {
+            bottomOverlay.clearTileCache();
+        }
+    };
+
+    private ExploredTileProvider provider;
+    private TileOverlay topOverlay;
+    private TileOverlay bottomOverlay;
+
 
     /**
      * Loads a gpx data from a file path sent through an intent.
@@ -372,6 +412,7 @@ public class FogOfExplore extends ActionBarActivity {
 
         CameraPosition cameraPosition = new CameraPosition.Builder()
                 .zoom(savedInstanceState.getFloat(BUNDLE_ZOOM))
+                .target(new LatLng(mCurrentLat, mCurrentLong))
                 .build();
 
         map.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
@@ -409,7 +450,6 @@ public class FogOfExplore extends ActionBarActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        mVisible = false;
         // unbind from service as the activity does
         // not display location info (is hidden or stopped)
         doUnbindService();
@@ -481,41 +521,16 @@ public class FogOfExplore extends ActionBarActivity {
     }
 
 
-    private GroundOverlay overlay_1;
-    private GroundOverlay overlay_2;
-
-
     /**
      * Updates the current location and calls an overlay redraw.
      */
     private void redrawOverlay() {
         updateExplored();
-        overlay.clearTileCache();
-        return;
-
-
-//        // FIXME hack
-//        // don't do anything if the activity is not visible
-//        if (!mVisible) {
-//            return;
-//        }
-//
-//        if (overlay_1 == null) {
-//            initializeOverlay();
-//        }
-//        updateExplored();
-//
-//
-//        // remove the odd overlay
-//        overlay_1.remove();
-//        //update the odd overlay
-//        overlay_1 = map.addGroundOverlay(OverlayFactory.getInstance(this).getCompleteOverlay(map));
-//        // remove the even overlay
-//        overlay_2.remove();
-//        //update the even overlay
-//        overlay_2 = map.addGroundOverlay(OverlayFactory.getInstance(this).getCompleteOverlay(map));
-
+        topOverlay.clearTileCache();
     }
+
+    private Timer timer = new Timer();
+
 
     private void updateExplored() {
         // get the coordinates of the visible area
@@ -531,16 +546,11 @@ public class FogOfExplore extends ActionBarActivity {
 
         // update the overlay with the currently visible explored area
 //        OverlayFactory.getInstance(this).setExplored(mRecorder.selectVisited(upperLeft, bottomRight));
+
+
         provider.setExplored(mRecorder.selectVisited(upperLeft, bottomRight));
     }
 
-
-    private void initializeOverlay() {
-        updateExplored();
-        // redraw overlay ????
-//        overlay_1 = map.addGroundOverlay(OverlayFactory.getInstance(this).getCompleteOverlay(map));
-//        overlay_2 = map.addGroundOverlay(OverlayFactory.getInstance(this).getCompleteOverlay(map));
-    }
 
     /**
      * Checks GPS and network connectivity. Displays a dialog asking the user to start the GPS if

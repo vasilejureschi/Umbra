@@ -72,7 +72,6 @@ public class ApproximateLocation extends Location {
 
     }
 
-    // TODO - check theory behind implementation, see Effective Java
     @Override
     public int hashCode() {
         int randomPrime = 47;

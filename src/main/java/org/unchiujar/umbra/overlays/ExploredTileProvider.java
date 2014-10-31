@@ -1,11 +1,10 @@
 package org.unchiujar.umbra.overlays;
 
-import android.app.Activity;
+import android.content.Context;
 import android.graphics.*;
 import android.location.Location;
 import android.preference.PreferenceManager;
 import android.util.Log;
-import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Tile;
@@ -41,17 +40,24 @@ public class ExploredTileProvider implements TileProvider {
 
 
     private static final int TILE_SIZE = 256;
+    private Context context;
 
-    private GoogleMap map;
 
-    public ExploredTileProvider(Activity context, GoogleMap map) {
-        LOGGER.debug("Tile overlay constructed with map {}", map);
-        this.map = map;
+    public ExploredTileProvider(Context context) {
+        this.context = context;
+        LOGGER.debug("Tile overlay constructed ");
 
         // ========== PAINTS SETUP =========
         mRectPaint = new Paint(ANTI_ALIAS_FLAG);
         mRectPaint.setColor(BLACK);
         mRectPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+
+//                SRC         (1),
+//                DST_OVER    (4),
+//                DARKEN      (12),
+//                LIGHTEN     (13),
+//                SCREEN      (15),
+        mRectPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_OVER));
 
         mClearPaint = new Paint(ANTI_ALIAS_FLAG);
         // set PorterDuff mode in order to create transparent holes in
@@ -72,9 +78,6 @@ public class ExploredTileProvider implements TileProvider {
         mShadePaint.setAlpha(TRANSPARENCY);
 
 
-        mAlpha = 255 - PreferenceManager.getDefaultSharedPreferences(context).getInt(Preferences.TRANSPARENCY, 120);
-
-
         pixelOrigin_ = new WorldCoordinate(TILE_SIZE / 2, TILE_SIZE / 2);
         pixelsPerLonDegree_ = TILE_SIZE / 360d;
         pixelsPerLonRadian_ = TILE_SIZE / (2 * Math.PI);
@@ -83,6 +86,8 @@ public class ExploredTileProvider implements TileProvider {
 
     @Override
     public Tile getTile(int x, int y, int zoom) {
+        mAlpha = 255 - PreferenceManager.getDefaultSharedPreferences(context).getInt(Preferences.TRANSPARENCY, 120);
+
         LOGGER.debug("Getting tile for coordinates {} {} and zoom {}", x, y, zoom);
         //create bitmap tile
         Bitmap image = draw(x, y, zoom);
@@ -209,7 +214,7 @@ public class ExploredTileProvider implements TileProvider {
         final double pixelsMeter = pixelsPerMeter(TILE_SIZE,
                 new LatLng(bounds.southwest.latitude, bounds.southwest.longitude),
                 new LatLng(bounds.northeast.latitude, bounds.southwest.longitude));
-        int radius = (int) (METERS_RADIUS * pixelsMeter);
+        int radius = (int) (METERS_RADIUS * 2 * pixelsMeter);
 
         radius = (radius <= 3) ? 3 : radius;
 
@@ -227,9 +232,11 @@ public class ExploredTileProvider implements TileProvider {
         for (ApproximateLocation location : mLocations) {
             // Log.v(TAG, "GeoPoint to screen point: " + mTempPoint);
             // for display use only visible points
-            if (bounds.contains(new LatLng(location.getLatitude(), location.getLongitude()))) {
-                drawShadedDisc(radius, passes, latLngToTilePoint(LocationUtilities.locationToLatLng(location), x, y, zoom), canvas);
-            }
+
+            //TODO optimize this
+//            if (bounds.contains(new LatLng(location.getLatitude(), location.getLongitude()))) {
+            drawShadedDisc(radius, passes, latLngToTilePoint(LocationUtilities.locationToLatLng(location), x, y, zoom), canvas);
+//            }
 
         }
 

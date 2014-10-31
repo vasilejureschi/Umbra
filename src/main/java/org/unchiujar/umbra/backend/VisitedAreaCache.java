@@ -1,59 +1,54 @@
 /*******************************************************************************
  * This file is part of Umbra.
- * 
+ *
  *     Umbra is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     Umbra is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Umbra.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     Copyright (c) 2011 Vasile Jureschi <vasile.jureschi@gmail.com>.
  *     All rights reserved. This program and the accompanying materials
  *     are made available under the terms of the GNU Public License v3.0
  *     which accompanies this distribution, and is available at
- *     
+ *
  *    http://www.gnu.org/licenses/gpl-3.0.html
- * 
+ *
  *     Contributors:
  *        Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
  ******************************************************************************/
 
 package org.unchiujar.umbra.backend;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.TreeSet;
-
-import org.unchiujar.umbra.location.ApproximateLocation;
-import org.unchiujar.umbra.location.LocationOrder;
-import org.unchiujar.umbra.services.LocationService;
-
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.location.Location;
-import android.os.Handler;
-import android.os.IBinder;
-import android.os.Message;
-import android.os.Messenger;
-import android.os.RemoteException;
+import android.os.*;
 import android.util.Log;
+import org.unchiujar.umbra.location.ApproximateLocation;
+import org.unchiujar.umbra.location.LocationOrder;
+import org.unchiujar.umbra.services.LocationService;
+
+import java.util.*;
 
 public class VisitedAreaCache implements ExploredProvider {
     private static final String TAG = VisitedAreaCache.class.getName();
-    /** The interval between database updates. */
+    /**
+     * The interval between database updates.
+     */
     private static final long UPDATE_INTERVAL = 30 * 1000;
-    /** The maximum number of entries in the cache's TreeSet. UNUSED */
+    /**
+     * The maximum number of entries in the cache's TreeSet. UNUSED
+     */
     private static final int MAX_CACHE_SIZE = 2000;
 
     private int mPreviousSize = 0;
@@ -61,21 +56,31 @@ public class VisitedAreaCache implements ExploredProvider {
     private TimerTask mUpdateDb;
     private Timer mUpdateTimer;
 
-    /** Flag signaling that unsaved data has been added to cache. */
+    /**
+     * Flag signaling that unsaved data has been added to cache.
+     */
     private boolean mDirty = false;
 
-    /** Actual Locations mCached. */
+    /**
+     * Actual Locations mCached.
+     */
     private TreeSet<ApproximateLocation> mLocations = new TreeSet<ApproximateLocation>(
             new LocationOrder());
 
-    /** TreeSet used to keep new locations between database updates. */
+    /**
+     * TreeSet used to keep new locations between database updates.
+     */
     private TreeSet<ApproximateLocation> mNewLocations = new TreeSet<ApproximateLocation>(
             new LocationOrder());
 
-    /** Upper left bound of mCached rectangle area. */
+    /**
+     * Upper left bound of mCached rectangle area.
+     */
     private ApproximateLocation mUpperLeftBoundCached;
 
-    /** Lower right bound of mCached rectangle area. */
+    /**
+     * Lower right bound of mCached rectangle area.
+     */
     private ApproximateLocation mLowerRightBoundCached;
     private Context mContext;
     private boolean mCached = false;
@@ -176,9 +181,13 @@ public class VisitedAreaCache implements ExploredProvider {
         return visited;
     }
 
-    /** Messenger for communicating with service. */
+    /**
+     * Messenger for communicating with service.
+     */
     Messenger mService = null;
-    /** Flag indicating whether we have called bind on the service. */
+    /**
+     * Flag indicating whether we have called bind on the service.
+     */
     private boolean mIsBound;
 
     /**
@@ -193,7 +202,7 @@ public class VisitedAreaCache implements ExploredProvider {
                         Location location = (Location) msg.obj;
                         Log.d(TAG, location.toString());
 
-                        if (location.getAccuracy() < LocationOrder.METERS_RADIUS * 2) {
+                        if (location.getAccuracy() < LocationOrder.METERS_RADIUS * 5) {
                             // record to database
                             long size = insert(new ApproximateLocation(location));
                             Log.d(TAG, "New tree size is :" + size);

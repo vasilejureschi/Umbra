@@ -138,7 +138,7 @@ public class OverlayFactory {
         // 2 - 21 levels
 
         final double pixelsMeter = pixelsPerMeter(width, vr.nearLeft, vr.nearRight);
-        int radius = (int) (LocationOrder.METERS_RADIUS * pixelsMeter);
+        int radius = (int) (LocationOrder.METERS_RADIUS * 2 * pixelsMeter);
         radius = radius / DOWN_SCALE_FACTOR;
 
         radius = (radius <= 3) ? 3 : radius;
