@@ -38,13 +38,14 @@ import android.os.AsyncTask;
 import android.os.Environment;
 import android.preference.Preference;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.Toast;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.unchiujar.umbra.R;
 import org.unchiujar.umbra.backend.LocationRecorder;
 import org.unchiujar.umbra.io.GpxExporter;
@@ -57,7 +58,7 @@ import java.io.IOException;
 import java.util.List;
 
 public class ExportDataPreference extends Preference {
-    private final String TAG = ExportDataPreference.class.getName();
+    private static final Logger LOGGER = LoggerFactory.getLogger(ExportDataPreference.class);
 
     private String mFolder;
     private Context mContext;
@@ -77,7 +78,7 @@ public class ExportDataPreference extends Preference {
 
     private void initPreference(Context context, AttributeSet attrs) {
         setValuesFromXml(attrs);
-        Log.d(TAG, "Init preferences.");
+        LOGGER.debug("Init preferences.");
         mContext = context;
 
 
@@ -108,7 +109,7 @@ public class ExportDataPreference extends Preference {
     @Override
     public void onBindView(View view) {
         super.onBindView(view);
-        Log.d(TAG, "Binding view...");
+        LOGGER.debug("Binding view...");
 
         Button mBtnExportGpx = (Button) view.findViewById(R.id.btnExportGpx);
         mBtnExportGpx.setOnClickListener(new OnClickListener() {
@@ -137,8 +138,9 @@ public class ExportDataPreference extends Preference {
             //load the entire database
             List<ApproximateLocation> locations = recorder.selectAll();
             //TODO show update
-            Log.d(TAG, "Loaded locations from database.");
-            progress.setMax(locations.size());
+            int noOfLocations = locations.size();
+            LOGGER.debug("Loaded {} locations from database .", noOfLocations);
+            progress.setMax(noOfLocations);
             GpxExporter exporter = new GpxExporter(mContext);
 
             File sdcard = Environment.getExternalStorageDirectory();
@@ -148,17 +150,17 @@ public class ExportDataPreference extends Preference {
 
                 exporter.prepare(new FileOutputStream(exported));
             } catch (FileNotFoundException e) {
-                Log.e(TAG, "Error opening stream for output file", e);
+                LOGGER.error("Error opening stream for output file", e);
             } catch (IOException e) {
-                Log.e(TAG, "Error creating export file.", e);
+                LOGGER.error("Error creating export file.", e);
             }
 
             exporter.writeHeader();
-            if (locations.size() > 0) {
+            if (noOfLocations > 0) {
                 exporter.writeBeginTrack(locations.get(0));
                 exporter.writeOpenSegment();
                 int written = 0;
-                int debug = 5;
+                int debug = Integer.MAX_VALUE;
                 for (ApproximateLocation location : locations) {
                     exporter.writeLocation(location);
                     if (written % 5 == 0) {
@@ -171,7 +173,7 @@ public class ExportDataPreference extends Preference {
                     }
                 }
                 exporter.writeCloseSegment();
-                exporter.writeEndTrack(locations.get(locations.size() - 1));
+                exporter.writeEndTrack(locations.get(noOfLocations - 1));
             }
             exporter.writeFooter();
             exporter.close();
@@ -187,7 +189,7 @@ public class ExportDataPreference extends Preference {
         @Override
         protected void onPostExecute(Long result) {
             progress.dismiss();
-            Log.d(TAG, "Exported GPX data.");
+            LOGGER.debug("Exported GPX data.");
             Toast.makeText(mContext, "Data exported to " + exported.getAbsolutePath(), Toast.LENGTH_LONG).show();
 
 

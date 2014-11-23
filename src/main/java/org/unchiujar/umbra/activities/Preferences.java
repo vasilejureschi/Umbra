@@ -120,8 +120,8 @@ public class Preferences extends PreferenceActivity {
                         .getCache();
 
                 try {
-                    GpxImporter.importGPXFile(new FileInputStream(
-                            new File(filePath)), cache);
+                    cache.insert(GpxImporter.importGPXFile(new FileInputStream(
+                            new File(filePath))));
                 } catch (ParserConfigurationException e) {
                     LOGGER.error("Error parsing file", e);
                 } catch (SAXException e) {

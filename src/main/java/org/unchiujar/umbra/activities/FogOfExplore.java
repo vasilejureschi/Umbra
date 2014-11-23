@@ -58,7 +58,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.unchiujar.umbra.R;
 import org.unchiujar.umbra.backend.ExploredProvider;
-import org.unchiujar.umbra.io.GpxImporter;
 import org.unchiujar.umbra.location.ApproximateLocation;
 import org.unchiujar.umbra.overlays.CustomUrlProvider;
 import org.unchiujar.umbra.overlays.ExploredTileProvider;
@@ -71,6 +70,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Timer;
 
+import static org.unchiujar.umbra.io.GpxImporter.importGPXFile;
 import static org.unchiujar.umbra.overlays.ExploredTileProvider.TILE_SIZE;
 import static org.unchiujar.umbra.utils.LocationUtilities.coordinatesToLocation;
 
@@ -264,6 +264,7 @@ public class FogOfExplore extends ActionBarActivity {
         mSettings = PreferenceManager.getDefaultSharedPreferences(this);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         mLoadProgress = ProgressDialog.show(this, "", "Loading. Please wait...", true);
+        loadFileFromIntent();
 
         mSettings.registerOnSharedPreferenceChangeListener(mPrefListener);
         setContentView(R.layout.main);
@@ -289,7 +290,6 @@ public class FogOfExplore extends ActionBarActivity {
         }
 
         mRecorder = ((UmbraApplication) getApplication()).getCache();
-        loadFileFromIntent();
         // check we still have access to GPS info
         checkConnectivity();
 
@@ -385,8 +385,8 @@ public class FogOfExplore extends ActionBarActivity {
                         .getCache();
 
                 try {
-                    GpxImporter.importGPXFile(new FileInputStream(
-                            new File(filePath)), cache);
+                    cache.insert(importGPXFile(new FileInputStream(
+                            new File(filePath))));
                 } catch (ParserConfigurationException e) {
                     Log.e(TAG, "Error parsing file", e);
                 } catch (SAXException e) {

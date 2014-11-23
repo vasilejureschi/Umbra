@@ -154,6 +154,13 @@ public class VisitedAreaCache implements ExploredProvider {
     }
 
     @Override
+    public synchronized void insert(List<ApproximateLocation> locations) {
+        for (ApproximateLocation location : locations) {
+            insert(location);
+        }
+    }
+
+    @Override
     public List<ApproximateLocation> selectAll() {
         cacheDatabaseInMemory();
         return new ArrayList<ApproximateLocation>(mLocations);

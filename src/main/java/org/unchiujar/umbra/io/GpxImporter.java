@@ -18,9 +18,9 @@ package org.unchiujar.umbra.io;
 
 import android.location.Location;
 import android.location.LocationManager;
-import android.util.Log;
 import com.google.android.gms.maps.model.LatLng;
-import org.unchiujar.umbra.backend.ExploredProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.unchiujar.umbra.location.ApproximateLocation;
 import org.xml.sax.Attributes;
 import org.xml.sax.Locator;
@@ -32,6 +32,8 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -43,7 +45,7 @@ import java.util.Locale;
  * @author Vasile Jureschi
  */
 public class GpxImporter extends DefaultHandler {
-    private static final String TAG = GpxImporter.class.getName();
+    private static final Logger LOGGER = LoggerFactory.getLogger(GpxImporter.class);
     // GPX tag names and attributes
     private static final String TAG_ALTITUDE = "ele";
     private static final String TAG_DESCRIPTION = "desc";
@@ -51,8 +53,8 @@ public class GpxImporter extends DefaultHandler {
     private static final String TAG_TIME = "time";
     private static final String TAG_TRACK = "trk";
     private static final String TAG_TRACK_POINT = "trkpt";
-    private static final Object TAG_TRACK_SEGMENT = "trkseg";
 
+    private static final Object TAG_TRACK_SEGMENT = "trkseg";
     private static final String ATT_LAT = "lat";
     private static final String ATT_LON = "lon";
 
@@ -74,33 +76,27 @@ public class GpxImporter extends DefaultHandler {
     // The last location in the current segment
     private Location lastLocationInSegment;
 
-    private ExploredProvider mAreaCache;
+    private static List<ApproximateLocation> locations = new LinkedList<ApproximateLocation>();
     private int elementsLoaded;
 
     /**
      * Reads GPS tracks from a GPX file and writes tracks and their coordinates to the database.
      *
      * @param inputStream the input stream for the GPX file
-     * @param areaCache   the cache the points are loaded into
      */
-    public static void importGPXFile(InputStream inputStream,
-                                     ExploredProvider areaCache) throws ParserConfigurationException,
+    public static List<ApproximateLocation> importGPXFile(InputStream inputStream) throws ParserConfigurationException,
             SAXException, IOException {
         SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
         SAXParser saxParser = saxParserFactory.newSAXParser();
-        GpxImporter gpxImporter = new GpxImporter(areaCache);
+        GpxImporter gpxImporter = new GpxImporter();
 
         long start = System.currentTimeMillis();
 
         saxParser.parse(inputStream, gpxImporter);
 
         long end = System.currentTimeMillis();
-        Log.d(TAG, "Total import time: " + (end - start) + "ms");
-
-    }
-
-    public GpxImporter(ExploredProvider areaCache) {
-        mAreaCache = areaCache;
+        LOGGER.debug("Total import time: " + (end - start) + "ms");
+        return locations;
     }
 
     @Override
@@ -229,7 +225,7 @@ public class GpxImporter extends DefaultHandler {
      */
     private void onTrackPointElementStart(Attributes attributes)
             throws SAXException {
-        Log.d(TAG, "Loaded elements " + elementsLoaded);
+        LOGGER.debug("Loaded elements " + elementsLoaded);
         elementsLoaded = 0;
         if (location != null) {
             throw new SAXException(
@@ -267,7 +263,7 @@ public class GpxImporter extends DefaultHandler {
         }
 
         // insert into cache
-        mAreaCache.insert(new ApproximateLocation(location));
+        locations.add(new ApproximateLocation(location));
         elementsLoaded++;
         lastLocationInSegment = location;
         location = null;
@@ -317,7 +313,7 @@ public class GpxImporter extends DefaultHandler {
 
             // check for negative time change
             if (timeDifference <= 0) {
-                Log.w(TAG, "Time difference not postive.");
+                LOGGER.warn("Time difference not positive.");
             } else {
 
                 /*
@@ -391,4 +387,7 @@ public class GpxImporter extends DefaultHandler {
                 && Math.abs(location.getLongitude()) <= 180;
     }
 
+    public List<ApproximateLocation> getLocations() {
+        return locations;
+    }
 }
