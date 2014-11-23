@@ -178,6 +178,7 @@ public class FogOfExplore extends ActionBarActivity {
         @Override
         public void onCameraChange(CameraPosition cameraPosition) {
             //if we are only zooming in then do nothing, the topOverlay will be scaled automatically
+            updateExplored();
         }
     };
     private boolean overlaySwitch = true;
@@ -263,6 +264,7 @@ public class FogOfExplore extends ActionBarActivity {
         mSettings = PreferenceManager.getDefaultSharedPreferences(this);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         mLoadProgress = ProgressDialog.show(this, "", "Loading. Please wait...", true);
+
         mSettings.registerOnSharedPreferenceChangeListener(mPrefListener);
         setContentView(R.layout.main);
 
@@ -438,6 +440,13 @@ public class FogOfExplore extends ActionBarActivity {
     protected void onResume() {
         super.onResume();
 
+
+        map.setOnCameraChangeListener(cameraListener);
+        mLoadProgress.cancel();
+        Log.d(TAG, "onResume completed.");
+        // bind to location service
+        doBindService();
+
         map.clear();
 
         String tilesUrl = PreferenceManager.getDefaultSharedPreferences(this)
@@ -466,12 +475,6 @@ public class FogOfExplore extends ActionBarActivity {
         backOpts.zIndex(BACK);
         bottomOverlay = map.addTileOverlay(backOpts);
 
-
-        map.setOnCameraChangeListener(cameraListener);
-        mLoadProgress.cancel();
-        Log.d(TAG, "onResume completed.");
-        // bind to location service
-        doBindService();
         redrawOverlay();
     }
 
@@ -482,24 +485,6 @@ public class FogOfExplore extends ActionBarActivity {
         // not display location info (is hidden or stopped)
         doUnbindService();
         Log.d(TAG, "onPause completed.");
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        Log.d(TAG, "onStop completed.");
-    }
-
-    @Override
-    protected void onRestart() {
-        super.onRestart();
-        Log.d(TAG, "onRestart completed.");
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        Log.d(TAG, "onDestroy completed.");
     }
 
     //    // ================= END LIFECYCLE METHODS ====================
@@ -557,14 +542,14 @@ public class FogOfExplore extends ActionBarActivity {
 //        topOverlay.clearTileCache();
 
         if (!overlaySwitch) {
-            bottomOverlay.setZIndex(30);
-            topOverlay.setZIndex(10);
+            bottomOverlay.setZIndex(FRONT);
+            topOverlay.setZIndex(BACK);
             topOverlay.clearTileCache();
         } else {
 
 //        bottomOverlay.clearTileCache();
-            topOverlay.setZIndex(30);
-            bottomOverlay.setZIndex(10);
+            topOverlay.setZIndex(FRONT);
+            bottomOverlay.setZIndex(BACK);
             bottomOverlay.clearTileCache();
         }
 
@@ -590,7 +575,9 @@ public class FogOfExplore extends ActionBarActivity {
 //        OverlayFactory.getInstance(this).setExplored(mRecorder.selectVisited(upperLeft, bottomRight));
 
 
-        provider.setExplored(mRecorder.selectVisited(upperLeft, bottomRight), (int) map.getCameraPosition().zoom);
+//        provider.setExplored(mRecorder.selectVisited(upperLeft, bottomRight), (int) map.getCameraPosition().zoom);
+        provider.setExplored(mRecorder.selectAll(), (int) map.getCameraPosition().zoom);
+
     }
 
 

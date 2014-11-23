@@ -155,7 +155,20 @@ public class VisitedAreaCache implements ExploredProvider {
 
     @Override
     public List<ApproximateLocation> selectAll() {
+        cacheDatabaseInMemory();
         return new ArrayList<ApproximateLocation>(mLocations);
+    }
+
+    private void cacheDatabaseInMemory() {
+        if (!mCached) {
+            Log.d(TAG, "Loading all visited points form database...");
+            // TODO find a better method
+            // cache the entire database
+            mLocations.addAll(recorder.selectAll());
+            mCached = true;
+            Log.d(TAG, "Loaded " + mLocations.size() + " points.");
+
+        }
     }
 
     /*
@@ -166,15 +179,7 @@ public class VisitedAreaCache implements ExploredProvider {
     @Override
     public List<ApproximateLocation> selectVisited(
             ApproximateLocation upperLeft, ApproximateLocation lowerRight) {
-        if (!mCached) {
-            Log.d(TAG, "Loading all visited points form database...");
-            // TODO find a better method
-            // cache the entire database
-            mLocations.addAll(recorder.selectAll());
-            mCached = true;
-            Log.d(TAG, "Loaded " + mLocations.size() + " points.");
-
-        }
+        cacheDatabaseInMemory();
         ArrayList<ApproximateLocation> visited = new ArrayList<ApproximateLocation>(
                 mLocations.subSet(upperLeft, lowerRight));
         Log.d(TAG, "Returning  " + visited.size() + "  mCached results");
