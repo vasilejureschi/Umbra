@@ -12,7 +12,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 21
-    buildToolsVersion "21.0.2"
+    buildToolsVersion "21.1.1"
     defaultConfig {
         versionCode 100
         versionName "0.1.00-SNAPSHOT"
@@ -30,9 +30,10 @@ repositories {
 }
 dependencies {
 
-    compile 'com.android.support:support-v4:21.0.+'
-    compile 'com.android.support:appcompat-v7:21.0.+'
+    compile 'com.android.support:support-v4:21.0.2'
+    compile 'com.android.support:appcompat-v7:21.0.2'
     compile 'com.google.android.gms:play-services:4.2.42'
+    compile 'com.google.maps.android:android-maps-utils:0.3.3'
     compile 'org.roboguice:roboguice:2.0'
     compile 'com.j256.ormlite:ormlite-android:4.42'
     compile 'org.slf4j:slf4j-api:1.7.7'

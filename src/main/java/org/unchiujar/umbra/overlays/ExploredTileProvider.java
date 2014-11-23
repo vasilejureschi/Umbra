@@ -4,7 +4,6 @@ import android.content.Context;
 import android.graphics.*;
 import android.location.Location;
 import android.preference.PreferenceManager;
-import android.util.Log;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Tile;
@@ -13,19 +12,59 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.unchiujar.umbra.activities.Preferences;
 import org.unchiujar.umbra.location.ApproximateLocation;
-import org.unchiujar.umbra.utils.LocationUtilities;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static android.graphics.Color.BLACK;
 import static android.graphics.Paint.ANTI_ALIAS_FLAG;
+import static com.google.maps.android.SphericalUtil.computeDistanceBetween;
+import static com.google.maps.android.SphericalUtil.computeOffset;
 import static org.unchiujar.umbra.location.LocationOrder.METERS_RADIUS;
 
 public class ExploredTileProvider implements TileProvider {
     private static final int SHADING_PASSES = 15;
-    private static final String TAG = ExploredOverlay.class.getName();
     private static final Logger LOGGER = LoggerFactory.getLogger(ExploredTileProvider.class);
+    public static final int RADIUS_SHADE_THRESHOLD = 3;
+
+    private static class TileCoordinates {
+        int x;
+        int y;
+        int zoom;
+
+        private TileCoordinates(int x, int y, int zoom) {
+            this.x = x;
+            this.y = y;
+            this.zoom = zoom;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            TileCoordinates that = (TileCoordinates) o;
+
+            if (x != that.x) return false;
+            if (y != that.y) return false;
+            if (zoom != that.zoom) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = x;
+            result = 31 * result + y;
+            result = 31 * result + zoom;
+            return result;
+        }
+    }
+
+    private ConcurrentHashMap<TileCoordinates, Bitmap> tilesCache = new ConcurrentHashMap<TileCoordinates, Bitmap>();
+
+
     /**
      * Transparency level of explored area. Lower value means more transparent.
      */
@@ -39,7 +78,7 @@ public class ExploredTileProvider implements TileProvider {
     private Paint mShadePaint;
 
 
-    private static final int TILE_SIZE = 256;
+    public static final int TILE_SIZE = 128;
     private Context context;
 
 
@@ -57,7 +96,7 @@ public class ExploredTileProvider implements TileProvider {
 //                DARKEN      (12),
 //                LIGHTEN     (13),
 //                SCREEN      (15),
-        mRectPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_OVER));
+
 
         mClearPaint = new Paint(ANTI_ALIAS_FLAG);
         // set PorterDuff mode in order to create transparent holes in
@@ -65,7 +104,7 @@ public class ExploredTileProvider implements TileProvider {
         // see http://developer.android.com/reference/android/graphics/PorterDuff.Mode.html
         // see http://en.wikipedia.org/wiki/Alpha_compositing
         // see http://groups.google.com/group/android-developers/browse_thread/thread/5b0a498664b17aa0/de4aab6fb7e97e38?lnk=gst&q=erase+transparent&pli=1
-        mClearPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+        mClearPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
         mClearPaint.setAlpha(255);
         mClearPaint.setColor(BLACK);
         mClearPaint.setStyle(Paint.Style.FILL_AND_STROKE);
@@ -87,6 +126,9 @@ public class ExploredTileProvider implements TileProvider {
     @Override
     public Tile getTile(int x, int y, int zoom) {
         mAlpha = 255 - PreferenceManager.getDefaultSharedPreferences(context).getInt(Preferences.TRANSPARENCY, 120);
+        mRectPaint.setAlpha(mAlpha);
+//        mRectPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST));
+
 
         LOGGER.debug("Getting tile for coordinates {} {} and zoom {}", x, y, zoom);
         //create bitmap tile
@@ -171,8 +213,6 @@ public class ExploredTileProvider implements TileProvider {
      * Transform the world coordinates into pixel-coordinates relative to the
      * whole tile-area. (i.e. the coordinate system that spans all tiles.)
      * <p/>
-     * <p/>
-     * Takes the resulting point as parameter, to avoid creation of new objects.
      */
     private Point worldToPixelCoordinates(WorldCoordinate worldCoord, int zoom) {
         int numTiles = 1 << zoom;
@@ -197,10 +237,24 @@ public class ExploredTileProvider implements TileProvider {
     public Bitmap draw(int x, int y, int zoom) {
         LOGGER.debug("Drawing tile...");
 
+        Bitmap bitmap = Bitmap.createBitmap(TILE_SIZE, TILE_SIZE, Bitmap.Config.ARGB_8888);
 
         LatLngBounds bounds = getTileBounds(x, y, zoom);
 
+
+        LatLng center = bounds.getCenter();
+        double diagonal = computeDistanceBetween(bounds.northeast, bounds.southwest) * 2;
+        LatLngBounds enlargedBounds = new LatLngBounds.Builder().
+                include(computeOffset(center, diagonal, 0)).
+                include(computeOffset(center, diagonal, 90)).
+                include(computeOffset(center, diagonal, 180)).
+                include(computeOffset(center, diagonal, 270)
+                ).build();
+
+
         LOGGER.debug("Tile bounds are {}", bounds);
+        LOGGER.debug("Enlarged tile bounds are {}", enlargedBounds);
+
         int passes = zoom < 14 ? 1 : zoom - 8;
         LOGGER.debug("Shading passes {}  ", passes);
 
@@ -216,12 +270,11 @@ public class ExploredTileProvider implements TileProvider {
                 new LatLng(bounds.northeast.latitude, bounds.southwest.longitude));
         int radius = (int) (METERS_RADIUS * 2 * pixelsMeter);
 
-        radius = (radius <= 3) ? 3 : radius;
+        radius = (radius <= RADIUS_SHADE_THRESHOLD) ? RADIUS_SHADE_THRESHOLD : radius;
 
         LOGGER.debug("View distance is {} meters, radius in pixels is {} pixel per meter is {}", METERS_RADIUS, radius, pixelsMeter);
 
 
-        Bitmap bitmap = Bitmap.createBitmap(TILE_SIZE, TILE_SIZE, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
         // TODO check is width, height is always the same - rotation may be a problem
         Rect mScreenCover = new Rect(0, 0, TILE_SIZE, TILE_SIZE);
@@ -234,15 +287,17 @@ public class ExploredTileProvider implements TileProvider {
             // for display use only visible points
 
             //TODO optimize this
-//            if (bounds.contains(new LatLng(location.getLatitude(), location.getLongitude()))) {
-            drawShadedDisc(radius, passes, latLngToTilePoint(LocationUtilities.locationToLatLng(location), x, y, zoom), canvas);
-//            }
+            LatLng point = new LatLng(location.getLatitude(), location.getLongitude());
+            if (enlargedBounds.contains(point)) {
+                drawShadedDisc(radius, passes, latLngToTilePoint(point, x, y, zoom), canvas);
+            }
 
         }
 
-        mRectPaint.setAlpha(mAlpha);
-
         canvas.drawBitmap(bitmap, 0, 0, mRectPaint);
+
+
+        tilesCache.put(new TileCoordinates(x, y, zoom), bitmap);
 
 
         return bitmap;
@@ -254,9 +309,13 @@ public class ExploredTileProvider implements TileProvider {
     private double pixelsPerLonRadian_;
 
 
-    public void setExplored(List<ApproximateLocation> locations) {
+    public void setExplored(List<ApproximateLocation> locations, int zoom) {
         this.mLocations = locations;
-        Log.d(TAG, "Explored size is: " + this.mLocations.size());
+        LOGGER.debug("Explored size is:{} ", this.mLocations.size());
+
+//        for (Location location : mLocations) {
+//            updateTile(LocationUtilities.locationToLatLng(location), zoom);
+//        }
     }
 
 
@@ -272,20 +331,54 @@ public class ExploredTileProvider implements TileProvider {
      * if the map is zoom out do not try to shade so much
      * shading passes are equivalent to zoom level minus a constant
      * after a certain zoom level only clear the area instead of
-     * shading
+     * shading.
      */
 
     private void drawShadedDisc(int radius, int passes, Point currentPoint, Canvas canvas) {
+        LOGGER.trace("Drawing radius {} with passes {} for point {}", radius, passes, currentPoint);
         int x = currentPoint.x;
         int y = currentPoint.y;
         // if the passes are only one do not shade, just clear
-        if (passes == 1) {
-            canvas.drawCircle(x, y, radius, mClearPaint);
-            return;
-        }
+//        if (passes == 1) {
+//            canvas.drawCircle(x, y, radius, mClearPaint);
+//            return;
+//        }
 
         for (int i = 0; i < passes; i++) {
             canvas.drawCircle(x, y, (SHADING_PASSES - i) * radius / SHADING_PASSES * 0.8f + radius * 0.2f, mShadePaint);
         }
+    }
+
+    public void updateTile(LatLng coordinates, int zoom) {
+        // find tile to update
+        Point pixelCoordinates = worldToPixelCoordinates(latLngToWorldCoordinates(coordinates), zoom);
+
+        int x = pixelCoordinates.x / TILE_SIZE;
+        int y = pixelCoordinates.y / TILE_SIZE;
+
+
+        LatLngBounds bounds = getTileBounds(x, y, zoom);
+
+        Bitmap bitmap = tilesCache.get(new TileCoordinates(x, y, zoom));
+
+        if (bitmap == null) {
+            LOGGER.debug("No bitmap tile cached, doing nothing");
+            return;
+        }
+
+        LOGGER.debug("Found bitmap for tile {} {} updating...", x, y);
+
+        Canvas canvas = new Canvas(bitmap);
+
+        final double pixelsMeter = pixelsPerMeter(TILE_SIZE,
+                new LatLng(bounds.southwest.latitude, bounds.southwest.longitude),
+                new LatLng(bounds.northeast.latitude, bounds.southwest.longitude));
+        int radius = (int) (METERS_RADIUS * 2 * pixelsMeter);
+
+        radius = (radius <= 3) ? 3 : radius;
+        int passes = zoom < 14 ? 1 : zoom - 8;
+
+        drawShadedDisc(radius, passes, latLngToTilePoint(coordinates, x, y, zoom), canvas);
+
     }
 }

@@ -7,12 +7,12 @@ import org.slf4j.LoggerFactory;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-public class OsmProvider extends UrlTileProvider {
+public class CustomUrlProvider extends UrlTileProvider {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(OsmProvider.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CustomUrlProvider.class);
     private String baseUrl;
 
-    public OsmProvider(int width, int height, String url) {
+    public CustomUrlProvider(int width, int height, String url) {
         super(width, height);
         this.baseUrl = url;
     }

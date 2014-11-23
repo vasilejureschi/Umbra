@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="map_sources_entries">
+        <item>Mapquest Open Street Map</item>
+        <item>Mapquest Aerial</item>
+        <item>Mapnik bycycle</item>
+        <item>Mapnik public transport</item>
+        <item>Mapnik public transport dark</item>
+        <item>Mapnik landscape</item>
+        <item>Mapnik outdoors (hiking)</item>
+
+
+        <item>Google satellite with roads</item>
+        <item>Google street</item>
+        <item>Google maps standard</item>
+        <item>Google terrain with roads</item>
+        <item>Google terrain without roads</item>
+        <item>Google roads and water</item>
+        <item>Google satellite without roads</item>
+    </string-array>
+    <string-array name="map_sources_values">
+        <item>http://otile2.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.png</item>
+        <item>http://otile2.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.png</item>
+        <item>http://a.tile.thunderforest.com/cycle/{z}/{x}/{y}.png</item>
+        <item>http://a.tile.thunderforest.com/transport/{z}/{x}/{y}.png</item>
+        <item>http://a.tile.thunderforest.com/transport-dark/{z}/{x}/{y}.png</item>
+        <item>http://a.tile.thunderforest.com/landscape/{z}/{x}/{y}.png</item>
+        <item>http://a.tile.thunderforest.com/outdoors/{z}/{x}/{y}.png</item>
+        <!--<item>http://a.tile.openstreetmap.org/{z}/{x}/{y}.png</item>-->
+
+        <item>http://mt1.google.com/vt/lyrs=y&amp;x={x}&amp;y={y}&amp;z={z}</item>
+        <item>http://mt1.google.com/vt/lyrs=h&amp;x={x}&amp;y={y}&amp;z={z}</item>
+        <item>http://mt1.google.com/vt/lyrs=m&amp;x={x}&amp;y={y}&amp;z={z}</item>
+        <item>http://mt1.google.com/vt/lyrs=p&amp;x={x}&amp;y={y}&amp;z={z}</item>
+        <item>http://mt1.google.com/vt/lyrs=t&amp;x={x}&amp;y={y}&amp;z={z}</item>
+        <item>http://mt1.google.com/vt/lyrs=r&amp;x={x}&amp;y={y}&amp;z={z}</item>
+        <item>http://mt1.google.com/vt/lyrs=s&amp;x={x}&amp;y={y}&amp;z={z}</item>
+    </string-array>
+</resources>

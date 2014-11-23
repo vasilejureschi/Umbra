@@ -40,6 +40,7 @@ import android.net.Uri;
 import android.os.*;
 import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -59,8 +60,8 @@ import org.unchiujar.umbra.R;
 import org.unchiujar.umbra.backend.ExploredProvider;
 import org.unchiujar.umbra.io.GpxImporter;
 import org.unchiujar.umbra.location.ApproximateLocation;
+import org.unchiujar.umbra.overlays.CustomUrlProvider;
 import org.unchiujar.umbra.overlays.ExploredTileProvider;
-import org.unchiujar.umbra.overlays.OsmProvider;
 import org.unchiujar.umbra.services.LocationService;
 import org.xml.sax.SAXException;
 
@@ -70,6 +71,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Timer;
 
+import static org.unchiujar.umbra.overlays.ExploredTileProvider.TILE_SIZE;
 import static org.unchiujar.umbra.utils.LocationUtilities.coordinatesToLocation;
 
 /**
@@ -111,6 +113,9 @@ public class FogOfExplore extends ActionBarActivity {
      */
     private static final String SERVICE_INTENT_NAME = "org.com.unchiujar.LocationService";
     private static final Logger LOGGER = LoggerFactory.getLogger(FogOfExplore.class);
+    public static final int FRONT = 30;
+    public static final int BACK = 10;
+    public static final int MIDDLE = 20;
 
     /**
      * Dialog displayed while loading the explored points at application start.
@@ -173,7 +178,6 @@ public class FogOfExplore extends ActionBarActivity {
         @Override
         public void onCameraChange(CameraPosition cameraPosition) {
             //if we are only zooming in then do nothing, the topOverlay will be scaled automatically
-            redrawOverlay();
         }
     };
     private boolean overlaySwitch = true;
@@ -260,7 +264,7 @@ public class FogOfExplore extends ActionBarActivity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         mLoadProgress = ProgressDialog.show(this, "", "Loading. Please wait...", true);
         mSettings.registerOnSharedPreferenceChangeListener(mPrefListener);
-        setContentView(R.layout.map);
+        setContentView(R.layout.main);
 
 
         FragmentManager fragmentManager = getFragmentManager();
@@ -287,97 +291,46 @@ public class FogOfExplore extends ActionBarActivity {
         // check we still have access to GPS info
         checkConnectivity();
 
-
-        // Open street maps tiles
-
-//        String osmUrl = "http://a.tile.openstreetmap.org/{z}/{x}/{y}.png";
-//        OsmProvider osmProvider = new OsmProvider(256, 256, osmUrl);
-//        osmOverlay = map.addTileOverlay(new TileOverlayOptions().tileProvider(osmProvider).zIndex(20));
-
-        // Google satellite tiles  with roads overlaid
-//        String googleUrl = "http://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}";
-
-        // Google terrain tiles
-//        String googleUrl = "http://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}";
-
-        // Google terrain tile, paper map look
-//        https://mts1.google.com/vt/lyrs=h@186112443&hl=x-local&src=app&x=1325&y=3143&z=13&s=Galile
-
-        // Google terrain tile, google maps look, roads different colors depending on road ?
-//        https://mts1.google.com/vt/lyrs=m@186112443&hl=x-local&src=app&x=1325&y=3143&z=13&s=Galile
-
-        // Google terrain tile, elevation, 3Dish look with roads overlaid?
-//        https://mts1.google.com/vt/lyrs=p@186112443&hl=x-local&src=app&x=1325&y=3143&z=13&s=Galile
-
-        // Google terrain tile, elevation, 3Dish look without roads overlaid?
-//        https://mts1.google.com/vt/lyrs=t@186112443&hl=x-local&src=app&x=1325&y=3143&z=13
-
-        // Google terrain tile, google maps all roads white ?
-//        https://mts1.google.com/vt/lyrs=r@186112443&hl=x-local&src=app&x=1325&y=3143&z=13&s=Galile
-
-        // Google satellite tile, no roads ?
-//        https://mts1.google.com/vt/lyrs=s@186112443&hl=x-local&src=app&x=1325&y=3143&z=13&s=Galile
-
-        String googleUrl = "http://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}";
-        OsmProvider googleProvider = new OsmProvider(256, 256, googleUrl);
-        map.addTileOverlay(new TileOverlayOptions().tileProvider(googleProvider).zIndex(20));
-
-        //TODO tilted overlay is not displayed correctly
-        // map.getUiSettings().setTiltGesturesEnabled(false);
-        // TODO rotated overlay is skewed
-        // map.getUiSettings().setRotateGesturesEnabled(false);
-
-        // Create new TileOverlayOptions instance.
-        TileOverlayOptions opts = new TileOverlayOptions();
-        // Set the tile provider to your custom implementation.
-        provider = new ExploredTileProvider(this);
-        opts.fadeIn(false).tileProvider(provider);
-        // Optional. Useful if you have multiple, layered tile providers.
-        opts.zIndex(30);
-
-
-        // Add the tile overlay to the map.
-        topOverlay = map.addTileOverlay(opts);
-
-
-        // Create new TileOverlayOptions instance.
-        TileOverlayOptions opts1 = new TileOverlayOptions();
-
-        opts1.fadeIn(false).tileProvider(provider);
-        // Optional. Useful if you have multiple, layered tile providers.
-        opts1.zIndex(10);
-        bottomOverlay = map.addTileOverlay(opts1);
-
-//
 //        //schedule overlay refresh
 //        Thread timer = new Thread() {
 //            public void run() {
 //                for (; ; ) {
 //                    try {
-//                        Thread.sleep(2000);
+//                        Thread.sleep(200);
 //                    } catch (InterruptedException e) {
 //                        LOGGER.warn("Thread interrupted", e);
 //                    }
-//                    topRefresh.sendEmptyMessage(0);
-//                    try {
-//                        Thread.sleep(2000);
-//                    } catch (InterruptedException e) {
-//                        LOGGER.warn("Thread interrupted", e);
+//                    if (cameraMoved) {
+//                        topRefresh.sendEmptyMessage(0);
 //                    }
-//                    bottomRefresh.sendEmptyMessage(0);
+////                    try {
+////                        Thread.sleep(2000);
+////                    } catch (InterruptedException e) {
+////                        LOGGER.warn("Thread interrupted", e);
+////                    }
+////                    bottomRefresh.sendEmptyMessage(0);
 //
 //                }
 //            }
 //        };
-//
+
 //        timer.start();
 
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar.setLogo(R.drawable.icon);
+        setSupportActionBar(toolbar);
     }
 
 
     private Handler topRefresh = new Handler() {
         public void handleMessage(Message msg) {
-            topOverlay.clearTileCache();
+            redrawOverlay();
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            redrawOverlay();
         }
     };
 
@@ -484,11 +437,42 @@ public class FogOfExplore extends ActionBarActivity {
     @Override
     protected void onResume() {
         super.onResume();
+
+        map.clear();
+
+        String tilesUrl = PreferenceManager.getDefaultSharedPreferences(this)
+                .getString("org.unchiujar.umbra.settings.tile_source", "http://otile2.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.png");
+        CustomUrlProvider provider = new CustomUrlProvider(TILE_SIZE, TILE_SIZE, tilesUrl);
+        map.addTileOverlay(new TileOverlayOptions().tileProvider(provider).zIndex(MIDDLE));
+
+        // Create new TileOverlayOptions instance.
+        TileOverlayOptions opts = new TileOverlayOptions();
+        // Set the tile provider to your custom implementation.
+        this.provider = new ExploredTileProvider(this);
+        opts.fadeIn(false).tileProvider(this.provider);
+        // set the layer in front
+        opts.zIndex(FRONT);
+
+
+        // Add the tile overlay to the map.
+        topOverlay = map.addTileOverlay(opts);
+
+
+        // Create new TileOverlayOptions instance.
+        TileOverlayOptions backOpts = new TileOverlayOptions();
+
+        backOpts.fadeIn(false).tileProvider(this.provider);
+        // set the layer in the back
+        backOpts.zIndex(BACK);
+        bottomOverlay = map.addTileOverlay(backOpts);
+
+
         map.setOnCameraChangeListener(cameraListener);
         mLoadProgress.cancel();
         Log.d(TAG, "onResume completed.");
         // bind to location service
         doBindService();
+        redrawOverlay();
     }
 
     @Override
@@ -606,7 +590,7 @@ public class FogOfExplore extends ActionBarActivity {
 //        OverlayFactory.getInstance(this).setExplored(mRecorder.selectVisited(upperLeft, bottomRight));
 
 
-        provider.setExplored(mRecorder.selectVisited(upperLeft, bottomRight));
+        provider.setExplored(mRecorder.selectVisited(upperLeft, bottomRight), (int) map.getCameraPosition().zoom);
     }
 
 

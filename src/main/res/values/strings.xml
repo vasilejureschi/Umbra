@@ -72,5 +72,7 @@
     <string name="ok">Ok</string>
     <string name="share_file">Share file</string>
     <string name="no">No</string>
+    <string name="tiles_source_summary">Select a source for the map tiles</string>
+    <string name="tiles_source">Map tiles type</string>
 
 </resources>

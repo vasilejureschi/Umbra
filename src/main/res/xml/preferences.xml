@@ -26,6 +26,12 @@
          Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
 -->
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <ListPreference
+            android:key="org.unchiujar.umbra.settings.tile_source"
+            android:title="@string/tiles_source"
+            android:summary="@string/tiles_source_summary"
+            android:entries="@array/map_sources_entries"
+            android:entryValues="@array/map_sources_values"/>
 
     <CheckBoxPreference
             android:id="@+id/check_animate"
@@ -61,14 +67,15 @@
             android:key="org.unchiujar.umbra.settings.transparency"
             android:max="255"
             android:summary="Drag to adjust fog transparency"/>
-    <org.unchiujar.umbra.preferences.FolderSelectPreference
-            android:defaultValue="80"
-            android:key="org.unchiujar.umbra.settings.import_folder"
-            android:summary="Select folder containing GPX tracks."/>
 
     <org.unchiujar.umbra.preferences.ExportDataPreference
             android:defaultValue="80"
             android:key="org.unchiujar.umbra.settings.export_data"
             android:summary="Export data as a GPX track."/>
+
+    <Preference
+            android:defaultValue="80"
+            android:key="org.unchiujar.umbra.settings.import_data"
+            android:summary="Click to import data from a GPX track."/>
 
 </PreferenceScreen>

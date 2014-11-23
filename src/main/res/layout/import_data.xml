@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   This file is part of Umbra.
   
@@ -26,22 +26,19 @@
          Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              android:orientation="vertical"
-              android:id="@+id/fog_of_explore">
+              android:id="@android:id/widget_frame"
+              android:layout_width="fill_parent"
+              android:layout_height="wrap_content"
+              android:paddingBottom="5dp"
+              android:paddingLeft="15dp"
+              android:paddingRight="10dp"
+              android:paddingTop="5dp">
 
-    <android.support.v7.widget.Toolbar
-            android:id="@+id/toolbar"
+
+    <Button
+            android:id="@+id/btn_import_gpx"
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:layout_width="match_parent"
-            android:minHeight="?attr/actionBarSize"
-            android:background="?attr/colorPrimary"/>
-
-    <fragment xmlns:android="http://schemas.android.com/apk/res/android"
-              android:id="@+id/map"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              android:name="com.google.android.gms.maps.MapFragment"/>
-
+            android:text="@string/import_gpx"/>
 </LinearLayout>
+
