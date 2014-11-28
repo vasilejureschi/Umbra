@@ -70,6 +70,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Timer;
 
+import static org.unchiujar.umbra2.R.string.*;
 import static org.unchiujar.umbra2.io.GpxImporter.importGPXFile;
 import static org.unchiujar.umbra2.overlays.ExploredTileProvider.TILE_SIZE;
 import static org.unchiujar.umbra2.utils.LocationUtilities.coordinatesToLocation;
@@ -116,6 +117,7 @@ public class FogOfExplore extends ActionBarActivity {
     public static final int FRONT = 30;
     public static final int BACK = 10;
     public static final int MIDDLE = 20;
+    private static final int RATE_ME_MINIMUM_LAUNCHES = 4;
 
     /**
      * Dialog displayed while loading the explored points at application start.
@@ -295,6 +297,56 @@ public class FogOfExplore extends ActionBarActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         toolbar.setLogo(R.drawable.icon);
         setSupportActionBar(toolbar);
+
+        askForStars();
+    }
+
+    private void askForStars() {
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        // check if we have the do not bother me flag
+        boolean bugMeNot = prefs.getBoolean(getString(prefs_bug_me_not), false);
+        if (bugMeNot) {
+            return;
+        }
+        //check if the user has started the application at least 5 times
+        int launches = prefs.getInt(getString(prefs_number_of_launches), 0);
+
+        if (launches < RATE_ME_MINIMUM_LAUNCHES) {
+            prefs.edit().putInt(getString(prefs_number_of_launches), launches + 1).apply();
+            return;
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(getString(rate_umbra))
+                .setMessage(getString(rate_umbra_message))
+                .setNegativeButton(getString(bug_me_not), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        prefs.edit().putBoolean(getString(prefs_bug_me_not), true).apply();
+                    }
+                })
+                .setNeutralButton(getString(remind_later), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        prefs.edit().putInt(getString(prefs_number_of_launches), 0).apply();
+                    }
+                })
+                .setPositiveButton(getString(rate), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        prefs.edit().putBoolean(getString(prefs_bug_me_not), true).apply();
+                        Uri uri = Uri.parse("market://details?id=" + getPackageName());
+                        Intent goToMarket = new Intent(Intent.ACTION_VIEW, uri);
+                        LOGGER.debug("Created rate intent {}", goToMarket);
+                        try {
+                            startActivity(goToMarket);
+                        } catch (ActivityNotFoundException e) {
+                            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("http://play.google.com/store/apps/details?id="
+                                    + getPackageName())));
+                        }
+                    }
+                });
+        builder.create().show();
     }
 
     private ExploredTileProvider provider;
@@ -327,7 +379,7 @@ public class FogOfExplore extends ActionBarActivity {
 
         progress.setCancelable(false);
         progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-        progress.setMessage(getString(R.string.importing_locations));
+        progress.setMessage(getString(importing_locations));
         progress.show();
 
         Runnable importer = new Runnable() {
@@ -447,20 +499,10 @@ public class FogOfExplore extends ActionBarActivity {
         boolean result = super.onCreateOptionsMenu(menu);
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main, menu);
-        menu.findItem(R.id.settings).setIcon(
-                android.R.drawable.ic_menu_preferences);
-        menu.findItem(R.id.help).setIcon(android.R.drawable.ic_menu_help);
-        menu.findItem(R.id.exit).setIcon(
-                android.R.drawable.ic_menu_close_clear_cancel);
-
         return result;
     }
 
 
-    /*
-* (non-Javadoc)
-* @see android.app.Activity#onOptionsItemSelected(android.view.MenuItem)
-*/
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle item selection
@@ -482,6 +524,17 @@ public class FogOfExplore extends ActionBarActivity {
                 Intent settingsIntent = new Intent(this, Preferences.class);
                 startActivity(settingsIntent);
                 return true;
+            case R.id.share_app:
+
+                Intent sendIntent = new Intent();
+                sendIntent.setAction(Intent.ACTION_SEND);
+                sendIntent.putExtra(Intent.EXTRA_TEXT,
+                        getString(share_app_text));
+                sendIntent.setType("text/plain");
+                startActivity(sendIntent);
+
+                return true;
+
         }
         return super.onOptionsItemSelected(item);
     }
@@ -565,7 +618,7 @@ public class FogOfExplore extends ActionBarActivity {
 
         if (!connected) {
             Toast.makeText(getApplicationContext(),
-                    R.string.connectivity_warning, Toast.LENGTH_LONG).show();
+                    connectivity_warning, Toast.LENGTH_LONG).show();
 
         }
     }
@@ -577,12 +630,12 @@ public class FogOfExplore extends ActionBarActivity {
      */
     private Dialog createGPSDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage(R.string.gps_dialog).setCancelable(false);
+        builder.setMessage(gps_dialog).setCancelable(false);
 
         final AlertDialog alert = builder.create();
 
         alert.setButton(DialogInterface.BUTTON_POSITIVE,
-                getString(R.string.start_gps_btn),
+                getString(start_gps_btn),
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int id) {
@@ -594,7 +647,7 @@ public class FogOfExplore extends ActionBarActivity {
         );
 
         alert.setButton(DialogInterface.BUTTON_NEGATIVE,
-                getString(R.string.continue_no_gps),
+                getString(continue_no_gps),
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int id) {

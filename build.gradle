@@ -14,8 +14,8 @@ android {
     compileSdkVersion 21
     buildToolsVersion "21.1.1"
     defaultConfig {
-        versionCode 100
-        versionName "0.1.00-SNAPSHOT"
+        versionCode 102
+        versionName "0.1.2"
         minSdkVersion 11
         targetSdkVersion 20
     }
@@ -30,6 +30,9 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.release
+        }
+        debug {
+            applicationIdSuffix ".debug"
         }
     }
 

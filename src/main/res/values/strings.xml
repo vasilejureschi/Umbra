@@ -76,5 +76,12 @@
     <string name="import_from_track">Import data from a GPX track.</string>
     <string name="export_as_track">Export data as a GPX track.</string>
     <string name="drag_to_adjust">Drag to adjust fog transparency</string>
+    <string name="share_app">Share this application</string>
+    <string name="share_app_text">Try Umbra : https://play.google.com/store/apps/details?id=org.unchiujar.umbra2</string>
+    <string name="rate_umbra">Rate Umbra</string>
+    <string name="rate_umbra_message">A lot of hours and sleepless nights have been spent writing Umbra. If you find it useful take a moment to rate and comment on Google Play.</string>
+    <string name="bug_me_not">Stop bugging me!</string>
+    <string name="remind_later">Remind me later</string>
+    <string name="rate">Rate</string>
 
 </resources>

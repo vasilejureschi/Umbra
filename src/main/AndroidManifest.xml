@@ -111,8 +111,9 @@
 
         <meta-data
                 android:name="com.google.android.maps.v2.API_KEY"
-                android:value="AIzaSyBnOaTCzzVIwS44ssONvav0eeLh607JUiQ"/>
+                android:value="AIzaSyBPYHF-CkwRiUB2w7F-7prSaWBqNAqoKDo"/>
         <!-- debug key: AIzaSyBnOaTCzzVIwS44ssONvav0eeLh607JUiQ -->
+        <!-- release key: AIzaSyBPYHF-CkwRiUB2w7F-7prSaWBqNAqoKDo -->
     </application>
 
 </manifest>

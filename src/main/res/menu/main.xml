@@ -32,19 +32,29 @@
 
     <item
             android:id="@+id/settings"
+            android:icon="@android:drawable/ic_menu_preferences"
             android:title="@string/settings"
             android:orderInCategory="1"
             app:showAsAction="ifRoom"/>
 
     <item
             android:id="@+id/help"
+            android:icon="@android:drawable/ic_menu_help"
             android:title="@string/help"
             android:orderInCategory="2"
             app:showAsAction="ifRoom"/>
 
     <item
-            android:id="@+id/exit"
-            android:title="@string/exit"
+            android:id="@+id/share_app"
+            android:icon="@android:drawable/ic_menu_share"
+            android:title="@string/share_app"
             android:orderInCategory="3"
+            app:showAsAction="ifRoom"/>
+
+    <item
+            android:id="@+id/exit"
+            android:icon="@android:drawable/ic_menu_close_clear_cancel"
+            android:title="@string/exit"
+            android:orderInCategory="4"
             app:showAsAction="ifRoom"/>
 </menu>
