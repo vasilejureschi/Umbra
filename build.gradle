@@ -17,8 +17,22 @@ android {
         versionCode 100
         versionName "0.1.00-SNAPSHOT"
         minSdkVersion 11
-        targetSdkVersion 21
+        targetSdkVersion 20
     }
+    signingConfigs {
+        release {
+            storeFile file(releaseKeystore)
+            storePassword keystorePassword
+            keyAlias alias
+            keyPassword passwordKey
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+        }
+    }
+
 }
 
 

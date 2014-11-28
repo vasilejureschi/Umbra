@@ -1,5 +1,5 @@
 
-package org.unchiujar.umbra.utils;
+package org.unchiujar.umbra2.utils;
 
 import static org.junit.Assert.assertEquals;
 

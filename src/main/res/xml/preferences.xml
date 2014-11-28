@@ -62,20 +62,20 @@
             android:summaryOff="@string/measurement_imperial"
             android:summaryOn="@string/measurement_metric"
             android:title="@string/measurement_system"/>
-    <org.unchiujar.umbra.preferences.SeekBarPreference
+    <org.unchiujar.umbra2.preferences.SeekBarPreference
             android:defaultValue="80"
             android:key="org.unchiujar.umbra.settings.transparency"
             android:max="255"
-            android:summary="Drag to adjust fog transparency"/>
+            android:summary="@string/drag_to_adjust"/>
 
-    <org.unchiujar.umbra.preferences.ExportDataPreference
+    <org.unchiujar.umbra2.preferences.ExportDataPreference
             android:defaultValue="80"
             android:key="org.unchiujar.umbra.settings.export_data"
-            android:summary="Export data as a GPX track."/>
+            android:summary="@string/export_as_track"/>
 
     <Preference
             android:defaultValue="80"
             android:key="org.unchiujar.umbra.settings.import_data"
-            android:summary="Click to import data from a GPX track."/>
+            android:summary="@string/import_from_track"/>
 
 </PreferenceScreen>

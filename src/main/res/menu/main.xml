@@ -28,7 +28,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
       xmlns:app="http://schemas.android.com/apk/res-auto"
       xmlns:tools="http://schemas.android.com/tools"
-      tools:context="org.unchiujar.umbra.activities.FogOfExplore">
+      tools:context="org.unchiujar.umbra2.activities.FogOfExplore">
 
     <item
             android:id="@+id/settings"
