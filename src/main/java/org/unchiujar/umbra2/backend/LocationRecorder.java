@@ -58,13 +58,11 @@ public class LocationRecorder implements ExploredProvider {
 
     private static final String INSERT = "insert into " + TABLE_NAME + "("
             + LATITUDE + "," + LONGITUDE + ") values (?,?)";
-    private Context mContext;
     private SQLiteDatabase mDatabase;
     private SQLiteStatement mInsertStmt;
 
     public LocationRecorder(Context context) {
-        this.mContext = context;
-        OpenHelper openHelper = new OpenHelper(this.mContext);
+        OpenHelper openHelper = new OpenHelper(context);
         this.mDatabase = openHelper.getWritableDatabase();
         // this.db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
         // openHelper.onCreate(mDatabase);
@@ -117,7 +115,7 @@ public class LocationRecorder implements ExploredProvider {
     public List<ApproximateLocation> selectAll() {
 
         List<ApproximateLocation> list = new ArrayList<ApproximateLocation>();
-        Cursor cursor = this.mDatabase.query(TABLE_NAME, new String[] {
+        Cursor cursor = this.mDatabase.query(TABLE_NAME, new String[]{
                 LATITUDE, LONGITUDE
         }, null, null, null, null, LONGITUDE
                 + " desc");

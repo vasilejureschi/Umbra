@@ -41,12 +41,12 @@ import android.os.*;
 import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.WindowManager;
 import android.widget.Toast;
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
@@ -58,7 +58,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.unchiujar.umbra2.R;
 import org.unchiujar.umbra2.backend.ExploredProvider;
-import org.unchiujar.umbra2.location.ApproximateLocation;
 import org.unchiujar.umbra2.overlays.CustomUrlProvider;
 import org.unchiujar.umbra2.overlays.ExploredTileProvider;
 import org.unchiujar.umbra2.services.LocationService;
@@ -68,12 +67,10 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Timer;
 
 import static org.unchiujar.umbra2.R.string.*;
 import static org.unchiujar.umbra2.io.GpxImporter.importGPXFile;
 import static org.unchiujar.umbra2.overlays.ExploredTileProvider.TILE_SIZE;
-import static org.unchiujar.umbra2.utils.LocationUtilities.coordinatesToLocation;
 
 /**
  * Main activity for Umbra application.
@@ -82,10 +79,6 @@ import static org.unchiujar.umbra2.utils.LocationUtilities.coordinatesToLocation
  * @see LocationService
  */
 public class FogOfExplore extends ActionBarActivity {
-    /**
-     * Logger tag.
-     */
-    private static final String TAG = FogOfExplore.class.getName();
     /**
      * Initial map zoom.
      */
@@ -194,15 +187,16 @@ public class FogOfExplore extends ActionBarActivity {
             switch (msg.what) {
                 case LocationService.MSG_LOCATION_CHANGED:
                     if (msg.obj != null) {
-                        Log.d(TAG, msg.obj.toString());
+                        LOGGER.debug(msg.obj.toString());
 
                         mCurrentLat = ((Location) msg.obj).getLatitude();
                         mCurrentLong = ((Location) msg.obj).getLongitude();
                         mCurrentAccuracy = ((Location) msg.obj).getAccuracy();
+                        // redraw overlay
                         redrawOverlay();
 
                     } else {
-                        Log.d(TAG, "Null object received");
+                        LOGGER.debug("Null object received");
                     }
                     break;
                 default:
@@ -218,7 +212,7 @@ public class FogOfExplore extends ActionBarActivity {
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {
             mService = new Messenger(service);
-            Log.d(TAG, "Location service attached.");
+            LOGGER.debug("Location service attached.");
             // register client
             sendMessage(LocationService.MSG_REGISTER_CLIENT);
             // register interface
@@ -229,17 +223,12 @@ public class FogOfExplore extends ActionBarActivity {
                     : LocationService.MSG_WALK);
         }
 
-        /*
-         * (non-Javadoc)
-         * @see android.content.ServiceConnection#onServiceDisconnected(android.content
-         * .ComponentName)
-         */
         @Override
         public void onServiceDisconnected(ComponentName className) {
             // Called when the connection with the service has been
             // unexpectedly disconnected / process crashed.
             mService = null;
-            Log.d(TAG, "Disconnected from location service");
+            LOGGER.debug("Disconnected from location service");
         }
     };
 
@@ -253,7 +242,7 @@ public class FogOfExplore extends ActionBarActivity {
         @Override
         public void onSharedPreferenceChanged(
                 SharedPreferences sharedPreferences, String key) {
-            Log.d(TAG, "Settings changed :" + sharedPreferences + " " + key);
+            LOGGER.debug("Settings changed :" + sharedPreferences + " " + key);
             mDrive = mSettings.getBoolean(Preferences.DRIVE_MODE, false);
         }
     };
@@ -281,7 +270,7 @@ public class FogOfExplore extends ActionBarActivity {
         map.setOnCameraChangeListener(cameraListener);
         map.setMapType(GoogleMap.MAP_TYPE_NONE);
 
-        Log.d(TAG, "onCreate completed: Activity created");
+        LOGGER.debug("onCreate completed: Activity created");
         mLocationServiceIntent = new Intent(SERVICE_INTENT_NAME);
         startService(mLocationServiceIntent);
 
@@ -299,6 +288,22 @@ public class FogOfExplore extends ActionBarActivity {
         setSupportActionBar(toolbar);
 
         askForStars();
+
+        map.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
+            @Override
+            public void onMyLocationChange(Location location) {
+                boolean updateCamera = PreferenceManager.getDefaultSharedPreferences(FogOfExplore.this).getBoolean("org.unchiujar.umbra.settings.animate", false);
+                if (updateCamera) {
+                    // get current camera info, and update it with the current lat, lng
+                    CameraPosition cameraPosition = map.getCameraPosition();
+                    CameraUpdate cameraUpdate = CameraUpdateFactory.newCameraPosition(new CameraPosition(
+                            new LatLng(location.getLatitude(), location.getLongitude()), cameraPosition.zoom, cameraPosition.tilt, cameraPosition.bearing
+                    ));
+                    map.animateCamera(cameraUpdate);
+                }
+
+            }
+        });
     }
 
     private void askForStars() {
@@ -393,11 +398,11 @@ public class FogOfExplore extends ActionBarActivity {
                     cache.insert(importGPXFile(new FileInputStream(
                             new File(filePath))));
                 } catch (ParserConfigurationException e) {
-                    Log.e(TAG, "Error parsing file", e);
+                    LOGGER.error("Error parsing file", e);
                 } catch (SAXException e) {
-                    Log.e(TAG, "Error parsing file", e);
+                    LOGGER.error("Error parsing file", e);
                 } catch (IOException e) {
-                    Log.e(TAG, "Error reading file", e);
+                    LOGGER.error("Error reading file", e);
                 }
 
                 progress.dismiss();
@@ -438,7 +443,7 @@ public class FogOfExplore extends ActionBarActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        Log.d(TAG, "onStart completed: Activity started");
+        LOGGER.debug("onStart completed: Activity started");
     }
 
     @Override
@@ -448,7 +453,7 @@ public class FogOfExplore extends ActionBarActivity {
 
         map.setOnCameraChangeListener(cameraListener);
         mLoadProgress.cancel();
-        Log.d(TAG, "onResume completed.");
+        LOGGER.debug("onResume completed.");
         // bind to location service
         doBindService();
 
@@ -489,7 +494,7 @@ public class FogOfExplore extends ActionBarActivity {
         // unbind from service as the activity does
         // not display location info (is hidden or stopped)
         doUnbindService();
-        Log.d(TAG, "onPause completed.");
+        LOGGER.debug("onPause completed.");
     }
 
     //    // ================= END LIFECYCLE METHODS ====================
@@ -508,12 +513,12 @@ public class FogOfExplore extends ActionBarActivity {
         // Handle item selection
         switch (item.getItemId()) {
             case R.id.help:
-                Log.d(TAG, "Showing help...");
+                LOGGER.debug("Showing help...");
                 Intent helpIntent = new Intent(this, Help.class);
                 startActivity(helpIntent);
                 return true;
             case R.id.exit:
-                Log.d(TAG, "Exit requested...");
+                LOGGER.debug("Exit requested...");
                 doUnbindService();
                 // cleanup
                 stopService(mLocationServiceIntent);
@@ -562,24 +567,16 @@ public class FogOfExplore extends ActionBarActivity {
         overlaySwitch = !overlaySwitch;
     }
 
-    private Timer timer = new Timer();
-
-
     private void updateExplored() {
         // get the coordinates of the visible area
         LatLng farLeft = map.getProjection().getVisibleRegion().farLeft;
         LatLng nearRight = map.getProjection().getVisibleRegion().nearRight;
 
-
-        final ApproximateLocation upperLeft = coordinatesToLocation(farLeft);
-
-        final ApproximateLocation bottomRight = coordinatesToLocation(nearRight);
         // TODO - optimization get points for rectangle only if a zoom out
         // or a pan action occurred - ie new points come into view
 
         // update the overlay with the currently visible explored area
 //        OverlayFactory.getInstance(this).setExplored(mRecorder.selectVisited(upperLeft, bottomRight));
-
 
 //        provider.setExplored(mRecorder.selectVisited(upperLeft, bottomRight), (int) map.getCameraPosition().zoom);
         provider.setExplored(mRecorder.selectAll(), (int) map.getCameraPosition().zoom);
@@ -658,16 +655,6 @@ public class FogOfExplore extends ActionBarActivity {
         return alert;
     }
 
-//    /*
-//     * (non-Javadoc)
-//     * @see com.google.android.maps.MapActivity#isRouteDisplayed()
-//     */
-//    @Override
-//    protected boolean isRouteDisplayed() {
-//        return false;
-//    }
-//
-
     /**
      * Binds to the location service. Called when the activity becomes visible.
      */
@@ -675,7 +662,7 @@ public class FogOfExplore extends ActionBarActivity {
         bindService(mLocationServiceIntent, mConnection,
                 Context.BIND_AUTO_CREATE);
         mIsBound = true;
-        Log.d(TAG, "Binding to location service");
+        LOGGER.debug("Binding to location service");
     }
 
     /**
@@ -691,7 +678,7 @@ public class FogOfExplore extends ActionBarActivity {
             // Detach our existing connection.
             unbindService(mConnection);
             mIsBound = false;
-            Log.d(TAG, "Unbinding map from location service.");
+            LOGGER.debug("Unbinding map from location service.");
         }
     }
 

@@ -33,7 +33,8 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.location.Location;
 import android.os.*;
-import android.util.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.unchiujar.umbra2.location.ApproximateLocation;
 import org.unchiujar.umbra2.location.LocationOrder;
 import org.unchiujar.umbra2.services.LocationService;
@@ -41,7 +42,6 @@ import org.unchiujar.umbra2.services.LocationService;
 import java.util.*;
 
 public class VisitedAreaCache implements ExploredProvider {
-    private static final String TAG = VisitedAreaCache.class.getName();
     /**
      * The interval between database updates.
      */
@@ -50,10 +50,10 @@ public class VisitedAreaCache implements ExploredProvider {
      * The maximum number of entries in the cache's TreeSet. UNUSED
      */
     private static final int MAX_CACHE_SIZE = 2000;
+    private static final Logger LOGGER = LoggerFactory.getLogger(VisitedAreaCache.class);
 
     private int mPreviousSize = 0;
 
-    private TimerTask mUpdateDb;
     private Timer mUpdateTimer;
 
     /**
@@ -73,15 +73,6 @@ public class VisitedAreaCache implements ExploredProvider {
     private TreeSet<ApproximateLocation> mNewLocations = new TreeSet<ApproximateLocation>(
             new LocationOrder());
 
-    /**
-     * Upper left bound of mCached rectangle area.
-     */
-    private ApproximateLocation mUpperLeftBoundCached;
-
-    /**
-     * Lower right bound of mCached rectangle area.
-     */
-    private ApproximateLocation mLowerRightBoundCached;
     private Context mContext;
     private boolean mCached = false;
 
@@ -95,13 +86,12 @@ public class VisitedAreaCache implements ExploredProvider {
         recorder = new LocationRecorder(context);
         // create database update task to be run
         // at UPDATE_TIME intervals
-        mUpdateDb = new TimerTask() {
+        TimerTask mUpdateDb = new TimerTask() {
 
             @Override
             public void run() {
                 if (mDirty) {
-                    Log.d(TAG, "Updating database with " + mNewLocations.size()
-                            + " new mLocations...");
+                    LOGGER.debug("Updating database with  {} new locations ", mNewLocations.size());
                     // TODO lame list creation
                     ArrayList<ApproximateLocation> addedLocations = new ArrayList<ApproximateLocation>();
                     for (ApproximateLocation location : mNewLocations) {
@@ -109,13 +99,13 @@ public class VisitedAreaCache implements ExploredProvider {
                     }
                     recorder.insert(addedLocations);
 
-                    Log.d(TAG, "Database update completed.");
+                    LOGGER.debug("Database update completed.");
                     // reset mDirty cache flag
                     mDirty = false;
                     // clear the TreeSet containing mLocations
                     mNewLocations.clear();
                 } else {
-                    Log.d(TAG, "No new location added, no update needed.");
+                    LOGGER.debug("No new location added, no update needed.");
                 }
             }
 
@@ -146,7 +136,7 @@ public class VisitedAreaCache implements ExploredProvider {
         if (mLocations.size() != mPreviousSize) {
             // add the location to the database update treeset
             mNewLocations.add(location);
-            Log.d(TAG, "Unsaved mLocations: " + mNewLocations.size());
+            LOGGER.debug("Unsaved mLocations: {}", mNewLocations.size());
             mDirty = true;
             mPreviousSize = mLocations.size();
         }
@@ -168,28 +158,23 @@ public class VisitedAreaCache implements ExploredProvider {
 
     private void cacheDatabaseInMemory() {
         if (!mCached) {
-            Log.d(TAG, "Loading all visited points form database...");
+            LOGGER.debug("Loading all visited points form database...");
             // TODO find a better method
             // cache the entire database
             mLocations.addAll(recorder.selectAll());
             mCached = true;
-            Log.d(TAG, "Loaded " + mLocations.size() + " points.");
+            LOGGER.debug("Loaded {} points", mLocations.size());
 
         }
     }
 
-    /*
-     * (non-Javadoc)
-     * @see org.unchiujar.umbra.LocationProvider#selectVisited(org.unchiujar.umbra
-     * .ApproximateLocation , org.unchiujar.umbra.ApproximateLocation)
-     */
     @Override
     public List<ApproximateLocation> selectVisited(
             ApproximateLocation upperLeft, ApproximateLocation lowerRight) {
         cacheDatabaseInMemory();
         ArrayList<ApproximateLocation> visited = new ArrayList<ApproximateLocation>(
                 mLocations.subSet(upperLeft, lowerRight));
-        Log.d(TAG, "Returning  " + visited.size() + "  mCached results");
+        LOGGER.debug("Returning {}  cached results", visited.size());
         return visited;
     }
 
@@ -212,17 +197,17 @@ public class VisitedAreaCache implements ExploredProvider {
                 case 9000:
                     if (msg.obj != null) {
                         Location location = (Location) msg.obj;
-                        Log.d(TAG, location.toString());
+                        LOGGER.debug("Location received", location);
 
                         if (location.getAccuracy() < LocationOrder.METERS_RADIUS * 5) {
                             // record to database
                             long size = insert(new ApproximateLocation(location));
-                            Log.d(TAG, "New tree size is :" + size);
+                            LOGGER.debug("New tree size is {}", size);
 
                         }
 
                     } else {
-                        Log.d(TAG, "@@@@ Null object received");
+                        LOGGER.debug("@@@@ Null object received");
                     }
                     break;
                 default:
@@ -247,7 +232,7 @@ public class VisitedAreaCache implements ExploredProvider {
             // service through an IDL interface, so get a client-side
             // representation of that from the raw service object.
             mService = new Messenger(service);
-            Log.d(TAG, "Client Attached.");
+            LOGGER.debug("Client Attached.");
 
             // We want to monitor the service for as long as we are
             // connected to it.
@@ -258,7 +243,7 @@ public class VisitedAreaCache implements ExploredProvider {
             // This is called when the connection with the service has been
             // unexpectedly disconnected -- that is, its process crashed.
             mService = null;
-            Log.d(TAG, "Disconnected from location service");
+            LOGGER.debug("Disconnected from location service");
         }
     };
 
@@ -266,7 +251,7 @@ public class VisitedAreaCache implements ExploredProvider {
         mContext.bindService(mLocationServiceIntent, mConnection,
                 Context.BIND_AUTO_CREATE);
         mIsBound = true;
-        Log.d(TAG, "Binding to location service");
+        LOGGER.debug("Binding to location service");
     }
 
     private void doUnbindService() {
@@ -280,7 +265,7 @@ public class VisitedAreaCache implements ExploredProvider {
             // Detach our existing connection.
             mContext.unbindService(mConnection);
             mIsBound = false;
-            Log.d(TAG, "Unbinding cache from location service.");
+            LOGGER.debug("Unbinding cache from location service.");
         }
     }
 

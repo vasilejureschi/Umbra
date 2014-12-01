@@ -40,7 +40,8 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.*;
 import android.support.v4.app.NotificationCompat;
-import android.util.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.unchiujar.umbra2.R;
 import org.unchiujar.umbra2.activities.FogOfExplore;
 import org.unchiujar.umbra2.location.LocationOrder;
@@ -49,10 +50,8 @@ import java.util.ArrayList;
 
 public class LocationService extends Service {
     private static final int APPLICATION_ID = 1241241;
+    private static final Logger LOGGER = LoggerFactory.getLogger(LocationService.class);
     private NotificationManager notificationManager;
-
-    private static final String TAG = LocationService.class.getName();
-
     public static final String MOVEMENT_UPDATE = "org.unchiujar.umbra.MOVEMENT_UPDATE";
 
     public static final String LATITUDE = "org.unchiujar.umbra.LocationService.LATITUDE";
@@ -130,7 +129,7 @@ public class LocationService extends Service {
 
         @Override
         public void onLocationChanged(Location location) {
-            Log.d(TAG, "Sending fine fast location :" + location);
+            LOGGER.debug("Sending fine fast location : {}", location);
             // send the location before doing any other work
             sendLocation(location);
             // only start the algorithm if the app is running in the background
@@ -157,7 +156,7 @@ public class LocationService extends Service {
     };
 
     private void sendLocation(Location location) {
-        Log.d(TAG, "Location changed: " + location);
+        LOGGER.debug("Location changed: {}", location);
         for (int i = mClients.size() - 1; i >= 0; i--) {
 
             try {
@@ -179,7 +178,7 @@ public class LocationService extends Service {
         try {
             mMessenger.send(message);
         } catch (RemoteException e) {
-            Log.e(TAG, "Error sending location", e);
+            LOGGER.error("Error sending location", e);
         }
 
     }
@@ -188,10 +187,10 @@ public class LocationService extends Service {
 
     @Override
     public void onCreate() {
-        Log.d(TAG, "On create");
+        LOGGER.debug("On create");
         super.onCreate();
         displayRunningNotification();
-        Log.d(TAG, "Location manager set up.");
+        LOGGER.debug("Location manager set up.");
 
         mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
@@ -207,19 +206,19 @@ public class LocationService extends Service {
 
     @Override
     public void onDestroy() {
-        Log.d(TAG, "On destroy");
+        LOGGER.debug("On destroy");
         super.onDestroy();
         // stop listening for power events
         unregisterReceiver(receiver);
 
         mLocationManager.removeUpdates(mFine);
         notificationManager.cancel(APPLICATION_ID);
-        Log.d(TAG, "Service on destroy called.");
+        LOGGER.debug("Service on destroy called.");
     }
 
     @Override
     public boolean onUnbind(Intent intent) {
-        Log.d(TAG, "Unbind called.");
+        LOGGER.debug("Unbind called.");
         return super.onUnbind(intent);
     }
 
@@ -258,14 +257,14 @@ public class LocationService extends Service {
 
         @Override
         public void handleMessage(Message msg) {
-            Log.d(TAG, "Message received:" + msg.what);
+            LOGGER.debug("Message received: {}", msg.what);
             switch (msg.what) {
                 case MSG_WALK:
-                    Log.d(TAG, "Walk message received.");
+                    LOGGER.debug("Walk message received.");
                     mWalking = true;
                     break;
                 case MSG_DRIVE:
-                    Log.d(TAG, "Drive message received.");
+                    LOGGER.debug("Drive message received.");
                     mWalking = false;
                     break;
                 case MSG_UNREGISTER_CLIENT:
@@ -274,27 +273,27 @@ public class LocationService extends Service {
                 case MSG_UNREGISTER_INTERFACE:
                     // remove client
                     mClients.remove(msg.replyTo);
-                    Log.d(TAG, "Setting the service to off screen state.");
+                    LOGGER.debug("Setting the service to off screen state.");
                     // if the power is connected do not change the
                     // the location update frequency
                     if (mPowerConnected) {
-                        Log.d(TAG, "Power is connected, not changing location update frequency");
+                        LOGGER.debug("Power is connected, not changing location update frequency");
                         break;
                     }
                     setOffScreenState();
                     break;
                 case MSG_REGISTER_INTERFACE:
-                    Log.d(TAG, "Setting the service to on screen state.");
+                    LOGGER.debug("Setting the service to on screen state.");
                     // if the power is connected do not change the
                     // the location update frequency
                     if (mPowerConnected) {
-                        Log.d(TAG, "Power is connected, not changing location update frequency");
+                        LOGGER.debug("Power is connected, not changing location update frequency");
                         break;
                     }
                     setOnScreeState();
                     break;
                 case MSG_REGISTER_CLIENT:
-                    Log.d(TAG, "Registering new client.");
+                    LOGGER.debug("Registering new client.");
                     mClients.add(msg.replyTo);
                     break;
                 default:
@@ -380,8 +379,7 @@ public class LocationService extends Service {
             // if the backoff interval has not increased to the max value
             // double the interval
             // need in order not to grow the backoff interval indefinitely
-            Log.d(TAG, "Location requests stopped and will be started in "
-                    + mBackoffTime + " milliseconds.");
+            LOGGER.debug("Location requests stopped and will be started in  {} milliseconds", mBackoffTime);
 
             if (mBackoffTime < MAX_BACKOFF_INTERVAL) {
                 mBackoffTime *= 2;
@@ -398,8 +396,7 @@ public class LocationService extends Service {
 
         @Override
         public void run() {
-            Log.d(TAG, "Location requests started and will be stopped in "
-                    + LOCATION_SEARCH_DURATON + " milliseconds.");
+            LOGGER.debug("Location requests started and will be stopped in {} milliseconds", LOCATION_SEARCH_DURATON);
 
             mLocationManager.requestLocationUpdates(
                     LocationManager.GPS_PROVIDER,
@@ -414,32 +411,32 @@ public class LocationService extends Service {
     private volatile boolean mBackoffStarted;
 
     /**
-     * Restarts the entire backoff algorithm. Called everytime we have a location fix.
+     * Restarts the entire backoff algorithm. Called every time we have a location fix.
      */
     private void restartBackoff() {
-        Log.d(TAG, "Restarting backoff handler, last backoff time was "
-                + mBackoffTime);
+        LOGGER.debug("Restarting backoff handler, last backoff time was {}"
+                , mBackoffTime);
         stopBackoff();
         mBackoffStarted = true;
 
         // post a request to stop the location updates but give a chance to the
         // location listeners to get a location and restart the backoff
         // algorithm again
-        Log.d(TAG,
-                "Initial backoff stop listener request. The updates will be stopped in "
-                        + mBackoffTime * 2 + " milliseconds.");
-        mBackoffHandler.postDelayed(stopLocationRequest, mBackoffTime * 2);
+        long actualBackoff = mBackoffTime * 2;
+        LOGGER.debug("Initial backoff stop listener request. The updates will be stopped in  {} milliseconds",
+                actualBackoff);
+        mBackoffHandler.postDelayed(stopLocationRequest, actualBackoff);
     }
 
     /**
      * Stop the exponential backoff algorithm.
      */
     private void stopBackoff() {
-        Log.d(TAG, "Stopping backoff last backoff time was " + mBackoffTime);
+        LOGGER.debug("Stopping backoff last backoff time was {}", mBackoffTime);
         mBackoffTime = mWalking ? WALK_UPDATE_INTERVAL * 2
                 : DRIVE_UPDATE_INTERVAL * 2;
         mBackoffStarted = false;
-        Log.d(TAG, "Backoff time reset to  " + mBackoffTime);
+        LOGGER.debug("Backoff time reset to  {}", mBackoffTime);
         // remove any runnables from backoff handler
         mBackoffHandler.removeCallbacks(startLocationRequests);
         mBackoffHandler.removeCallbacks(stopLocationRequest);
@@ -478,13 +475,12 @@ public class LocationService extends Service {
             String action = intent.getAction();
 
             if (action.equals(Intent.ACTION_POWER_CONNECTED)) {
-                Log.d(TAG,
-                        "Power connected, increasing location frequency update.");
+
+                LOGGER.debug("Power connected, increasing location frequency update.");
                 setOnScreeState();
                 mPowerConnected = true;
             } else if (action.equals(Intent.ACTION_POWER_DISCONNECTED)) {
-                Log.d(TAG,
-                        "Power disconnected, restoring location frequency update.");
+                LOGGER.debug("Power disconnected, restoring location frequency update.");
                 mPowerConnected = false;
                 PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
                 // if we received a power disconnected event and the screen is off then
