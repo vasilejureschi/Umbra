@@ -53,6 +53,8 @@ public class GpxImporter extends DefaultHandler {
     private static final String TAG_TIME = "time";
     private static final String TAG_TRACK = "trk";
     private static final String TAG_TRACK_POINT = "trkpt";
+    //    <wpt lat="51.31488000" lon="6.714700000">
+    private static final String TAG_WAYPOINT = "wpt";
 
     private static final Object TAG_TRACK_SEGMENT = "trkseg";
     private static final String ATT_LAT = "lat";
@@ -77,7 +79,6 @@ public class GpxImporter extends DefaultHandler {
     private Location lastLocationInSegment;
 
     private static List<ApproximateLocation> locations = new LinkedList<ApproximateLocation>();
-    private int elementsLoaded;
 
     /**
      * Reads GPS tracks from a GPX file and writes tracks and their coordinates to the database.
@@ -132,12 +133,44 @@ public class GpxImporter extends DefaultHandler {
             isInTrackElement = true;
             trackChildDepth = 0;
             onTrackElementStart();
+        } else if (localName.equals(TAG_WAYPOINT)) {
+            LOGGER.debug("Waypoint element found with attributes {}", attributes);
+            onWaypointStart(attributes);
         }
+    }
+
+    private void onWaypointStart(Attributes attributes) throws SAXException {
+        String latitude = attributes.getValue(ATT_LAT);
+        String longitude = attributes.getValue(ATT_LON);
+
+        if (latitude == null || longitude == null) {
+            throw new SAXException(
+                    createErrorMessage("Point with no longitude or latitude."));
+        }
+        double latitudeValue;
+        double longitudeValue;
+        try {
+            latitudeValue = Double.parseDouble(latitude);
+            longitudeValue = Double.parseDouble(longitude);
+        } catch (NumberFormatException e) {
+            throw new SAXException(
+                    createErrorMessage("Unable to parse latitude/longitude: "
+                            + latitude + "/" + longitude), e
+            );
+        }
+
+        location = createNewLocation(latitudeValue, longitudeValue, -1L);
     }
 
     @Override
     public void endElement(String uri, String localName, String name)
             throws SAXException {
+        LOGGER.debug("End element is {}, uri {}", localName, uri);
+        if (localName.equals(TAG_WAYPOINT)) {
+            onWaypointEnd();
+            return;
+        }
+
         if (!isInTrackElement) {
             content = null;
             return;
@@ -170,6 +203,24 @@ public class GpxImporter extends DefaultHandler {
 
         // reset element content
         content = null;
+    }
+
+    private void onWaypointEnd() throws SAXException {
+        LOGGER.debug("Waypoint done.");
+        persistLocation();
+    }
+
+    private void persistLocation() throws SAXException {
+        LOGGER.debug("Saving location {}", location);
+        if (!isValidLocation(location)) {
+            throw new SAXException(
+                    createErrorMessage("Invalid location detected: " + location));
+        }
+
+        // insert into cache
+        locations.add(new ApproximateLocation(location));
+        lastLocationInSegment = location;
+        location = null;
     }
 
     @Override
@@ -225,8 +276,6 @@ public class GpxImporter extends DefaultHandler {
      */
     private void onTrackPointElementStart(Attributes attributes)
             throws SAXException {
-        LOGGER.debug("Loaded elements " + elementsLoaded);
-        elementsLoaded = 0;
         if (location != null) {
             throw new SAXException(
                     createErrorMessage("Found a track point inside another one."));
@@ -257,16 +306,7 @@ public class GpxImporter extends DefaultHandler {
      * On track point element end.
      */
     private void onTrackPointElementEnd() throws SAXException {
-        if (!isValidLocation(location)) {
-            throw new SAXException(
-                    createErrorMessage("Invalid location detected: " + location));
-        }
-
-        // insert into cache
-        locations.add(new ApproximateLocation(location));
-        elementsLoaded++;
-        lastLocationInSegment = location;
-        location = null;
+        persistLocation();
     }
 
     /**

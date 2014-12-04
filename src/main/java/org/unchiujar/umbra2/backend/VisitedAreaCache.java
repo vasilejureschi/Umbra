@@ -45,7 +45,7 @@ public class VisitedAreaCache implements ExploredProvider {
     /**
      * The interval between database updates.
      */
-    private static final long UPDATE_INTERVAL = 30 * 1000;
+    private static final long UPDATE_INTERVAL = 10 * 1000;
     /**
      * The maximum number of entries in the cache's TreeSet. UNUSED
      */
@@ -70,8 +70,8 @@ public class VisitedAreaCache implements ExploredProvider {
     /**
      * TreeSet used to keep new locations between database updates.
      */
-    private TreeSet<ApproximateLocation> mNewLocations = new TreeSet<ApproximateLocation>(
-            new LocationOrder());
+    private SortedSet<ApproximateLocation> mNewLocations = Collections.synchronizedSortedSet(new TreeSet<ApproximateLocation>(
+            new LocationOrder()));
 
     private Context mContext;
     private boolean mCached = false;
@@ -95,9 +95,9 @@ public class VisitedAreaCache implements ExploredProvider {
                     // TODO lame list creation
                     ArrayList<ApproximateLocation> addedLocations = new ArrayList<ApproximateLocation>();
                     for (ApproximateLocation location : mNewLocations) {
-                        addedLocations.add(location);
+                        recorder.insert(location);
                     }
-                    recorder.insert(addedLocations);
+//                    recorder.insert(addedLocations);
 
                     LOGGER.debug("Database update completed.");
                     // reset mDirty cache flag
