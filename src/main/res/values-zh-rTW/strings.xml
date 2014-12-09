@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  This file is part of Umbra.
+  
+      Umbra is free software: you can redistribute it and/or modify
+      it under the terms of the GNU General Public License as published by
+      the Free Software Foundation, either version 3 of the License, or
+      (at your option) any later version.
+  
+      Umbra is distributed in the hope that it will be useful,
+      but WITHOUT ANY WARRANTY; without even the implied warranty of
+      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+      GNU General Public License for more details.
+  
+      You should have received a copy of the GNU General Public License
+      along with Umbra.  If not, see <http://www.gnu.org/licenses/>.
+  
+      Copyright (c) 2011 vasile.
+      All rights reserved. This program and the accompanying materials
+      are made available under the terms of the GNU Public License v3.0
+      which accompanies this distribution, and is available at
+      
+     http://www.gnu.org/licenses/gpl-3.0.html
+  
+      Contributors:
+         Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
+-->
+<resources>
+
+    <string name="where_am_i">我在哪裡?</string>
+    <string name="help">幫助</string>
+    <string name="settings">設定</string>
+    <string name="exit">離開</string>
+    <string name="app_name">Umbra</string>
+    <string name="running">執行中，請按這裡顯示</string>
+    <string name="gps_dialog">This application needs a GPS fix to run properly.</string>
+    <string name="start_gps_btn">Start GPS</string>
+    <string name="continue_no_gps">繼續</string>
+    <string name="connectivity_warning">因為網路的問題無法下載地圖，請開啟3G/4G行動通訊網路或wifi連線</string>
+    <string name="help_text">Umbra是一個以戰爭迷霧(Fog Of War)為概念的探索應用策略遊戲。
+    地圖上還沒有被探索的區域會被灰暗的顏色覆蓋，
+    當探索過後就會顯現出來，此應用需要GPS定位以便精準標示</string>
+    <string name="feedback_text">透過email給我回饋或建議</string>
+    <string name="feedback_email">vasile.jureschi@gmail.com</string>
+    <string name="email_subject">Umbra回饋</string>
+    <string name="email_body">Complain here :)</string>
+    <string name="email_chooser">Send email using:</string>
+    <string name="transparency_label">設定迷霧透明度</string>
+    <string name="measurement_metric">英制單位(打勾),公制單位(沒有打勾)</string>
+    <string name="measurement_imperial">公制單位(沒有打勾),英制單位(打勾)</string>
+    <string name="animate_move">手動移動地圖,打勾改成地圖自動把自己訂位在螢幕中心</string>
+    <string name="animate_none">打勾改成地圖自動把自己訂位在螢幕中心,取消打勾改成手動移動地圖</string>
+    <string name="updates_car">步行移動模式,打勾改成汽車移動模式</string>
+    <string name="updates_walk">汽車移動模式,取消打勾改成步行移動模式</string>
+    <string name="remote_service_started">Location service started</string>
+    <string name="remote_service_connected">Connected to location service</string>
+    <string name="remote_service_disconnected">Disconnected from location service</string>
+    <string name="load">載入</string>
+    <string name="import_locations">Import locations</string>
+    <string name="import_gpx">匯入資料</string>
+    <string name="export_gpx">匯出資料</string>
+    <string name="select_gpx_folder">選擇GPX檔案存放的目錄</string>
+    <string name="importing_locations">資料匯入中,請稍候…</string>
+    <string name="measurement_system">Measurement system</string>
+    <string name="map_movement">Map movement</string>
+    <string name="location_updates_frequency">更新頻率</string>
+    <string name="exporting_locations">資料匯出中,請稍候....</string>
+    <string name="share_data">分享Umbra資料</string>
+    <string name="ok">OK</string>
+    <string name="share_file">分享檔案</string>
+    <string name="no">No</string>
+    <string name="tiles_source_summary">選擇地圖來源</string>
+    <string name="tiles_source">地圖來源</string>
+    <string name="import_from_track">匯入GPX track資料檔</string>
+    <string name="export_as_track">匯出GPX track資料檔</string>
+    <string name="drag_to_adjust">拖曳調整迷霧透明度</string>
+    <string name="share_app">分享這個程式</string>
+    <string name="share_app_text">Try Umbra : https://play.google.com/store/apps/details?id=org.unchiujar.umbra2</string>
+    <string name="rate_umbra">給Umbra評分</string>
+    <string name="rate_umbra_message">我花了無數的時間與犧牲睡眂時間熬夜來製做Umbra.如果您覺得喜歡這個軟體，請在Google Play給我評價.</string>
+    <string name="bug_me_not">Stop bugging me!</string>
+    <string name="remind_later">稍候</string>
+    <string name="rate">評分</string>
+
+</resources>
