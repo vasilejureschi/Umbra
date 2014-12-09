@@ -5,7 +5,7 @@
         </encoder>
     </appender>
 
-    <root level="INFO">
+    <root level="ERROR">
         <appender-ref ref="logcat"/>
     </root>
 </configuration>

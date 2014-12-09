@@ -4,7 +4,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.13.2'
+        classpath 'com.android.tools.build:gradle:0.14.2'
     }
 }
 
@@ -49,7 +49,7 @@ dependencies {
 
     compile 'com.android.support:support-v4:21.0.2'
     compile 'com.android.support:appcompat-v7:21.0.2'
-    compile 'com.google.android.gms:play-services:4.2.42'
+    compile 'com.google.android.gms:play-services:6.5.87'
     compile 'com.google.maps.android:android-maps-utils:0.3.3'
     compile 'org.roboguice:roboguice:2.0'
     compile 'com.j256.ormlite:ormlite-android:4.42'
