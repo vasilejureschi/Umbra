@@ -174,9 +174,10 @@ public class FogOfExplore extends ActionBarActivity {
         public void onCameraChange(CameraPosition cameraPosition) {
             //if we are only zooming in then do nothing, the topOverlay will be scaled automatically
             updateExplored();
+            redrawOverlay();
         }
     };
-    private boolean overlaySwitch = true;
+    private boolean overlaySwitch = false;
 
     /**
      * Handler of incoming messages from service.
@@ -255,7 +256,6 @@ public class FogOfExplore extends ActionBarActivity {
         mSettings = PreferenceManager.getDefaultSharedPreferences(this);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         mLoadProgress = ProgressDialog.show(this, "", "Loading. Please wait...", true);
-        loadFileFromIntent();
 
         mSettings.registerOnSharedPreferenceChangeListener(mPrefListener);
         setContentView(R.layout.main);
@@ -269,6 +269,8 @@ public class FogOfExplore extends ActionBarActivity {
         map.setMyLocationEnabled(true);
         map.setOnCameraChangeListener(cameraListener);
         map.setMapType(GoogleMap.MAP_TYPE_NONE);
+        map.getUiSettings().setZoomControlsEnabled(false);
+        map.getUiSettings().setCompassEnabled(false);
 
         LOGGER.debug("onCreate completed: Activity created");
         mLocationServiceIntent = new Intent(SERVICE_INTENT_NAME);
@@ -413,6 +415,11 @@ public class FogOfExplore extends ActionBarActivity {
     }
 
     @Override
+    protected void onNewIntent(Intent intent) {
+        setIntent(intent);
+    }
+
+    @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         // restore accuracy and coordinates from saved state
         mCurrentAccuracy = savedInstanceState.getDouble(BUNDLE_ACCURACY);
@@ -449,8 +456,7 @@ public class FogOfExplore extends ActionBarActivity {
     @Override
     protected void onResume() {
         super.onResume();
-
-
+        loadFileFromIntent();
         map.setOnCameraChangeListener(cameraListener);
         mLoadProgress.cancel();
         LOGGER.debug("onResume completed.");
@@ -563,7 +569,6 @@ public class FogOfExplore extends ActionBarActivity {
             bottomOverlay.setZIndex(BACK);
             bottomOverlay.clearTileCache();
         }
-
         overlaySwitch = !overlaySwitch;
     }
 
