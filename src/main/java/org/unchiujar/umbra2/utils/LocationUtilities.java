@@ -23,7 +23,9 @@
  *
  *     Contributors:
  *        Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
+ *        Yen-Liang, Shen - Simplified Chinese and Traditional Chinese translations
  ******************************************************************************/
+
 
 package org.unchiujar.umbra2.utils;
 

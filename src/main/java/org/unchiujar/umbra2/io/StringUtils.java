@@ -1,4 +1,3 @@
-
 package org.unchiujar.umbra2.io;
 
 /*
@@ -17,6 +16,12 @@ package org.unchiujar.umbra2.io;
  * the License.
  */
 
+import android.content.Context;
+import android.text.Html;
+import android.text.Spanned;
+import android.text.TextUtils;
+import android.text.format.DateUtils;
+
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -25,15 +30,9 @@ import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import android.content.Context;
-import android.text.Html;
-import android.text.Spanned;
-import android.text.TextUtils;
-import android.text.format.DateUtils;
-
 /**
  * Various string manipulation methods.
- * 
+ *
  * @author Sandor Dornbush
  * @author Rodrigo Damazio
  */
@@ -45,6 +44,7 @@ public class StringUtils {
             "yyyy-MM-dd'T'HH:mm:ss");
     private static final Pattern ISO_8601_EXTRAS = Pattern
             .compile("^(\\.\\d+)?(?:Z|([+-])(\\d{2}):(\\d{2}))?$");
+
     static {
         ISO_8601_DATE_TIME_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
         ISO_8601_BASE.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -55,23 +55,23 @@ public class StringUtils {
 
     /**
      * Formats the date and time based on user's phone date/time preferences.
-     * 
+     *
      * @param context the context
-     * @param time the time in milliseconds
+     * @param time    the time in milliseconds
      */
     public static String formatDateTime(Context context, long time) {
         return android.text.format.DateFormat.getDateFormat(context).format(
                 time)
                 + " "
                 + DateUtils.formatDateTime(context, time,
-                        DateUtils.FORMAT_SHOW_TIME).toString();
+                DateUtils.FORMAT_SHOW_TIME);
     }
 
     /**
      * Formats the relative date and time based on user's phone date/time preferences.
-     * 
+     *
      * @param context the context
-     * @param time the time in milliseconds
+     * @param time    the time in milliseconds
      */
     public static String formatRelativeDateTime(Context context, long time) {
         long now = Calendar.getInstance().getTimeInMillis();
@@ -87,7 +87,7 @@ public class StringUtils {
     /**
      * Formats the time using the ISO 8601 date time format with fractional seconds in UTC time
      * zone.
-     * 
+     *
      * @param time the time in milliseconds
      */
     public static String formatDateTimeIso8601(long time) {
@@ -96,7 +96,7 @@ public class StringUtils {
 
     /**
      * Formats the elapsed timed in the form "MM:SS" or "H:MM:SS".
-     * 
+     *
      * @param time the time in milliseconds
      */
     public static String formatElapsedTime(long time) {
@@ -105,7 +105,7 @@ public class StringUtils {
 
     /**
      * Formats the elapsed time in the form "H:MM:SS".
-     * 
+     *
      * @param time the time in milliseconds
      */
     public static String formatElapsedTimeWithHour(long time) {
@@ -116,7 +116,7 @@ public class StringUtils {
     /**
      * Formats the given text as a XML CDATA element. This includes adding the starting and ending
      * CDATA tags. Please notice that this may result in multiple consecutive CDATA tags.
-     * 
+     *
      * @param text the given text
      */
     public static String formatCData(String text) {
@@ -126,7 +126,7 @@ public class StringUtils {
     /**
      * Gets the time, in milliseconds, from an XML date time string as defined at
      * http://www.w3.org/TR/xmlschema-2/#dateTime
-     * 
+     *
      * @param xmlDateTime the XML date time string
      */
     public static long getTime(String xmlDateTime) {
@@ -192,7 +192,7 @@ public class StringUtils {
     /**
      * Gets the time as an array of three integers. Index 0 contains the number of seconds, index 1
      * contains the number of minutes, and index 2 contains the number of hours.
-     * 
+     *
      * @param time the time in milliseconds
      * @return an array of 3 elements.
      */
@@ -216,13 +216,13 @@ public class StringUtils {
 
     /**
      * Gets the html.
-     * 
-     * @param context the context
-     * @param resId the string resource id
+     *
+     * @param context    the context
+     * @param resId      the string resource id
      * @param formatArgs the string resource ids of the format arguments
      */
     public static Spanned getHtml(Context context, int resId,
-            Object... formatArgs) {
+                                  Object... formatArgs) {
         Object[] args = new Object[formatArgs.length];
         for (int i = 0; i < formatArgs.length; i++) {
             String url = context.getString((Integer) formatArgs[i]);

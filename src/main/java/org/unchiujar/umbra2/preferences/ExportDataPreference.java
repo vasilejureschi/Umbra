@@ -23,7 +23,9 @@
  *
  *     Contributors:
  *        Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
+ *        Yen-Liang, Shen - Simplified Chinese and Traditional Chinese translations
  ******************************************************************************/
+
 
 package org.unchiujar.umbra2.preferences;
 
@@ -124,7 +126,7 @@ public class ExportDataPreference extends Preference {
             int noOfLocations = locations.size();
             LOGGER.debug("Loaded {} locations from database .", noOfLocations);
             progress.setMax(noOfLocations);
-            GpxExporter exporter = new GpxExporter(mContext);
+            GpxExporter exporter = new GpxExporter();
 
             File sdcard = Environment.getExternalStorageDirectory();
             try {

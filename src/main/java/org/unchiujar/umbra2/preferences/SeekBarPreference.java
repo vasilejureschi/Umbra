@@ -23,7 +23,9 @@
  *
  *     Contributors:
  *        Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
+ *        Yen-Liang, Shen - Simplified Chinese and Traditional Chinese translations
  ******************************************************************************/
+
 
 package org.unchiujar.umbra2.preferences;
 
@@ -83,7 +85,7 @@ public class SeekBarPreference extends Preference implements
         LayoutInflater mInflater = (LayoutInflater) getContext()
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
-        return mInflater.inflate(R.xml.seek_transparency,
+        return mInflater.inflate(R.layout.seek_transparency,
                 parent, false);
 
     }

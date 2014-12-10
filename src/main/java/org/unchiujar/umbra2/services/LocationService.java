@@ -23,7 +23,9 @@
  *
  *     Contributors:
  *        Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
+ *        Yen-Liang, Shen - Simplified Chinese and Traditional Chinese translations
  ******************************************************************************/
+
 
 package org.unchiujar.umbra2.services;
 
@@ -107,7 +109,7 @@ public class LocationService extends Service {
     /**
      * Location search duration.
      */
-    private static final long LOCATION_SEARCH_DURATON = 30 * 1000;
+    private static final long LOCATION_SEARCH_DURATION = 30 * 1000;
     /**
      * The maximum duration the location listeners should be put to sleep.
      */
@@ -390,13 +392,13 @@ public class LocationService extends Service {
 
     /**
      * Starts the location updates and post a request to stop them using
-     * {@link #stopLocationRequest} after {@link #LOCATION_SEARCH_DURATON} interval.
+     * {@link #stopLocationRequest} after {@link #LOCATION_SEARCH_DURATION} interval.
      */
     private Runnable startLocationRequests = new Runnable() {
 
         @Override
         public void run() {
-            LOGGER.debug("Location requests started and will be stopped in {} milliseconds", LOCATION_SEARCH_DURATON);
+            LOGGER.debug("Location requests started and will be stopped in {} milliseconds", LOCATION_SEARCH_DURATION);
 
             mLocationManager.requestLocationUpdates(
                     LocationManager.GPS_PROVIDER,
@@ -405,7 +407,7 @@ public class LocationService extends Service {
             // stop location requests after we waited for the location search
             // duration
             mBackoffHandler.postDelayed(stopLocationRequest,
-                    LOCATION_SEARCH_DURATON);
+                    LOCATION_SEARCH_DURATION);
         }
     };
     private volatile boolean mBackoffStarted;

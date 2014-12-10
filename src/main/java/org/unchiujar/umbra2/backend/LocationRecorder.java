@@ -1,38 +1,33 @@
 /*******************************************************************************
  * This file is part of Umbra.
- * 
+ *
  *     Umbra is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     Umbra is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Umbra.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     Copyright (c) 2011 Vasile Jureschi <vasile.jureschi@gmail.com>.
  *     All rights reserved. This program and the accompanying materials
  *     are made available under the terms of the GNU Public License v3.0
  *     which accompanies this distribution, and is available at
- *     
+ *
  *    http://www.gnu.org/licenses/gpl-3.0.html
- * 
+ *
  *     Contributors:
  *        Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
+ *        Yen-Liang, Shen - Simplified Chinese and Traditional Chinese translations
  ******************************************************************************/
 
+
 package org.unchiujar.umbra2.backend;
-
-import static org.unchiujar.umbra2.utils.LogUtilities.numberLogList;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import org.unchiujar.umbra2.location.ApproximateLocation;
 
 import android.content.Context;
 import android.database.Cursor;
@@ -41,6 +36,12 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
 import android.util.Log;
+import org.unchiujar.umbra2.location.ApproximateLocation;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.unchiujar.umbra2.utils.LogUtilities.numberLogList;
 
 public class LocationRecorder implements ExploredProvider {
     private static final String TAG = LocationRecorder.class.getName();
@@ -80,7 +81,7 @@ public class LocationRecorder implements ExploredProvider {
                 DATABASE_NAME
                         + "Inserted latitude and longitude: "
                         + numberLogList(location.getLatitude(),
-                                location.getLongitude()));
+                        location.getLongitude()));
 
         return index;
     }
@@ -92,16 +93,16 @@ public class LocationRecorder implements ExploredProvider {
         int latitudeIndex = batchInserter.getColumnIndex(LATITUDE);
         int longitudeIndex = batchInserter.getColumnIndex(LONGITUDE);
 
-        for (ApproximateLocation aproximateLocation : locations) {
+        for (ApproximateLocation approximateLocation : locations) {
             batchInserter.prepareForInsert();
-            batchInserter.bind(latitudeIndex, aproximateLocation.getLatitude());
+            batchInserter.bind(latitudeIndex, approximateLocation.getLatitude());
             batchInserter.bind(longitudeIndex,
-                    aproximateLocation.getLongitude());
+                    approximateLocation.getLongitude());
             batchInserter.execute();
             Log.d(TAG,
                     "Batch inserted latitude and longitude: "
-                            + numberLogList(aproximateLocation.getLatitude(),
-                                    aproximateLocation.getLongitude()));
+                            + numberLogList(approximateLocation.getLatitude(),
+                            approximateLocation.getLongitude()));
 
         }
         batchInserter.close();
@@ -152,7 +153,7 @@ public class LocationRecorder implements ExploredProvider {
                 + latitudeMax;
 
         Log.v(TAG, "Select condition is " + condition);
-        Cursor cursor = this.mDatabase.query(TABLE_NAME, new String[] {
+        Cursor cursor = this.mDatabase.query(TABLE_NAME, new String[]{
                 LATITUDE, LONGITUDE
         }, condition, null, null, null, LATITUDE
                 + " desc");
@@ -199,9 +200,9 @@ public class LocationRecorder implements ExploredProvider {
                             // success = upgradeToVersion2(mDatabase);
                             break;
                         case 3:
-                            // success = upgrateToVersion3(mDatabase);
+                            // success = upgradeToVersion3(mDatabase);
                             break;
-                    // etc. for later versions.
+                        // etc. for later versions.
                     }
                     if (!success) {
                         break;

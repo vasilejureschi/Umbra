@@ -23,6 +23,7 @@
  *
  *     Contributors:
  *        Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
+ *        Yen-Liang, Shen - Simplified Chinese and Traditional Chinese translations
  ******************************************************************************/
 
 package org.unchiujar.umbra2.backend;
@@ -134,7 +135,7 @@ public class VisitedAreaCache implements ExploredProvider {
         // set mDirty cache flag if an actual location was
         // inserted in the tree, checks by tree size
         if (mLocations.size() != mPreviousSize) {
-            // add the location to the database update treeset
+            // add the location to the database update tree set
             mNewLocations.add(location);
             LOGGER.debug("Unsaved mLocations: {}", mNewLocations.size());
             mDirty = true;

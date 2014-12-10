@@ -24,6 +24,7 @@
   
       Contributors:
          Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
+        Yen-Liang, Shen - Simplified Chinese and Traditional Chinese translations
 -->
 <resources>
 
@@ -31,18 +32,18 @@
     <string name="help">帮助</string>
     <string name="settings">设定</string>
     <string name="exit">离开</string>
-    <string name="app_name">Umbra</string>
+    <string name="app_name">暗影</string>
     <string name="running">执行中，请按这里显示</string>
     <string name="gps_dialog">This application needs a GPS fix to run properly.</string>
     <string name="start_gps_btn">Start GPS</string>
     <string name="continue_no_gps">继续</string>
     <string name="connectivity_warning">因为网路的问题无法下载地图，请开启3G/4G行动通讯网路或wifi连线</string>
-    <string name="help_text">Umbra是一个以战争迷雾(Fog Of War)为概念的探索应用策略游戏。
+    <string name="help_text">暗影是一个以战争迷雾(Fog Of War)为概念的探索应用策略游戏。
     地图上还没有被探索的区域会被灰暗的颜色覆盖，
     当探索过后就会显现出来，此应用需要GPS定位以便精准标示</string>
     <string name="feedback_text">透过email给我回馈或建议</string>
     <string name="feedback_email">vasile.jureschi@gmail.com</string>
-    <string name="email_subject">Umbra回馈</string>
+    <string name="email_subject">暗影回馈</string>
     <string name="email_body">Complain here :)</string>
     <string name="email_chooser">Send email using:</string>
     <string name="transparency_label">设定迷雾透明度</string>
@@ -65,7 +66,7 @@
     <string name="map_movement">Map movement</string>
     <string name="location_updates_frequency">更新频率</string>
     <string name="exporting_locations">资料汇出中,请稍候....</string>
-    <string name="share_data">分享Umbra资料</string>
+    <string name="share_data">分享暗影资料</string>
     <string name="ok">OK</string>
     <string name="share_file">分享档案</string>
     <string name="no">No</string>
@@ -75,8 +76,8 @@
     <string name="export_as_track">汇出GPX track资料档</string>
     <string name="drag_to_adjust">拖曳调整迷雾透明度</string>
     <string name="share_app">分享这个程式</string>
-    <string name="share_app_text">Try Umbra : https://play.google.com/store/apps/details?id=org.unchiujar.umbra2</string>
-    <string name="rate_umbra">给Umbra评分</string>
+    <string name="share_app_text">Try 暗影 : https://play.google.com/store/apps/details?id=org.unchiujar.umbra2</string>
+    <string name="rate_umbra">给暗影评分</string>
     <string name="rate_umbra_message">我花了无数的时间与牺牲睡眂时间熬夜来制做Umbra.如果您觉得喜欢这个软体，请在Google Play给我评价.</string>
     <string name="bug_me_not">Stop bugging me!</string>
     <string name="remind_later">稍候</string>
