@@ -56,6 +56,8 @@ public class Preferences extends PreferenceActivity {
     public static final String MEASUREMENT_SYSTEM = "org.unchiujar.umbra.settings.measurement";
     public static final String ANIMATE = "org.unchiujar.umbra.settings.animate";
     public static final String DRIVE_MODE = "org.unchiujar.umbra.settings.update_mode";
+    public static final String IMPORT_DATA = "org.unchiujar.umbra.settings.import_data";
+    public static final String FULLSCREEN = "org.unchiujar.umbra.settings.fullscreen";
 
     private static final int READ_REQUEST_CODE = 42;
     private static final Logger LOGGER = LoggerFactory.getLogger(Preferences.class);
@@ -64,7 +66,7 @@ public class Preferences extends PreferenceActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         addPreferencesFromResource(R.xml.preferences);
-        Preference preference = findPreference("org.unchiujar.umbra.settings.import_data");
+        Preference preference = findPreference(IMPORT_DATA);
         preference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             @Override
             public boolean onPreferenceClick(Preference preference) {
@@ -124,9 +126,7 @@ public class Preferences extends PreferenceActivity {
                 try {
                     cache.insert(GpxImporter.importGPXFile(new FileInputStream(
                             new File(filePath))));
-                } catch (ParserConfigurationException e) {
-                    LOGGER.error("Error parsing file", e);
-                } catch (SAXException e) {
+                } catch (ParserConfigurationException | SAXException e) {
                     LOGGER.error("Error parsing file", e);
                 } catch (IOException e) {
                     LOGGER.error("Error reading file", e);

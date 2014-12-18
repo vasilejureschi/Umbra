@@ -63,6 +63,18 @@
             android:summaryOff="@string/measurement_imperial"
             android:summaryOn="@string/measurement_metric"
             android:title="@string/measurement_system"/>
+
+    <CheckBoxPreference
+        android:id="@+id/fullscreen"
+        android:layout_width="fill_parent"
+        android:layout_height="0dip"
+        android:layout_margin="10dp"
+        android:key="org.unchiujar.umbra.settings.fullscreen"
+        android:summaryOff="@string/fullscreen_off"
+        android:summaryOn="@string/fullscreen_on"
+        android:title="@string/fullscreen"/>
+
+
     <org.unchiujar.umbra2.preferences.SeekBarPreference
             android:defaultValue="80"
             android:key="org.unchiujar.umbra.settings.transparency"

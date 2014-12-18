@@ -84,5 +84,8 @@
     <string name="bug_me_not">Stop bugging me!</string>
     <string name="remind_later">Remind me later</string>
     <string name="rate">Rate</string>
+    <string name="fullscreen_off">Check to display only the map. Use the menu button to access the settings again if you need to disable fullscreen mode.</string>
+    <string name="fullscreen_on">Uncheck to display the Action Bar.</string>
+    <string name="fullscreen">Fullscreen mode</string>
 
 </resources>

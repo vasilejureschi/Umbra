@@ -33,21 +33,33 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.FragmentManager;
 import android.app.ProgressDialog;
-import android.content.*;
+import android.content.ActivityNotFoundException;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
-import android.os.*;
-import android.preference.PreferenceManager;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.WindowManager;
 import android.widget.Toast;
+
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -56,6 +68,7 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.TileOverlay;
 import com.google.android.gms.maps.model.TileOverlayOptions;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.unchiujar.umbra2.R;
@@ -65,12 +78,32 @@ import org.unchiujar.umbra2.overlays.ExploredTileProvider;
 import org.unchiujar.umbra2.services.LocationService;
 import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-import static org.unchiujar.umbra2.R.string.*;
+import javax.xml.parsers.ParserConfigurationException;
+
+import hugo.weaving.DebugLog;
+
+import static android.preference.PreferenceManager.getDefaultSharedPreferences;
+import static android.view.MenuItem.*;
+import static android.view.View.*;
+import static org.unchiujar.umbra2.R.string.bug_me_not;
+import static org.unchiujar.umbra2.R.string.connectivity_warning;
+import static org.unchiujar.umbra2.R.string.continue_no_gps;
+import static org.unchiujar.umbra2.R.string.gps_dialog;
+import static org.unchiujar.umbra2.R.string.importing_locations;
+import static org.unchiujar.umbra2.R.string.prefs_bug_me_not;
+import static org.unchiujar.umbra2.R.string.prefs_number_of_launches;
+import static org.unchiujar.umbra2.R.string.rate;
+import static org.unchiujar.umbra2.R.string.rate_umbra;
+import static org.unchiujar.umbra2.R.string.rate_umbra_message;
+import static org.unchiujar.umbra2.R.string.remind_later;
+import static org.unchiujar.umbra2.R.string.share_app_text;
+import static org.unchiujar.umbra2.R.string.start_gps_btn;
+import static org.unchiujar.umbra2.activities.Preferences.DRIVE_MODE;
+import static org.unchiujar.umbra2.activities.Preferences.FULLSCREEN;
 import static org.unchiujar.umbra2.io.GpxImporter.importGPXFile;
 import static org.unchiujar.umbra2.overlays.ExploredTileProvider.TILE_SIZE;
 
@@ -81,6 +114,10 @@ import static org.unchiujar.umbra2.overlays.ExploredTileProvider.TILE_SIZE;
  * @see LocationService
  */
 public class FogOfExplore extends ActionBarActivity {
+    public static final int FRONT = Integer.MAX_VALUE;
+    public static final int BACK = 0;
+    public static final int MIDDLE = Integer.MAX_VALUE / 2;
+    public static final String TILE_SOURCE = "org.unchiujar.umbra.settings.tile_source";
     /**
      * Initial map zoom.
      */
@@ -101,7 +138,6 @@ public class FogOfExplore extends ActionBarActivity {
      * Constant used for saving the zoom level between screen rotations.
      */
     private static final String BUNDLE_ZOOM = "org.unchiujar.umbra.zoom";
-
     /**
      * Intent named used for starting the location service
      *
@@ -109,23 +145,21 @@ public class FogOfExplore extends ActionBarActivity {
      */
     private static final String SERVICE_INTENT_NAME = "org.com.unchiujar.LocationService";
     private static final Logger LOGGER = LoggerFactory.getLogger(FogOfExplore.class);
-    public static final int FRONT = 30;
-    public static final int BACK = 10;
-    public static final int MIDDLE = 20;
     private static final int RATE_ME_MINIMUM_LAUNCHES = 4;
-
+    /**
+     * Target we publish for clients to send messages to IncomingHandler.
+     */
+    private final Messenger mMessenger = new Messenger(new IncomingHandler());
     /**
      * Dialog displayed while loading the explored points at application start.
      */
     private ProgressDialog mLoadProgress;
-
     /**
      * Location service intent.
      *
      * @see LocationService
      */
     private Intent mLocationServiceIntent;
-
     /**
      * Source for obtaining explored area information.
      */
@@ -142,7 +176,6 @@ public class FogOfExplore extends ActionBarActivity {
      * Current location accuracy . Updated on every location change.
      */
     private double mCurrentAccuracy;
-
     /**
      * Flag signaling if the user is walking or driving. It is passed to the location service in
      * order to change location update frequency.
@@ -150,64 +183,24 @@ public class FogOfExplore extends ActionBarActivity {
      * @see LocationService
      */
     private boolean mDrive;
+    /**
+     * Drive or walk preference listener. A listener is necessary for this option as the location
+     * service needs to be notified of the change in order to change location update frequency. The
+     * preference is sent when the activity comes into view and rebinds to the location service.
+     */
+    private SharedPreferences.OnSharedPreferenceChangeListener mPrefListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
 
+        @Override
+        public void onSharedPreferenceChanged(
+                SharedPreferences sharedPreferences, String key) {
+            LOGGER.debug("Settings changed :" + sharedPreferences + " " + key);
+            mDrive = mSettings.getBoolean(DRIVE_MODE, false);
+        }
+    };
     /**
      * Messenger for communicating with service.
      */
     private Messenger mService = null;
-    /**
-     * Flag indicating whether we have called bind on the service.
-     */
-    private boolean mIsBound;
-
-    /**
-     * Target we publish for clients to send messages to IncomingHandler.
-     */
-    private final Messenger mMessenger = new Messenger(new IncomingHandler());
-
-    private SharedPreferences mSettings;
-
-    private GoogleMap map;
-
-
-    private GoogleMap.OnCameraChangeListener cameraListener = new GoogleMap.OnCameraChangeListener() {
-
-        @Override
-        public void onCameraChange(CameraPosition cameraPosition) {
-            //if we are only zooming in then do nothing, the topOverlay will be scaled automatically
-            updateExplored();
-            redrawOverlay();
-        }
-    };
-    private boolean overlaySwitch = false;
-
-    /**
-     * Handler of incoming messages from service.
-     */
-    private class IncomingHandler extends Handler {
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case LocationService.MSG_LOCATION_CHANGED:
-                    if (msg.obj != null) {
-                        LOGGER.debug(msg.obj.toString());
-
-                        mCurrentLat = ((Location) msg.obj).getLatitude();
-                        mCurrentLong = ((Location) msg.obj).getLongitude();
-                        mCurrentAccuracy = ((Location) msg.obj).getAccuracy();
-                        // redraw overlay
-                        redrawOverlay();
-
-                    } else {
-                        LOGGER.debug("Null object received");
-                    }
-                    break;
-                default:
-                    super.handleMessage(msg);
-            }
-        }
-    }
-
     /**
      * Class for interacting with the main interface of the service.
      */
@@ -234,28 +227,34 @@ public class FogOfExplore extends ActionBarActivity {
             LOGGER.debug("Disconnected from location service");
         }
     };
-
     /**
-     * Drive or walk preference listener. A listener is necessary for this option as the location
-     * service needs to be notified of the change in order to change location update frequency. The
-     * preference is sent when the activity comes into view and rebinds to the location service.
+     * Flag indicating whether we have called bind on the service.
      */
-    private SharedPreferences.OnSharedPreferenceChangeListener mPrefListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+    private boolean mIsBound;
+    private SharedPreferences mSettings;
+    private GoogleMap map;
+    private GoogleMap.OnCameraChangeListener cameraListener = new GoogleMap.OnCameraChangeListener() {
 
         @Override
-        public void onSharedPreferenceChanged(
-                SharedPreferences sharedPreferences, String key) {
-            LOGGER.debug("Settings changed :" + sharedPreferences + " " + key);
-            mDrive = mSettings.getBoolean(Preferences.DRIVE_MODE, false);
+        public void onCameraChange(CameraPosition cameraPosition) {
+            //if we are only zooming in then do nothing, the topOverlay will be scaled automatically
+            updateExplored();
+            wiggleLayers();
         }
     };
+    private boolean overlaySwitch = false;
+    private TileOverlayOptions mapOverlay;
+    private ExploredTileProvider provider;
 
     // ==================== LIFECYCLE METHODS ====================
+    private TileOverlay topOverlay;
+    private TileOverlay bottomOverlay;
+    private Menu menu;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mSettings = PreferenceManager.getDefaultSharedPreferences(this);
+        mSettings = getDefaultSharedPreferences(this);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         mLoadProgress = ProgressDialog.show(this, "", "Loading. Please wait...", true);
 
@@ -296,7 +295,7 @@ public class FogOfExplore extends ActionBarActivity {
         map.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
             @Override
             public void onMyLocationChange(Location location) {
-                boolean updateCamera = PreferenceManager.getDefaultSharedPreferences(FogOfExplore.this).getBoolean("org.unchiujar.umbra.settings.animate", false);
+                boolean updateCamera = getDefaultSharedPreferences(FogOfExplore.this).getBoolean("org.unchiujar.umbra.settings.animate", false);
                 if (updateCamera) {
                     // get current camera info, and update it with the current lat, lng
                     CameraPosition cameraPosition = map.getCameraPosition();
@@ -311,7 +310,7 @@ public class FogOfExplore extends ActionBarActivity {
     }
 
     private void askForStars() {
-        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        final SharedPreferences prefs = getDefaultSharedPreferences(this);
         // check if we have the do not bother me flag
         boolean bugMeNot = prefs.getBoolean(getString(prefs_bug_me_not), false);
         if (bugMeNot) {
@@ -357,10 +356,6 @@ public class FogOfExplore extends ActionBarActivity {
                 });
         builder.create().show();
     }
-
-    private ExploredTileProvider provider;
-    private TileOverlay topOverlay;
-    private TileOverlay bottomOverlay;
 
     /**
      * Loads a gpx data from a file path sent through an intent.
@@ -458,6 +453,20 @@ public class FogOfExplore extends ActionBarActivity {
     @Override
     protected void onResume() {
         super.onResume();
+
+        boolean fullScreen = getDefaultSharedPreferences(this).getBoolean(FULLSCREEN, false);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+
+        toolbar.setVisibility(fullScreen? GONE: VISIBLE);
+        int action = fullScreen? SHOW_AS_ACTION_NEVER: SHOW_AS_ACTION_IF_ROOM;
+
+        if (menu !=null) {
+            menu.findItem(R.id.settings).setShowAsAction(action);
+            menu.findItem(R.id.help).setShowAsAction(action);
+            menu.findItem(R.id.exit).setShowAsAction(action);
+            menu.findItem(R.id.share_app).setShowAsAction(action);
+        }
+
         loadFileFromIntent();
         map.setOnCameraChangeListener(cameraListener);
         mLoadProgress.cancel();
@@ -467,10 +476,11 @@ public class FogOfExplore extends ActionBarActivity {
 
         map.clear();
 
-        String tilesUrl = PreferenceManager.getDefaultSharedPreferences(this)
-                .getString("org.unchiujar.umbra.settings.tile_source", "http://otile2.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.png");
+        String tilesUrl = getDefaultSharedPreferences(this)
+                .getString(TILE_SOURCE, "http://otile2.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.png");
         CustomUrlProvider provider = new CustomUrlProvider(TILE_SIZE, TILE_SIZE, tilesUrl);
-        map.addTileOverlay(new TileOverlayOptions().tileProvider(provider).zIndex(MIDDLE));
+        mapOverlay = new TileOverlayOptions().tileProvider(provider).zIndex(MIDDLE);
+        map.addTileOverlay(mapOverlay);
 
         // Create new TileOverlayOptions instance.
         TileOverlayOptions opts = new TileOverlayOptions();
@@ -496,6 +506,7 @@ public class FogOfExplore extends ActionBarActivity {
         redrawOverlay();
     }
 
+
     @Override
     protected void onPause() {
         super.onPause();
@@ -505,16 +516,24 @@ public class FogOfExplore extends ActionBarActivity {
         LOGGER.debug("onPause completed.");
     }
 
-    //    // ================= END LIFECYCLE METHODS ====================
+    @Override
+    @DebugLog
+    public boolean onPrepareOptionsMenu(Menu menu) {
+
+        return super.onPrepareOptionsMenu(menu);
+    }
 
     @Override
+    @DebugLog
     public boolean onCreateOptionsMenu(Menu menu) {
         boolean result = super.onCreateOptionsMenu(menu);
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main, menu);
+        this.menu = menu;
         return result;
     }
 
+    //    // ================= END LIFECYCLE METHODS ====================
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -552,26 +571,37 @@ public class FogOfExplore extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
-
     /**
      * Updates the current location and calls an overlay redraw.
      */
     private void redrawOverlay() {
         updateExplored();
-//        topOverlay.clearTileCache();
 
         if (!overlaySwitch) {
             bottomOverlay.setZIndex(FRONT);
             topOverlay.setZIndex(BACK);
             topOverlay.clearTileCache();
         } else {
-
-//        bottomOverlay.clearTileCache();
             topOverlay.setZIndex(FRONT);
             bottomOverlay.setZIndex(BACK);
             bottomOverlay.clearTileCache();
         }
         overlaySwitch = !overlaySwitch;
+    }
+
+    /**
+     * Rearrange layers, fixes, Google maps redraw fuckup.
+     */
+    private void wiggleLayers() {
+        if (overlaySwitch) {
+            bottomOverlay.setZIndex(FRONT);
+            mapOverlay.zIndex(MIDDLE);
+            topOverlay.setZIndex(BACK);
+        } else {
+            topOverlay.setZIndex(FRONT);
+            mapOverlay.zIndex(MIDDLE);
+            bottomOverlay.setZIndex(BACK);
+        }
     }
 
     private void updateExplored() {
@@ -589,7 +619,6 @@ public class FogOfExplore extends ActionBarActivity {
         provider.setExplored(mRecorder.selectAll(), (int) map.getCameraPosition().zoom);
 
     }
-
 
     /**
      * Checks GPS and network connectivity. Displays a dialog asking the user to start the GPS if
@@ -701,6 +730,33 @@ public class FogOfExplore extends ActionBarActivity {
             // has crashed.
         }
 
+    }
+
+    /**
+     * Handler of incoming messages from service.
+     */
+    private class IncomingHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case LocationService.MSG_LOCATION_CHANGED:
+                    if (msg.obj != null) {
+                        LOGGER.debug(msg.obj.toString());
+
+                        mCurrentLat = ((Location) msg.obj).getLatitude();
+                        mCurrentLong = ((Location) msg.obj).getLongitude();
+                        mCurrentAccuracy = ((Location) msg.obj).getAccuracy();
+                        // redraw overlay
+                        redrawOverlay();
+
+                    } else {
+                        LOGGER.debug("Null object received");
+                    }
+                    break;
+                default:
+                    super.handleMessage(msg);
+            }
+        }
     }
 
 }
