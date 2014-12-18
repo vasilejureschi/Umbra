@@ -454,18 +454,7 @@ public class FogOfExplore extends ActionBarActivity {
     protected void onResume() {
         super.onResume();
 
-        boolean fullScreen = getDefaultSharedPreferences(this).getBoolean(FULLSCREEN, false);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-
-        toolbar.setVisibility(fullScreen? GONE: VISIBLE);
-        int action = fullScreen? SHOW_AS_ACTION_NEVER: SHOW_AS_ACTION_IF_ROOM;
-
-        if (menu !=null) {
-            menu.findItem(R.id.settings).setShowAsAction(action);
-            menu.findItem(R.id.help).setShowAsAction(action);
-            menu.findItem(R.id.exit).setShowAsAction(action);
-            menu.findItem(R.id.share_app).setShowAsAction(action);
-        }
+        configureToolbar();
 
         loadFileFromIntent();
         map.setOnCameraChangeListener(cameraListener);
@@ -506,6 +495,21 @@ public class FogOfExplore extends ActionBarActivity {
         redrawOverlay();
     }
 
+    private void configureToolbar() {
+        boolean fullScreen = getDefaultSharedPreferences(this).getBoolean(FULLSCREEN, false);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+
+        toolbar.setVisibility(fullScreen? GONE: VISIBLE);
+        int action = fullScreen? SHOW_AS_ACTION_NEVER: SHOW_AS_ACTION_IF_ROOM;
+
+        if (menu !=null) {
+            menu.findItem(R.id.settings).setShowAsAction(action);
+            menu.findItem(R.id.help).setShowAsAction(action);
+            menu.findItem(R.id.exit).setShowAsAction(action);
+            menu.findItem(R.id.share_app).setShowAsAction(action);
+        }
+    }
+
 
     @Override
     protected void onPause() {
@@ -518,18 +522,12 @@ public class FogOfExplore extends ActionBarActivity {
 
     @Override
     @DebugLog
-    public boolean onPrepareOptionsMenu(Menu menu) {
-
-        return super.onPrepareOptionsMenu(menu);
-    }
-
-    @Override
-    @DebugLog
     public boolean onCreateOptionsMenu(Menu menu) {
         boolean result = super.onCreateOptionsMenu(menu);
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main, menu);
         this.menu = menu;
+        configureToolbar();
         return result;
     }
 
