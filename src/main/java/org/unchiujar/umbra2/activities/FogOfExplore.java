@@ -504,7 +504,10 @@ public class FogOfExplore extends ActionBarActivity {
         fullscreenButton.setVisibility(fullScreen ? VISIBLE:GONE);
 
         int action = fullScreen? SHOW_AS_ACTION_NEVER: SHOW_AS_ACTION_IF_ROOM;
+        configureToolbarOnFullscreenChange(action);
+    }
 
+    private void configureToolbarOnFullscreenChange(int action) {
         if (menu != null) {
             menu.findItem(R.id.settings).setShowAsAction(action);
             menu.findItem(R.id.help).setShowAsAction(action);
@@ -523,14 +526,7 @@ public class FogOfExplore extends ActionBarActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         toolbar.setVisibility(VISIBLE);
 
-        int action = SHOW_AS_ACTION_IF_ROOM;
-        if (menu != null) {
-            menu.findItem(R.id.settings).setShowAsAction(action);
-            menu.findItem(R.id.help).setShowAsAction(action);
-            menu.findItem(R.id.exit).setShowAsAction(action);
-            menu.findItem(R.id.share_app).setShowAsAction(action);
-        }
-
+        configureToolbarOnFullscreenChange(SHOW_AS_ACTION_IF_ROOM);
     }
 
     @Override
