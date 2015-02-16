@@ -24,9 +24,9 @@
   
       Contributors:
          Vasile Jureschi <vasile.jureschi@gmail.com> - initial API and implementation
-        Yen-Liang, Shen - Simplified Chinese and Traditional Chinese translations
+         Yen-Liang, Shen - Simplified Chinese and Traditional Chinese translations
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:orientation="vertical"
@@ -43,6 +43,18 @@
               android:id="@+id/map"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
+              android:layout_below="@id/toolbar"
               android:name="com.google.android.gms.maps.MapFragment"/>
-
-</LinearLayout>
+    <ImageButton
+        android:id="@+id/fullscreen"
+        android:layout_width="?attr/actionBarSize"
+        android:layout_height="?attr/actionBarSize"
+        android:layout_alignEnd="@id/map"
+        android:layout_alignRight="@id/map"
+        android:layout_alignBottom="@id/map"
+        android:src="@android:drawable/ic_menu_revert"
+        android:layout_margin="10dp"
+        android:visibility="gone"
+        android:onClick="disableFullscreen"
+     />
+</RelativeLayout>

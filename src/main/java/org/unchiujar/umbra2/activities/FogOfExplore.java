@@ -58,6 +58,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdate;
@@ -92,6 +93,7 @@ import static android.view.View.*;
 import static org.unchiujar.umbra2.R.string.bug_me_not;
 import static org.unchiujar.umbra2.R.string.connectivity_warning;
 import static org.unchiujar.umbra2.R.string.continue_no_gps;
+import static org.unchiujar.umbra2.R.string.fullscreen;
 import static org.unchiujar.umbra2.R.string.gps_dialog;
 import static org.unchiujar.umbra2.R.string.importing_locations;
 import static org.unchiujar.umbra2.R.string.prefs_bug_me_not;
@@ -143,7 +145,7 @@ public class FogOfExplore extends ActionBarActivity {
      *
      * @see LocationService
      */
-    private static final String SERVICE_INTENT_NAME = "org.com.unchiujar.LocationService";
+    private static final String SERVICE_INTENT_NAME = "org.com.unchiujar.umbra2.LocationService";
     private static final Logger LOGGER = LoggerFactory.getLogger(FogOfExplore.class);
     private static final int RATE_ME_MINIMUM_LAUNCHES = 4;
     /**
@@ -193,7 +195,7 @@ public class FogOfExplore extends ActionBarActivity {
         @Override
         public void onSharedPreferenceChanged(
                 SharedPreferences sharedPreferences, String key) {
-            LOGGER.debug("Settings changed :" + sharedPreferences + " " + key);
+            LOGGER.debug("Settings changed {} key {}", sharedPreferences, key);
             mDrive = mSettings.getBoolean(DRIVE_MODE, false);
         }
     };
@@ -396,9 +398,7 @@ public class FogOfExplore extends ActionBarActivity {
                 try {
                     cache.insert(importGPXFile(new FileInputStream(
                             new File(filePath))));
-                } catch (ParserConfigurationException e) {
-                    LOGGER.error("Error parsing file", e);
-                } catch (SAXException e) {
+                } catch (ParserConfigurationException | SAXException e) {
                     LOGGER.error("Error parsing file", e);
                 } catch (IOException e) {
                     LOGGER.error("Error reading file", e);
@@ -498,11 +498,14 @@ public class FogOfExplore extends ActionBarActivity {
     private void configureToolbar() {
         boolean fullScreen = getDefaultSharedPreferences(this).getBoolean(FULLSCREEN, false);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-
         toolbar.setVisibility(fullScreen? GONE: VISIBLE);
+
+        ImageButton fullscreenButton = (ImageButton) findViewById(R.id.fullscreen);
+        fullscreenButton.setVisibility(fullScreen ? VISIBLE:GONE);
+
         int action = fullScreen? SHOW_AS_ACTION_NEVER: SHOW_AS_ACTION_IF_ROOM;
 
-        if (menu !=null) {
+        if (menu != null) {
             menu.findItem(R.id.settings).setShowAsAction(action);
             menu.findItem(R.id.help).setShowAsAction(action);
             menu.findItem(R.id.exit).setShowAsAction(action);
@@ -510,6 +513,25 @@ public class FogOfExplore extends ActionBarActivity {
         }
     }
 
+    public void disableFullscreen(View v){
+        // hide self
+        v.setVisibility(GONE);
+        // update fullscreen flag
+        SharedPreferences.Editor edit = getDefaultSharedPreferences(this).edit();
+        edit.putBoolean(FULLSCREEN, false).apply();
+        // make toolbar visible
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar.setVisibility(VISIBLE);
+
+        int action = SHOW_AS_ACTION_IF_ROOM;
+        if (menu != null) {
+            menu.findItem(R.id.settings).setShowAsAction(action);
+            menu.findItem(R.id.help).setShowAsAction(action);
+            menu.findItem(R.id.exit).setShowAsAction(action);
+            menu.findItem(R.id.share_app).setShowAsAction(action);
+        }
+
+    }
 
     @Override
     protected void onPause() {
