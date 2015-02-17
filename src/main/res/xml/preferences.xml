@@ -65,15 +65,27 @@
             android:title="@string/measurement_system"/>
 
     <CheckBoxPreference
-        android:id="@+id/fullscreen"
-        android:layout_width="fill_parent"
-        android:layout_height="0dip"
-        android:layout_margin="10dp"
-        android:key="org.unchiujar.umbra.settings.fullscreen"
-        android:summaryOff="@string/fullscreen_off"
-        android:summaryOn="@string/fullscreen_on"
-        android:title="@string/fullscreen"/>
+            android:id="@+id/check_fullscreen"
+            android:layout_width="fill_parent"
+            android:layout_height="0dip"
+            android:layout_margin="10dp"
+            android:key="org.unchiujar.umbra.settings.fullscreen"
+            android:summaryOff="@string/fullscreen_off"
+            android:summaryOn="@string/fullscreen_on"
+            android:title="@string/fullscreen"/>
 
+
+    <CheckBoxPreference
+            android:id="@+id/check_enable_notification"
+            android:layout_width="fill_parent"
+            android:layout_height="0dip"
+            android:layout_margin="10dp"
+            android:key="org.unchiujar.umbra.settings.notification"
+            android:summaryOff="@string/enable_notification_off"
+            android:summaryOn="@string/enable_notification_on"
+            android:title="@string/enable_notification_title"
+            android:checked="true"
+            />
 
     <org.unchiujar.umbra2.preferences.SeekBarPreference
             android:defaultValue="80"

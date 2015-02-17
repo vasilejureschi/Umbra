@@ -58,6 +58,7 @@ public class Preferences extends PreferenceActivity {
     public static final String DRIVE_MODE = "org.unchiujar.umbra.settings.update_mode";
     public static final String IMPORT_DATA = "org.unchiujar.umbra.settings.import_data";
     public static final String FULLSCREEN = "org.unchiujar.umbra.settings.fullscreen";
+    public static final String NOTIFICATION = "org.unchiujar.umbra.settings.notification";
 
     private static final int READ_REQUEST_CODE = 42;
     private static final Logger LOGGER = LoggerFactory.getLogger(Preferences.class);
@@ -137,6 +138,4 @@ public class Preferences extends PreferenceActivity {
         };
         new Thread(importer).start();
     }
-
-
 }

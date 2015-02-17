@@ -101,7 +101,7 @@
 
         <service android:name="org.unchiujar.umbra2.services.LocationService">
             <intent-filter>
-                <action android:name="org.com.unchiujar.LocationService"/>
+                <action android:name="org.com.unchiujar.umbra2.LocationService"/>
             </intent-filter>
         </service>
 

@@ -87,5 +87,8 @@
     <string name="fullscreen_off">Check to display only the map. Use the menu button to access the settings again if you need to disable fullscreen mode.</string>
     <string name="fullscreen_on">Uncheck to display the Action Bar.</string>
     <string name="fullscreen">Fullscreen mode</string>
+    <string name="enable_notification_title">Umbra drawer notification</string>
+    <string name="enable_notification_on">The notification is on. Uncheck to hide the notification in the notification drawer. If you hide the notification locations may not be received if the system stops the location service.</string>
+    <string name="enable_notification_off">The notification is off. The system may stop the location service if it deems necessary. Check to enable the notification in the drawer.</string>
 
 </resources>

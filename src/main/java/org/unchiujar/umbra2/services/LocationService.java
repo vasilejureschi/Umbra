@@ -51,48 +51,45 @@ import org.unchiujar.umbra2.location.LocationOrder;
 import java.util.ArrayList;
 
 public class LocationService extends Service {
-    private static final int APPLICATION_ID = 1241241;
-    private static final Logger LOGGER = LoggerFactory.getLogger(LocationService.class);
-    private NotificationManager notificationManager;
     public static final String MOVEMENT_UPDATE = "org.unchiujar.umbra.MOVEMENT_UPDATE";
-
     public static final String LATITUDE = "org.unchiujar.umbra.LocationService.LATITUDE";
-
     public static final String LONGITUDE = "org.unchiujar.umbra.LocationService.LONGITUDE";
     public static final String ACCURACY = "org.unchiujar.umbra.LocationService.ACCURACY";
-
     /**
      * Command to the service to register a client, receiving callbacks from the service. The
      * Message's replyTo field must be a Messenger of the client where callbacks should be sent.
      */
     public static final int MSG_REGISTER_CLIENT = 1;
-
     /**
      * Command to the service to un`register a client, or stop receiving callbacks from the service.
      * The Message's replyTo field must be a Messenger of the client as previously given with
      * MSG_REGISTER_CLIENT.
      */
     public static final int MSG_UNREGISTER_CLIENT = 2;
-
     public static final int MSG_UNREGISTER_INTERFACE = 4;
     public static final int MSG_REGISTER_INTERFACE = 5;
-
     public static final int MSG_WALK = 6;
     public static final int MSG_DRIVE = 7;
+    public static final int MSG_SHOW_NOTIFICATION = 8;
+    public static final int MSG_HIDE_NOTIFICATION = 9;
 
     public static final int MSG_LOCATION_CHANGED = 9000;
-
+    public static final String POWER_EVENT = "org.unchiujar.services.LocationService.POWER_EVENT";
+    /**
+     * The maximum duration the location listeners should be put to sleep.
+     */
+    protected static final long MAX_BACKOFF_INTERVAL = 10 * 60 * 1000;
+    private static final int APPLICATION_ID = 1241241;
+    private static final Logger LOGGER = LoggerFactory.getLogger(LocationService.class);
     /**
      * Walk update frequency for average walking speed. Average distance covered by humans while
      * walking is 1.3 m/s. Using quadruple update time for safety.
      */
     private static final long WALK_UPDATE_INTERVAL = (long) (LocationOrder.METERS_RADIUS * 4 / 1.3 * 1000) / 2;
-
     /**
      * Update frequency for driving at 50 km/h. Using quadruple update time for safety.
      */
     private static final long DRIVE_UPDATE_INTERVAL = (long) (LocationOrder.METERS_RADIUS * 4 / 13 * 1000) / 2;
-
     /**
      * Fast update frequency for screen on state.
      */
@@ -101,7 +98,6 @@ public class LocationService extends Service {
      * Update distance for screen on state.
      */
     private static final long SCREEN_ON_UPDATE_DISTANCE = 1;
-
     /**
      * Initial backoff interval is double the {@link LocationService#WALK_UPDATE_INTERVAL}.
      */
@@ -111,22 +107,44 @@ public class LocationService extends Service {
      */
     private static final long LOCATION_SEARCH_DURATION = 30 * 1000;
     /**
-     * The maximum duration the location listeners should be put to sleep.
+     * Target we publish for clients to send messages to IncomingHandler.
      */
-    protected static final long MAX_BACKOFF_INTERVAL = 10 * 60 * 1000;
-    public static final String POWER_EVENT = "org.unchiujar.services.LocationService.POWER_EVENT";
-
-    private boolean mWalking = true;
+    private final Messenger mMessenger = new Messenger(new IncomingHandler());
     protected boolean mPowerConnected;
+    private final BroadcastReceiver receiver = new BroadcastReceiver() {
 
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            String action = intent.getAction();
+
+            if (action.equals(Intent.ACTION_POWER_CONNECTED)) {
+
+                LOGGER.debug("Power connected, increasing location frequency update.");
+                setOnScreeState();
+                mPowerConnected = true;
+            } else if (action.equals(Intent.ACTION_POWER_DISCONNECTED)) {
+                LOGGER.debug("Power disconnected, restoring location frequency update.");
+                mPowerConnected = false;
+                PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+                // if we received a power disconnected event and the screen is off then
+                // set the location update frequency to off screen
+                if (!pm.isScreenOn()) {
+                    setOffScreenState();
+                }
+            }
+        }
+    };
+    private NotificationManager notificationManager;
+    private boolean mWalking = true;
     /**
      * Keeps track of all current registered clients.
      */
-    private ArrayList<Messenger> mClients = new ArrayList<Messenger>();
-
+    private ArrayList<Messenger> mClients = new ArrayList<>();
     private LocationManager mLocationManager;
     private volatile boolean mOnScreen;
 
+    // ==================== LIFECYCLE METHODS ====================
     private LocationListener mFine = new LocationListener() {
 
         @Override
@@ -155,6 +173,68 @@ public class LocationService extends Service {
             // NO-OP
         }
 
+    };
+    /**
+     * Handler to post start and stop location updates runnables.
+     */
+    private Handler mBackoffHandler = new Handler();
+    /**
+     * The shortest duration of backoff time. The initial value is twice the frequency of
+     * {@link #WALK_UPDATE_INTERVAL} since it doesn't make sense to request locations faster when we
+     * have GPS fix problems than we there is a normal location update.
+     */
+    private long mBackoffTime = INITIAL_BACKOFF_INTERVAL;
+    // =================END LIFECYCLE METHODS ====================
+    private volatile boolean mBackoffStarted;
+    /**
+     * Starts the location updates and post a request to stop them using
+     * {@link #stopLocationRequest} after {@link #LOCATION_SEARCH_DURATION} interval.
+     */
+    private Runnable startLocationRequests = new Runnable() {
+
+        @Override
+        public void run() {
+            LOGGER.debug("Location requests started and will be stopped in {} milliseconds", LOCATION_SEARCH_DURATION);
+
+            mLocationManager.requestLocationUpdates(
+                    LocationManager.GPS_PROVIDER,
+                    mWalking ? WALK_UPDATE_INTERVAL : DRIVE_UPDATE_INTERVAL, 0,
+                    mFine);
+            // stop location requests after we waited for the location search
+            // duration
+            mBackoffHandler.postDelayed(stopLocationRequest,
+                    LOCATION_SEARCH_DURATION);
+        }
+    };
+    /**
+     * Stops the location updates and posts a request to start them in after {@link #mBackoffTime}
+     * interval .
+     */
+    private Runnable stopLocationRequest = new Runnable() {
+
+        @Override
+        public void run() {
+            mLocationManager.removeUpdates(mFine);
+            // only start if the backoff algorithm is enabled
+            // necessary as the stopBackoff method may try to remove the
+            // runnables while the
+            // runnables are running with the effect that the algorithm doesn't
+            // stop
+            if (mBackoffStarted) {
+                // start location requests after we have waited the backoff time
+                mBackoffHandler
+                        .postDelayed(startLocationRequests, mBackoffTime);
+            }
+            // if the backoff interval has not increased to the max value
+            // double the interval
+            // need in order not to grow the backoff interval indefinitely
+            LOGGER.debug("Location requests stopped and will be started in  {} milliseconds", mBackoffTime);
+
+            if (mBackoffTime < MAX_BACKOFF_INTERVAL) {
+                mBackoffTime *= 2;
+            }
+
+        }
     };
 
     private void sendLocation(Location location) {
@@ -185,8 +265,6 @@ public class LocationService extends Service {
 
     }
 
-    // ==================== LIFECYCLE METHODS ====================
-
     @Override
     public void onCreate() {
         LOGGER.debug("On create");
@@ -206,6 +284,8 @@ public class LocationService extends Service {
         return super.onStartCommand(intent, flags, startId);
     }
 
+    // *----------- Exponential backoff code ---------------
+
     @Override
     public void onDestroy() {
         LOGGER.debug("On destroy");
@@ -224,13 +304,16 @@ public class LocationService extends Service {
         return super.onUnbind(intent);
     }
 
-    // =================END LIFECYCLE METHODS ====================
-
     private void displayRunningNotification() {
+        notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+        notificationManager.notify(APPLICATION_ID, createNotification());
+    }
+
+    private Notification createNotification() {
         String contentTitle = getString(R.string.app_name);
         String running = getString(R.string.running);
 
-        notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         CharSequence tickerText = contentTitle + " " + running;
 
         // instantiate notification
@@ -249,11 +332,104 @@ public class LocationService extends Service {
                 notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         notification.setLatestEventInfo(this, contentTitle, contentText,
                 contentIntent);
-        notificationManager.notify(APPLICATION_ID, notification);
+        return notification;
     }
 
     /**
-     * Handler of incoming messages from clients`.
+     * Turns off fast GPS updates when the application is not in foreground.
+     */
+    private void setOffScreenState() {
+        mOnScreen = false;
+        // move from screen on updates to regular speed updates
+        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                mWalking ? WALK_UPDATE_INTERVAL : DRIVE_UPDATE_INTERVAL, 0,
+                mFine);
+        restartBackoff();
+    }
+
+    /**
+     * Turns on fast GPS updates when the application is in foreground and tries to display the last
+     * known location.
+     */
+    private void setOnScreeState() {
+        mOnScreen = true;
+        stopBackoff();
+        Location network = mLocationManager
+                .getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        Location gps = mLocationManager
+                .getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        // Location passive =
+        // mLocationManager.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
+
+        // Location toSend = (gps != null) ? gps : (network != null) ? network
+        // : (passive != null) ? passive : null;
+        Location toSend = (gps != null) ? gps : (network != null) ? network
+                : null;
+
+        if (toSend != null) {
+            sendLocation(toSend);
+        }
+
+        // register fast location listener
+        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                SCREEN_ON_UPDATE_INTERVAL, SCREEN_ON_UPDATE_DISTANCE, mFine);
+
+    }
+
+    /**
+     * Restarts the entire backoff algorithm. Called every time we have a location fix.
+     */
+    private void restartBackoff() {
+        LOGGER.debug("Restarting backoff handler, last backoff time was {}"
+                , mBackoffTime);
+        stopBackoff();
+        mBackoffStarted = true;
+
+        // post a request to stop the location updates but give a chance to the
+        // location listeners to get a location and restart the backoff
+        // algorithm again
+        long actualBackoff = mBackoffTime * 2;
+        LOGGER.debug("Initial backoff stop listener request. The updates will be stopped in  {} milliseconds",
+                actualBackoff);
+        mBackoffHandler.postDelayed(stopLocationRequest, actualBackoff);
+    }
+
+    // *----------- Exponential backoff code end ---------------
+
+    /**
+     * Stop the exponential backoff algorithm.
+     */
+    private void stopBackoff() {
+        LOGGER.debug("Stopping backoff last backoff time was {}", mBackoffTime);
+        mBackoffTime = mWalking ? WALK_UPDATE_INTERVAL * 2
+                : DRIVE_UPDATE_INTERVAL * 2;
+        mBackoffStarted = false;
+        LOGGER.debug("Backoff time reset to  {}", mBackoffTime);
+        // remove any runnables from backoff handler
+        mBackoffHandler.removeCallbacks(startLocationRequests);
+        mBackoffHandler.removeCallbacks(stopLocationRequest);
+
+    }
+
+    /**
+     * When binding to the service, we return an interface to our messenger for sending messages to
+     * the service.
+     */
+    @Override
+    public IBinder onBind(Intent intent) {
+        return mMessenger.getBinder();
+    }
+
+    // ------------ Power connected broadcast receiver ------------
+    private void registerPowerReceiver() {
+        IntentFilter filter = new IntentFilter();
+        filter.addAction("android.intent.action.ACTION_POWER_CONNECTED");
+        filter.addAction("android.intent.action.ACTION_POWER_DISCONNECTED");
+        registerReceiver(receiver, filter);
+    }
+
+    /**
+     * Handler of incoming messages from clients.
      */
     private class IncomingHandler extends Handler {
 
@@ -298,200 +474,20 @@ public class LocationService extends Service {
                     LOGGER.debug("Registering new client.");
                     mClients.add(msg.replyTo);
                     break;
+                case MSG_SHOW_NOTIFICATION:
+                    LOGGER.debug("Showing notification");
+                    displayRunningNotification();
+                    break;
+                case MSG_HIDE_NOTIFICATION:
+                    LOGGER.debug("Hiding notification");
+
+                    notificationManager.cancelAll();
+                    break;
                 default:
                     super.handleMessage(msg);
             }
         }
 
     }
-
-    /**
-     * Turns off fast GPS updates when the application is not in foreground.
-     */
-    private void setOffScreenState() {
-        mOnScreen = false;
-        // move from screen on updates to regular speed updates
-        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                mWalking ? WALK_UPDATE_INTERVAL : DRIVE_UPDATE_INTERVAL, 0,
-                mFine);
-        restartBackoff();
-    }
-
-    /**
-     * Turns on fast GPS updates when the application is in foreground and tries to display the last
-     * known location.
-     */
-    private void setOnScreeState() {
-        mOnScreen = true;
-        stopBackoff();
-        Location network = mLocationManager
-                .getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-        Location gps = mLocationManager
-                .getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        // Location passive =
-        // mLocationManager.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
-
-        // Location toSend = (gps != null) ? gps : (network != null) ? network
-        // : (passive != null) ? passive : null;
-        Location toSend = (gps != null) ? gps : (network != null) ? network
-                : null;
-
-        if (toSend != null) {
-            sendLocation(toSend);
-        }
-
-        // register fast location listener
-        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                SCREEN_ON_UPDATE_INTERVAL, SCREEN_ON_UPDATE_DISTANCE, mFine);
-
-    }
-
-    // *----------- Exponential backoff code ---------------
-    /**
-     * Handler to post start and stop location updates runnables.
-     */
-    private Handler mBackoffHandler = new Handler();
-
-    /**
-     * The shortest duration of backoff time. The initial value is twice the frequency of
-     * {@link #WALK_UPDATE_INTERVAL} since it doesn't make sense to request locations faster when we
-     * have GPS fix problems than we there is a normal location update.
-     */
-    private long mBackoffTime = INITIAL_BACKOFF_INTERVAL;
-
-    /**
-     * Stops the location updates and posts a request to start them in after {@link #mBackoffTime}
-     * interval .
-     */
-    private Runnable stopLocationRequest = new Runnable() {
-
-        @Override
-        public void run() {
-            mLocationManager.removeUpdates(mFine);
-            // only start if the backoff algorithm is enabled
-            // necessary as the stopBackoff method may try to remove the
-            // runnables while the
-            // runnables are running with the effect that the algorithm doesn't
-            // stop
-            if (mBackoffStarted) {
-                // start location requests after we have waited the backoff time
-                mBackoffHandler
-                        .postDelayed(startLocationRequests, mBackoffTime);
-            }
-            // if the backoff interval has not increased to the max value
-            // double the interval
-            // need in order not to grow the backoff interval indefinitely
-            LOGGER.debug("Location requests stopped and will be started in  {} milliseconds", mBackoffTime);
-
-            if (mBackoffTime < MAX_BACKOFF_INTERVAL) {
-                mBackoffTime *= 2;
-            }
-
-        }
-    };
-
-    /**
-     * Starts the location updates and post a request to stop them using
-     * {@link #stopLocationRequest} after {@link #LOCATION_SEARCH_DURATION} interval.
-     */
-    private Runnable startLocationRequests = new Runnable() {
-
-        @Override
-        public void run() {
-            LOGGER.debug("Location requests started and will be stopped in {} milliseconds", LOCATION_SEARCH_DURATION);
-
-            mLocationManager.requestLocationUpdates(
-                    LocationManager.GPS_PROVIDER,
-                    mWalking ? WALK_UPDATE_INTERVAL : DRIVE_UPDATE_INTERVAL, 0,
-                    mFine);
-            // stop location requests after we waited for the location search
-            // duration
-            mBackoffHandler.postDelayed(stopLocationRequest,
-                    LOCATION_SEARCH_DURATION);
-        }
-    };
-    private volatile boolean mBackoffStarted;
-
-    /**
-     * Restarts the entire backoff algorithm. Called every time we have a location fix.
-     */
-    private void restartBackoff() {
-        LOGGER.debug("Restarting backoff handler, last backoff time was {}"
-                , mBackoffTime);
-        stopBackoff();
-        mBackoffStarted = true;
-
-        // post a request to stop the location updates but give a chance to the
-        // location listeners to get a location and restart the backoff
-        // algorithm again
-        long actualBackoff = mBackoffTime * 2;
-        LOGGER.debug("Initial backoff stop listener request. The updates will be stopped in  {} milliseconds",
-                actualBackoff);
-        mBackoffHandler.postDelayed(stopLocationRequest, actualBackoff);
-    }
-
-    /**
-     * Stop the exponential backoff algorithm.
-     */
-    private void stopBackoff() {
-        LOGGER.debug("Stopping backoff last backoff time was {}", mBackoffTime);
-        mBackoffTime = mWalking ? WALK_UPDATE_INTERVAL * 2
-                : DRIVE_UPDATE_INTERVAL * 2;
-        mBackoffStarted = false;
-        LOGGER.debug("Backoff time reset to  {}", mBackoffTime);
-        // remove any runnables from backoff handler
-        mBackoffHandler.removeCallbacks(startLocationRequests);
-        mBackoffHandler.removeCallbacks(stopLocationRequest);
-
-    }
-
-    // *----------- Exponential backoff code end ---------------
-
-    /**
-     * Target we publish for clients to send messages to IncomingHandler.
-     */
-    private final Messenger mMessenger = new Messenger(new IncomingHandler());
-
-    /**
-     * When binding to the service, we return an interface to our messenger for sending messages to
-     * the service.
-     */
-    @Override
-    public IBinder onBind(Intent intent) {
-        return mMessenger.getBinder();
-    }
-
-    // ------------ Power connected broadcast receiver ------------
-    private void registerPowerReceiver() {
-        IntentFilter filter = new IntentFilter();
-        filter.addAction("android.intent.action.ACTION_POWER_CONNECTED");
-        filter.addAction("android.intent.action.ACTION_POWER_DISCONNECTED");
-        registerReceiver(receiver, filter);
-    }
-
-    private final BroadcastReceiver receiver = new BroadcastReceiver() {
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-
-            String action = intent.getAction();
-
-            if (action.equals(Intent.ACTION_POWER_CONNECTED)) {
-
-                LOGGER.debug("Power connected, increasing location frequency update.");
-                setOnScreeState();
-                mPowerConnected = true;
-            } else if (action.equals(Intent.ACTION_POWER_DISCONNECTED)) {
-                LOGGER.debug("Power disconnected, restoring location frequency update.");
-                mPowerConnected = false;
-                PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-                // if we received a power disconnected event and the screen is off then
-                // set the location update frequency to off screen
-                if (!pm.isScreenOn()) {
-                    setOffScreenState();
-                }
-            }
-        }
-    };
 
 }

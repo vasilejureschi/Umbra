@@ -33,34 +33,18 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.FragmentManager;
 import android.app.ProgressDialog;
-import android.content.ActivityNotFoundException;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.ServiceConnection;
-import android.content.SharedPreferences;
+import android.content.*;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.IBinder;
-import android.os.Message;
-import android.os.Messenger;
-import android.os.RemoteException;
+import android.os.*;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.WindowManager;
+import android.view.*;
 import android.widget.ImageButton;
 import android.widget.Toast;
-
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -69,7 +53,7 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.TileOverlay;
 import com.google.android.gms.maps.model.TileOverlayOptions;
-
+import hugo.weaving.DebugLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.unchiujar.umbra2.R;
@@ -79,33 +63,18 @@ import org.unchiujar.umbra2.overlays.ExploredTileProvider;
 import org.unchiujar.umbra2.services.LocationService;
 import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-import javax.xml.parsers.ParserConfigurationException;
-
-import hugo.weaving.DebugLog;
-
 import static android.preference.PreferenceManager.getDefaultSharedPreferences;
-import static android.view.MenuItem.*;
-import static android.view.View.*;
-import static org.unchiujar.umbra2.R.string.bug_me_not;
-import static org.unchiujar.umbra2.R.string.connectivity_warning;
-import static org.unchiujar.umbra2.R.string.continue_no_gps;
-import static org.unchiujar.umbra2.R.string.fullscreen;
-import static org.unchiujar.umbra2.R.string.gps_dialog;
-import static org.unchiujar.umbra2.R.string.importing_locations;
-import static org.unchiujar.umbra2.R.string.prefs_bug_me_not;
-import static org.unchiujar.umbra2.R.string.prefs_number_of_launches;
-import static org.unchiujar.umbra2.R.string.rate;
-import static org.unchiujar.umbra2.R.string.rate_umbra;
-import static org.unchiujar.umbra2.R.string.rate_umbra_message;
-import static org.unchiujar.umbra2.R.string.remind_later;
-import static org.unchiujar.umbra2.R.string.share_app_text;
-import static org.unchiujar.umbra2.R.string.start_gps_btn;
-import static org.unchiujar.umbra2.activities.Preferences.DRIVE_MODE;
-import static org.unchiujar.umbra2.activities.Preferences.FULLSCREEN;
+import static android.view.MenuItem.SHOW_AS_ACTION_IF_ROOM;
+import static android.view.MenuItem.SHOW_AS_ACTION_NEVER;
+import static android.view.View.GONE;
+import static android.view.View.VISIBLE;
+import static org.unchiujar.umbra2.R.string.*;
+import static org.unchiujar.umbra2.activities.Preferences.*;
 import static org.unchiujar.umbra2.io.GpxImporter.importGPXFile;
 import static org.unchiujar.umbra2.overlays.ExploredTileProvider.TILE_SIZE;
 
@@ -186,23 +155,15 @@ public class FogOfExplore extends ActionBarActivity {
      */
     private boolean mDrive;
     /**
-     * Drive or walk preference listener. A listener is necessary for this option as the location
-     * service needs to be notified of the change in order to change location update frequency. The
-     * preference is sent when the activity comes into view and rebinds to the location service.
-     */
-    private SharedPreferences.OnSharedPreferenceChangeListener mPrefListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
-
-        @Override
-        public void onSharedPreferenceChanged(
-                SharedPreferences sharedPreferences, String key) {
-            LOGGER.debug("Settings changed {} key {}", sharedPreferences, key);
-            mDrive = mSettings.getBoolean(DRIVE_MODE, false);
-        }
-    };
-    /**
      * Messenger for communicating with service.
      */
     private Messenger mService = null;
+    /**
+     * Flag indicating whether we have called bind on the service.
+     */
+    private boolean mIsBound;
+    private SharedPreferences mSettings;
+    private boolean mNotificationEnabled;
     /**
      * Class for interacting with the main interface of the service.
      */
@@ -219,6 +180,12 @@ public class FogOfExplore extends ActionBarActivity {
             // send walk or drive mode
             sendMessage(mDrive ? LocationService.MSG_DRIVE
                     : LocationService.MSG_WALK);
+
+            // send notification change message
+            sendMessage(mNotificationEnabled ? LocationService.MSG_SHOW_NOTIFICATION
+                    : LocationService.MSG_HIDE_NOTIFICATION);
+
+            mIsBound = true;
         }
 
         @Override
@@ -226,14 +193,25 @@ public class FogOfExplore extends ActionBarActivity {
             // Called when the connection with the service has been
             // unexpectedly disconnected / process crashed.
             mService = null;
+            mIsBound = false;
             LOGGER.debug("Disconnected from location service");
         }
     };
     /**
-     * Flag indicating whether we have called bind on the service.
+     * Drive or walk preference listener. A listener is necessary for this option as the location
+     * service needs to be notified of the change in order to change location update frequency. The
+     * preference is sent when the activity comes into view and rebinds to the location service.
      */
-    private boolean mIsBound;
-    private SharedPreferences mSettings;
+    private SharedPreferences.OnSharedPreferenceChangeListener mPrefListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+
+        @Override
+        public void onSharedPreferenceChanged(
+                SharedPreferences sharedPreferences, String key) {
+            LOGGER.debug("Settings changed {} key {}", sharedPreferences, key);
+            mDrive = mSettings.getBoolean(DRIVE_MODE, false);
+            mNotificationEnabled = mSettings.getBoolean(NOTIFICATION, true);
+        }
+    };
     private GoogleMap map;
     private GoogleMap.OnCameraChangeListener cameraListener = new GoogleMap.OnCameraChangeListener() {
 
@@ -309,6 +287,18 @@ public class FogOfExplore extends ActionBarActivity {
 
             }
         });
+
+
+        // configure if the location service is already started
+        if (mIsBound) {
+            // send walk or drive mode
+            sendMessage(mDrive ? LocationService.MSG_DRIVE
+                    : LocationService.MSG_WALK);
+
+            // send notification change message
+            sendMessage(mNotificationEnabled ? LocationService.MSG_SHOW_NOTIFICATION
+                    : LocationService.MSG_HIDE_NOTIFICATION);
+        }
     }
 
     private void askForStars() {
@@ -498,12 +488,12 @@ public class FogOfExplore extends ActionBarActivity {
     private void configureToolbar() {
         boolean fullScreen = getDefaultSharedPreferences(this).getBoolean(FULLSCREEN, false);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        toolbar.setVisibility(fullScreen? GONE: VISIBLE);
+        toolbar.setVisibility(fullScreen ? GONE : VISIBLE);
 
-        ImageButton fullscreenButton = (ImageButton) findViewById(R.id.fullscreen);
-        fullscreenButton.setVisibility(fullScreen ? VISIBLE:GONE);
+        ImageButton fullscreenButton = (ImageButton) findViewById(R.id.check_fullscreen);
+        fullscreenButton.setVisibility(fullScreen ? VISIBLE : GONE);
 
-        int action = fullScreen? SHOW_AS_ACTION_NEVER: SHOW_AS_ACTION_IF_ROOM;
+        int action = fullScreen ? SHOW_AS_ACTION_NEVER : SHOW_AS_ACTION_IF_ROOM;
         configureToolbarOnFullscreenChange(action);
     }
 
@@ -516,7 +506,7 @@ public class FogOfExplore extends ActionBarActivity {
         }
     }
 
-    public void disableFullscreen(View v){
+    public void disableFullscreen(View v) {
         // hide self
         v.setVisibility(GONE);
         // update fullscreen flag
@@ -713,7 +703,6 @@ public class FogOfExplore extends ActionBarActivity {
     private void doBindService() {
         bindService(mLocationServiceIntent, mConnection,
                 Context.BIND_AUTO_CREATE);
-        mIsBound = true;
         LOGGER.debug("Binding to location service");
     }
 
@@ -721,17 +710,17 @@ public class FogOfExplore extends ActionBarActivity {
      * Unbinds from the location service. Called when the activity is stopped or closed.
      */
     private void doUnbindService() {
-        if (mIsBound) {
-            // test if we have a valid service registration
-            if (mService != null) {
-                sendMessage(LocationService.MSG_UNREGISTER_INTERFACE);
-            }
-
-            // Detach our existing connection.
-            unbindService(mConnection);
-            mIsBound = false;
-            LOGGER.debug("Unbinding map from location service.");
+        if (!mIsBound) {
+            return;
         }
+        // test if we have a valid service registration
+        if (mService != null) {
+            sendMessage(LocationService.MSG_UNREGISTER_INTERFACE);
+        }
+
+        // Detach our existing connection.
+        unbindService(mConnection);
+        LOGGER.debug("Unbinding map from location service.");
     }
 
     private void sendMessage(int message) {
@@ -756,7 +745,9 @@ public class FogOfExplore extends ActionBarActivity {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case LocationService.MSG_LOCATION_CHANGED:
-                    if (msg.obj != null) {
+                    if (msg.obj == null) {
+                        LOGGER.debug("Null object received");
+                    } else {
                         LOGGER.debug(msg.obj.toString());
 
                         mCurrentLat = ((Location) msg.obj).getLatitude();
@@ -765,8 +756,6 @@ public class FogOfExplore extends ActionBarActivity {
                         // redraw overlay
                         redrawOverlay();
 
-                    } else {
-                        LOGGER.debug("Null object received");
                     }
                     break;
                 default:

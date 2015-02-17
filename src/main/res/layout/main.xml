@@ -46,7 +46,7 @@
               android:layout_below="@id/toolbar"
               android:name="com.google.android.gms.maps.MapFragment"/>
     <ImageButton
-        android:id="@+id/fullscreen"
+        android:id="@+id/check_fullscreen"
         android:layout_width="?attr/actionBarSize"
         android:layout_height="?attr/actionBarSize"
         android:layout_alignEnd="@id/map"
