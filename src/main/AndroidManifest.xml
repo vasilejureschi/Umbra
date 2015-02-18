@@ -34,6 +34,7 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
     <uses-feature
             android:glEsVersion="0x00020000"
@@ -104,6 +105,17 @@
                 <action android:name="org.com.unchiujar.umbra2.LocationService"/>
             </intent-filter>
         </service>
+
+
+        <receiver
+                android:name="org.unchiujar.umbra2.services.BootReceiver"
+                android:enabled="true"
+                android:exported="true"
+                android:label="StartLocationAtBootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+        </receiver>
 
         <activity android:name="org.unchiujar.umbra2.activities.Help"/>
         <activity

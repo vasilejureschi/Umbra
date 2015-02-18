@@ -114,7 +114,7 @@ public class FogOfExplore extends ActionBarActivity {
      *
      * @see LocationService
      */
-    private static final String SERVICE_INTENT_NAME = "org.com.unchiujar.umbra2.LocationService";
+    public static final String SERVICE_INTENT_NAME = "org.com.unchiujar.umbra2.LocationService";
     private static final Logger LOGGER = LoggerFactory.getLogger(FogOfExplore.class);
     private static final int RATE_ME_MINIMUM_LAUNCHES = 4;
     /**
@@ -287,18 +287,6 @@ public class FogOfExplore extends ActionBarActivity {
 
             }
         });
-
-
-        // configure if the location service is already started
-        if (mIsBound) {
-            // send walk or drive mode
-            sendMessage(mDrive ? LocationService.MSG_DRIVE
-                    : LocationService.MSG_WALK);
-
-            // send notification change message
-            sendMessage(mNotificationEnabled ? LocationService.MSG_SHOW_NOTIFICATION
-                    : LocationService.MSG_HIDE_NOTIFICATION);
-        }
     }
 
     private void askForStars() {
@@ -483,6 +471,17 @@ public class FogOfExplore extends ActionBarActivity {
         bottomOverlay = map.addTileOverlay(backOpts);
 
         redrawOverlay();
+
+        // configure if the location service is already started
+        if (mIsBound) {
+            // send walk or drive mode
+            sendMessage(mDrive ? LocationService.MSG_DRIVE
+                    : LocationService.MSG_WALK);
+
+            // send notification change message
+            sendMessage(mNotificationEnabled ? LocationService.MSG_SHOW_NOTIFICATION
+                    : LocationService.MSG_HIDE_NOTIFICATION);
+        }
     }
 
     private void configureToolbar() {

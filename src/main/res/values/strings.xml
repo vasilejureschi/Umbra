@@ -90,5 +90,8 @@
     <string name="enable_notification_title">Umbra drawer notification</string>
     <string name="enable_notification_on">The notification is on. Uncheck to hide the notification in the notification drawer. If you hide the notification locations may not be received if the system stops the location service.</string>
     <string name="enable_notification_off">The notification is off. The system may stop the location service if it deems necessary. Check to enable the notification in the drawer.</string>
+    <string name="boot_start_off">Do not start Umbra on boot. Check to start Umbra on boot.</string>
+    <string name="boot_start_on">Start Umbra on boot. Uncheck to not start Umbra on boot.</string>
+    <string name="boot_start_title">Start Umbra on boot</string>
 
 </resources>

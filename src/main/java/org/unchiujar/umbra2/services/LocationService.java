@@ -306,6 +306,7 @@ public class LocationService extends Service {
 
     private void displayRunningNotification() {
         notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        // display notification only if users says so
 
         notificationManager.notify(APPLICATION_ID, createNotification());
     }

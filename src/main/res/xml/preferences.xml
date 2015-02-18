@@ -87,6 +87,18 @@
             android:checked="true"
             />
 
+    <CheckBoxPreference
+            android:id="@+id/check_boot_start"
+            android:layout_width="fill_parent"
+            android:layout_height="0dip"
+            android:layout_margin="10dp"
+            android:key="org.unchiujar.umbra.settings.boot_start"
+            android:summaryOff="@string/boot_start_off"
+            android:summaryOn="@string/boot_start_on"
+            android:title="@string/boot_start_title"
+            android:checked="false"
+            />
+
     <org.unchiujar.umbra2.preferences.SeekBarPreference
             android:defaultValue="80"
             android:key="org.unchiujar.umbra.settings.transparency"
