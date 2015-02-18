@@ -90,6 +90,12 @@ public class FogOfExplore extends ActionBarActivity {
     public static final int MIDDLE = Integer.MAX_VALUE / 2;
     public static final String TILE_SOURCE = "org.unchiujar.umbra.settings.tile_source";
     /**
+     * Intent named used for starting the location service
+     *
+     * @see LocationService
+     */
+    public static final String SERVICE_INTENT_NAME = "org.unchiujar.umbra2.LocationService";
+    /**
      * Initial map zoom.
      */
     private static final int INITIAL_ZOOM = 17;
@@ -109,12 +115,6 @@ public class FogOfExplore extends ActionBarActivity {
      * Constant used for saving the zoom level between screen rotations.
      */
     private static final String BUNDLE_ZOOM = "org.unchiujar.umbra.zoom";
-    /**
-     * Intent named used for starting the location service
-     *
-     * @see LocationService
-     */
-    public static final String SERVICE_INTENT_NAME = "org.com.unchiujar.umbra2.LocationService";
     private static final Logger LOGGER = LoggerFactory.getLogger(FogOfExplore.class);
     private static final int RATE_ME_MINIMUM_LAUNCHES = 4;
     /**

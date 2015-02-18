@@ -36,6 +36,7 @@ import android.location.Location;
 import android.os.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.unchiujar.umbra2.activities.FogOfExplore;
 import org.unchiujar.umbra2.location.ApproximateLocation;
 import org.unchiujar.umbra2.location.LocationOrder;
 import org.unchiujar.umbra2.services.LocationService;
@@ -77,8 +78,7 @@ public class VisitedAreaCache implements ExploredProvider {
     private Context mContext;
     private boolean mCached = false;
 
-    private Intent mLocationServiceIntent = new Intent(
-            "org.com.unchiujar.LocationService");
+    private Intent mLocationServiceIntent = new Intent(FogOfExplore.SERVICE_INTENT_NAME);
     private LocationRecorder recorder;
 
     public VisitedAreaCache(Context context) {
