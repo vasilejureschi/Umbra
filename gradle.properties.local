@@ -1,0 +1,4 @@
+releaseKeystore=/path/to/keystore
+keystorePassword=keystore_pass
+alias=key_alias
+passwordKey=pass
