@@ -34,8 +34,8 @@
     <string name="exit">離開</string>
     <string name="app_name">闇影</string>
     <string name="running">執行中，請按這裡顯示</string>
-    <string name="gps_dialog">This application needs a GPS fix to run properly.</string>
-    <string name="start_gps_btn">Start GPS</string>
+    <string name="gps_dialog">本應用程式需要 GPS 定位才能正常運作。</string>
+    <string name="start_gps_btn">啟動 GPS</string>
     <string name="continue_no_gps">繼續</string>
     <string name="connectivity_warning">因為網路的問題無法下載地圖，請開啟3G/4G行動通訊網路或wifi連線</string>
     <string name="help_text">闇影是一個以戰爭迷霧(Fog Of War)為概念的探索應用策略遊戲。
@@ -44,8 +44,8 @@
     <string name="feedback_text">透過email給我回饋或建議</string>
     <string name="feedback_email">vasile.jureschi@gmail.com</string>
     <string name="email_subject">闇影回饋</string>
-    <string name="email_body">Complain here :)</string>
-    <string name="email_chooser">Send email using:</string>
+    <string name="email_body">在這裡抱怨 :)</string>
+    <string name="email_chooser">採用下列方法傳送電子郵件：</string>
     <string name="transparency_label">設定迷霧透明度</string>
     <string name="measurement_metric">英制單位(打勾),公制單位(沒有打勾)</string>
     <string name="measurement_imperial">公制單位(沒有打勾),英制單位(打勾)</string>
@@ -53,17 +53,17 @@
     <string name="animate_none">打勾改成地圖自動把自己訂位在螢幕中心,取消打勾改成手動移動地圖</string>
     <string name="updates_car">步行移動模式,打勾改成汽車移動模式</string>
     <string name="updates_walk">汽車移動模式,取消打勾改成步行移動模式</string>
-    <string name="remote_service_started">Location service started</string>
-    <string name="remote_service_connected">Connected to location service</string>
-    <string name="remote_service_disconnected">Disconnected from location service</string>
+    <string name="remote_service_started">已啟用定位服務</string>
+    <string name="remote_service_connected">已連線至定位服務</string>
+    <string name="remote_service_disconnected">已中斷定位服務的連線</string>
     <string name="load">載入</string>
-    <string name="import_locations">Import locations</string>
+    <string name="import_locations">匯入位置</string>
     <string name="import_gpx">匯入資料</string>
     <string name="export_gpx">匯出資料</string>
     <string name="select_gpx_folder">選擇GPX檔案存放的目錄</string>
     <string name="importing_locations">資料匯入中,請稍候…</string>
-    <string name="measurement_system">Measurement system</string>
-    <string name="map_movement">Map movement</string>
+    <string name="measurement_system">距離單位</string>
+    <string name="map_movement">地圖移動方式</string>
     <string name="location_updates_frequency">更新頻率</string>
     <string name="exporting_locations">資料匯出中,請稍候....</string>
     <string name="share_data">分享闇影資料</string>
@@ -79,7 +79,7 @@
     <string name="share_app_text">Try 闇影 : https://play.google.com/store/apps/details?id=org.unchiujar.umbra2</string>
     <string name="rate_umbra">給闇影評分</string>
     <string name="rate_umbra_message">我花了無數的時間與犧牲睡眂時間熬夜來製做Umbra.如果您覺得喜歡這個軟體，請在Google Play給我評價.</string>
-    <string name="bug_me_not">Stop bugging me!</string>
+    <string name="bug_me_not">不要再煩我了！</string>
     <string name="remind_later">稍候</string>
     <string name="rate">評分</string>
 
